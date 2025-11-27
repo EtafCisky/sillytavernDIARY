@@ -1,0 +1,10 @@
+{
+  "display_name": "日记本",
+  "loading_order": 50,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "author": "Etaf Cisky",
+  "version": "3.3.0",
+  "homePage": "https://github.com/EtafCisky/SillyTavern-Diary"
+}

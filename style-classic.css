@@ -1,0 +1,3070 @@
+/**
+ * ============================================================================
+ * 日记本插件 - 经典主题样式表
+ * SillyTavern-Diary Plugin - Classic Theme Stylesheet
+ * ============================================================================
+ * 
+ * @author    Etaf Cisky
+ * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
+ * @license   CC BY-NC-ND 4.0
+ * @version   3.3.0
+ * @link      https://github.com/EtafCisky/SillyTavern-Diary
+ * 
+ * ============================================================================
+ * 版权声明 (COPYRIGHT NOTICE)
+ * ============================================================================
+ * 
+ * 本文件是日记本插件的一部分，受 CC BY-NC-ND 4.0 许可协议保护。
+ * 
+ * 使用条款：
+ * ✓ 署名 - 必须保留原作者署名（Etaf Cisky）
+ * ✗ 非商业性使用 - 禁止用于商业目的
+ * ✗ 禁止演绎 - 禁止修改本作品
+ * 
+ * This file is part of the SillyTavern-Diary plugin and is protected
+ * under CC BY-NC-ND 4.0 License. Commercial use and modifications are
+ * prohibited. Author attribution must be retained.
+ * 
+ * ============================================================================
+ */
+
+/* ========================================= */
+/* 基础样式 - 所有主题共享                    */
+/* ========================================= */
+
+/* 注意：悬浮窗按钮相关样式已统一移动到 index.js 文件中进行管理 */
+
+
+/* ========== 动态元素辅助样式 ========== */
+
+/* 角色卡片辅助元素 */
+.diary-book-character-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.diary-book-character-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.diary-book-character-stats {
+  margin-bottom: 4px;
+}
+
+.diary-book-character-count-label {
+  font-size: 12px;
+  color: #666;
+  margin-left: 4px;
+}
+
+.diary-book-character-arrow {
+  color: #ccc;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: none !important;
+}
+
+.diary-book-character-card:hover .diary-book-character-arrow {
+  color: #007bff;
+  transform: translateX(4px);
+}
+
+/* 日记卡片辅助元素 */
+.diary-book-diary-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diary-book-diary-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  display: none !important;
+}
+
+.diary-book-diary-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.diary-book-diary-arrow {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #ccc;
+  font-size: 20px;
+  transition: all 0.2s;
+  display: none !important;
+}
+
+.diary-book-diary-card:hover .diary-book-diary-arrow {
+  color: #007bff;
+  transform: translateX(4px);
+}
+
+/* 日记详情空状态 */
+.diary-book-detail-empty {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  margin: 40px 0;
+}
+
+/* 预设卡片辅助元素 */
+.diary-preset-item-icon {
+  display: none !important;
+}
+
+.diary-preset-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 预设状态高亮 */
+.diary-preset-item-current {
+  background: linear-gradient(135deg, #89f7fe1a 0%, #66a6ff1a 100%);
+  border-color: #66a6ff;
+}
+
+.diary-preset-item-selected {
+  background: linear-gradient(135deg, #f093fb1a 0%, #f5576c1a 100%);
+  border-color: #f5576c !important;
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3) !important;
+}
+
+.diary-preset-badge-current {
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+}
+
+.diary-preset-badge-selected {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+
+/* ========================================= */
+/* 弹窗基础布局样式 - 所有主题必需            */
+/* ========================================= */
+
+/* ========== 自定义角色弹窗基础样式 ========== */
+
+.diary-custom-character-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diary-custom-character-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.diary-custom-character-header {
+  padding: 20px 20px 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diary-custom-character-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.diary-character-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.diary-character-close:hover {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.diary-custom-character-body {
+  padding: 20px;
+}
+
+.diary-custom-character-body p {
+  margin: 0 0 15px;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.diary-character-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.diary-character-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.diary-custom-character-footer {
+  padding: 10px 20px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.diary-character-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.diary-character-cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.diary-character-cancel:hover {
+  background-color: #5a6268;
+}
+
+.diary-character-send {
+  background-color: #007bff;
+  color: white;
+}
+
+.diary-character-send:hover {
+  background-color: #0056b3;
+}
+
+
+/* ========== 日记本弹窗基础样式 ========== */
+
+.diary-book-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diary-book-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.diary-book-header {
+  padding: 26px 30px 22px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.diary-book-title {
+  margin: 0;
+  color: #333;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.diary-book-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.diary-book-close:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #666;
+  transform: scale(1.1);
+}
+
+.diary-book-body {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* 日记本视图容器 */
+.diary-book-view {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* 当通过JavaScript显示时覆盖隐藏 */
+.diary-book-view[style*="display: block"] {
+  display: block !important;
+}
+
+/* 日记本封面基础样式 */
+.diary-book-cover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+/* 封面特殊处理：当显示时使用flex布局 */
+#diary-book-cover-view[style*="display: block"] {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.diary-book-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="60" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="40" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.diary-book-cover-content {
+  text-align: center;
+  color: white;
+  z-index: 1;
+  position: relative;
+}
+
+.diary-book-cover-title {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 2px;
+}
+
+
+
+/* ========== 预设弹窗基础样式 ========== */
+
+.diary-preset-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diary-preset-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.diary-preset-header {
+  padding: 20px 25px 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.diary-preset-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.diary-preset-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.diary-preset-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.diary-preset-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+
+/* ========== 列表页面基础布局 ========== */
+
+.diary-book-character-list {
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.diary-book-nav-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  background: transparent !important;
+  border-bottom: 1px solid #eee;
+  box-shadow: none !important;
+}
+
+.diary-book-nav-btn {
+  background: #6c757d;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.diary-book-nav-btn:hover {
+  background: #5a6268;
+}
+
+/* 日记列表页的返回按钮也需要移出卡片 */
+.diary-book-diary-list .diary-book-nav-header::before,
+.diary-book-diary-list .diary-book-nav-header::after {
+content: '❀';
+position: absolute;
+color: #deb887;
+font-size: 20px;
+top: 50%;
+transform: translateY(-50%);
+animation: sparkle 4s ease-in-out infinite;
+text-shadow: none !important;
+filter: none !important;
+box-shadow: none !important;
+-webkit-filter: none !important;
+}
+
+.diary-book-diary-list .diary-book-nav-header::before {
+left: 15px;
+}
+
+.diary-book-diary-list .diary-book-nav-header::after {
+right: 15px;
+animation-delay: 2s;
+}
+
+/* 日记列表标题样式 */
+.diary-book-diary-list .diary-book-view-title {
+font-size: 24px !important;
+font-weight: 800 !important;
+color: #2d1810 !important;
+border-bottom: none !important;
+padding-bottom: 0 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1) !important;
+background: transparent !important;
+text-align: center !important;
+flex: 1 !important;
+}
+
+/* 隐藏日记详情页标题 */
+.diary-book-detail .diary-book-view-title {
+display: none !important;
+}
+
+/* 隐藏日记详情页的导航占位符 */
+.diary-book-detail .diary-book-nav-spacer {
+display: none !important;
+}
+
+/* 日记详情页导航头部样式 - 透明化 */
+.diary-book-detail .diary-book-nav-header {
+background: transparent !important;
+border: none !important;
+padding: 0 !important;
+margin: 0 !important;
+position: relative !important;
+height: auto !important;
+}
+
+.diary-book-view-title {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: bold;
+  flex: 1;
+  text-align: center;
+}
+
+.diary-book-nav-spacer {
+  width: 80px;
+}
+
+.diary-book-character-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ========================================= */
+/* 原版主题美化 - 弹窗专属                    */
+/* ========================================= */
+
+/* ========== 1. 关键帧动画定义 ========== */
+
+@keyframes floatingPatterns {
+0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.6; }
+25% { transform: translateY(-8px) rotate(2deg) scale(1.02); opacity: 0.8; }
+50% { transform: translateY(-5px) rotate(-1deg) scale(0.98); opacity: 0.7; }
+75% { transform: translateY(-12px) rotate(1deg) scale(1.01); opacity: 0.9; }
+}
+
+@keyframes shimmerDecoration {
+0% { opacity: 0.2; transform: translateX(-200%) rotate(0deg); }
+50% { opacity: 0.8; transform: translateX(0%) rotate(180deg); }
+100% { opacity: 0.2; transform: translateX(200%) rotate(360deg); }
+}
+
+@keyframes paperRipple {
+0%, 100% { transform: perspective(1200px) rotateX(2deg) rotateY(-1deg) scale(1); }
+20% { transform: perspective(1200px) rotateX(0deg) rotateY(1deg) scale(1.01); }
+40% { transform: perspective(1200px) rotateX(-1deg) rotateY(-0.5deg) scale(0.99); }
+60% { transform: perspective(1200px) rotateX(1deg) rotateY(0.5deg) scale(1.005); }
+80% { transform: perspective(1200px) rotateX(-0.5deg) rotateY(-1deg) scale(1.01); }
+}
+
+@keyframes gentleGlow {
+0%, 100% { box-shadow: 0 0 30px rgba(210, 180, 140, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1); }
+50% { box-shadow: 0 0 50px rgba(222, 184, 135, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.2); }
+}
+
+@keyframes fadeInUp {
+from { opacity: 0; transform: translateY(30px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sparkle {
+0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes dialogFadeIn {
+from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 0.6; }
+50% { opacity: 0.8; }
+}
+
+
+/* ========== 2. 主弹窗容器样式 ========== */
+
+/* 日记本弹窗遮罩层 - 增强背景效果 */
+.diary-book-dialog {
+background: 
+  radial-gradient(circle at 25% 25%, rgba(210, 180, 140, 0.15) 0%, transparent 40%),
+  radial-gradient(circle at 75% 75%, rgba(222, 184, 135, 0.12) 0%, transparent 40%),
+  radial-gradient(circle at 50% 10%, rgba(205, 133, 63, 0.08) 0%, transparent 30%),
+  linear-gradient(135deg, rgba(15, 10, 5, 0.94) 0%, rgba(25, 15, 10, 0.90) 100%) !important;
+backdrop-filter: blur(12px) !important;
+animation: fadeInUp 0.8s ease-out !important;
+}
+
+.diary-book-dialog::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-image: 
+  radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+  radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+  radial-gradient(circle at 40% 60%, rgba(210, 180, 140, 0.05) 2px, transparent 2px);
+background-size: 80px 80px, 60px 60px, 120px 120px;
+animation: floatingPatterns 12s ease-in-out infinite;
+pointer-events: none;
+}
+
+/* 日记本内容容器 - 纸张纹理效果 */
+.diary-book-content {
+background: 
+  linear-gradient(145deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
+color: #2d1810 !important;
+padding: 0 !important;
+border-radius: 16px !important;
+width: 95% !important;
+max-width: 900px !important;
+min-width: 480px !important;
+text-align: center !important;
+box-shadow: 
+  0 30px 100px rgba(0, 0, 0, 0.5),
+  0 15px 60px rgba(210, 180, 140, 0.3),
+  0 8px 30px rgba(222, 184, 135, 0.25),
+  inset 0 2px 0 rgba(255, 255, 255, 0.7),
+  inset 0 -2px 0 rgba(210, 180, 140, 0.2) !important;
+border: 4px solid #c4a87c !important;
+overflow: hidden !important;
+position: relative !important;
+margin: auto !important;
+max-height: 78vh !important;
+transform: perspective(1200px) rotateX(2deg) rotateY(-1deg);
+transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+animation: paperRipple 8s ease-in-out infinite;
+}
+
+.diary-book-content:hover {
+transform: perspective(1200px) rotateX(0deg) rotateY(0deg) !important;
+animation-play-state: paused;
+}
+
+/* 弹窗纹理装饰 */
+.diary-book-content::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 25px,
+    rgba(210, 180, 140, 0.03) 25px,
+    rgba(210, 180, 140, 0.03) 50px
+  ),
+  radial-gradient(circle at 30% 30%, rgba(205, 133, 63, 0.08) 0%, transparent 60%),
+  radial-gradient(circle at 70% 70%, rgba(222, 184, 135, 0.06) 0%, transparent 60%);
+pointer-events: none;
+}
+
+/* 弹窗左侧装订线效果 */
+.diary-book-content::after {
+content: '';
+position: absolute;
+left: 25px;
+top: 0;
+bottom: 0;
+width: 3px;
+background: 
+  linear-gradient(to bottom, 
+    transparent 0%, 
+    rgba(210, 180, 140, 0.4) 15%, 
+    rgba(210, 180, 140, 0.2) 85%, 
+    transparent 100%
+  );
+box-shadow: 
+  2px 0 0 rgba(205, 133, 63, 0.3),
+  5px 0 0 rgba(210, 180, 140, 0.15),
+  1px 0 10px rgba(210, 180, 140, 0.2);
+}
+
+
+/* ========== 3. 弹窗标题栏样式 ========== */
+
+/* 日记本标题栏 - 皮革质感 */
+.diary-book-header {
+background: 
+  linear-gradient(135deg, 
+    #7a4d2a 0%, 
+    #6b3511 25%, 
+    #7a4d2a 50%,
+    #6b3511 75%,
+    #562a17 100%
+  ) !important;
+box-shadow: 
+  0 4px 15px rgba(0, 0, 0, 0.4),
+  inset 0 2px 0 rgba(255, 255, 255, 0.3),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+border-bottom: 5px solid rgba(196, 168, 124, 0.7) !important;
+overflow: hidden;
+position: relative;
+}
+
+/* 标题栏闪光装饰 */
+.diary-book-header::before {
+content: '';
+position: absolute;
+top: 50%;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg, 
+  transparent 0%, 
+  rgba(205, 133, 63, 0.8) 25%, 
+  rgba(255, 215, 0, 0.6) 50%, 
+  rgba(205, 133, 63, 0.8) 75%, 
+  transparent 100%
+);
+animation: shimmerDecoration 4s ease-in-out infinite;
+transform: translateY(-50%);
+}
+
+/* 日记本标题文字 */
+.diary-book-title {
+color: #f9f6f1 !important;
+font-size: 22px !important;
+font-weight: 800 !important;
+text-shadow: 
+  3px 3px 6px rgba(0, 0, 0, 0.6),
+  0 0 20px rgba(255, 215, 0, 0.3),
+  0 0 40px rgba(255, 215, 0, 0.1) !important;
+letter-spacing: 1px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+margin: 0 !important;
+}
+
+/* 关闭按钮 */
+.diary-book-close {
+background: 
+  radial-gradient(circle at center, rgba(245, 241, 234, 0.2) 0%, rgba(211, 47, 47, 0.1) 70%) !important;
+border: 3px solid rgba(245, 241, 234, 0.4) !important;
+color: #f9f6f1 !important;
+backdrop-filter: blur(10px);
+position: relative;
+overflow: hidden;
+}
+
+.diary-book-close::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: radial-gradient(circle at center, transparent 0%, rgba(211, 47, 47, 0.3) 100%);
+transform: scale(0);
+transition: transform 0.3s ease;
+}
+
+.diary-book-close:hover {
+background: rgba(211, 47, 47, 0.9) !important;
+border-color: #d32f2f !important;
+transform: scale(1.15) rotate(90deg) !important;
+box-shadow: 
+  0 8px 25px rgba(211, 47, 47, 0.5),
+  inset 0 2px 10px rgba(255, 255, 255, 0.2) !important;
+}
+
+.diary-book-close:hover::before {
+transform: scale(1);
+}
+
+/* ========== 4. 弹窗内容区域样式 ========== */
+
+.diary-book-body {
+padding: 65px 48px !important;
+overflow-y: auto !important;
+overflow-x: hidden !important;
+max-height: 62vh !important;
+min-height: 200px !important;
+background: 
+  radial-gradient(circle at 95% 5%, rgba(245, 241, 234, 0.4) 0%, transparent 50%),
+  radial-gradient(circle at 5% 95%, rgba(235, 228, 214, 0.3) 0%, transparent 50%) !important;
+position: relative;
+box-sizing: border-box;
+scrollbar-width: thin;
+scrollbar-color: rgba(196, 168, 124, 0.6) transparent;
+-webkit-overflow-scrolling: touch;
+overscroll-behavior: contain;
+}
+
+/* WebKit浏览器滚动条样式 */
+.diary-book-body::-webkit-scrollbar {
+width: 8px;
+}
+
+.diary-book-body::-webkit-scrollbar-track {
+background: transparent;
+}
+
+.diary-book-body::-webkit-scrollbar-thumb {
+background-color: rgba(196, 168, 124, 0.6);
+border-radius: 4px;
+border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diary-book-body::-webkit-scrollbar-thumb:hover {
+background-color: rgba(196, 168, 124, 0.8);
+}
+
+
+/* ========== 5. 封面页面样式 ========== */
+
+/* 封面容器 */
+.diary-book-cover {
+text-align: center;
+padding: 40px 36px 36px !important;
+background: 
+  radial-gradient(1200px 600px at 50% -200px, rgba(255, 215, 180, 0.18) 0%, transparent 60%), 
+  linear-gradient(135deg, #f6ecd9 0%, #efe1c8 50%, #e6d6b8 100%) !important;
+margin: 0 !important;
+border: 2px solid #caa574 !important;
+border-radius: 18px !important;
+position: relative !important;
+transition: transform 0.25s ease, box-shadow 0.25s ease;
+box-shadow: 
+  0 10px 30px rgba(0, 0, 0, 0.22), 
+  inset 0 2px 0 rgba(255, 255, 255, 0.65) !important;
+min-height: auto !important;
+}
+
+.diary-book-cover::before {
+content: '';
+position: absolute;
+inset: 14px;
+border: 1px solid rgba(196, 168, 124, 0.5);
+border-radius: 14px;
+box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.25);
+background: 
+  repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(210, 180, 140, 0.10) 29px, rgba(210, 180, 140, 0.10) 30px), 
+  radial-gradient(600px 300px at 20% 0%, rgba(222, 184, 135, 0.15) 0%, transparent 60%), 
+  radial-gradient(600px 300px at 80% 100%, rgba(210, 180, 140, 0.12) 0%, transparent 60%);
+pointer-events: none;
+}
+
+.diary-book-cover::after {
+content: '';
+position: absolute;
+top: 0;
+left: 28px;
+bottom: 0;
+width: 4px;
+background: linear-gradient(to bottom, rgba(205, 133, 63, 0.35), rgba(210, 180, 140, 0.55), rgba(205, 133, 63, 0.35));
+box-shadow: 
+  2px 0 0 rgba(255, 255, 255, 0.5), 
+  -2px 0 0 rgba(120, 80, 40, 0.15);
+pointer-events: none;
+}
+
+.diary-book-cover:hover {
+transform: translateY(-6px) scale(1.02) !important;
+box-shadow: 
+  0 20px 48px rgba(0, 0, 0, 0.35), 
+  inset 0 3px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 封面内容容器 */
+.diary-book-cover-content {
+position: relative;
+padding: 6px 8px;
+}
+
+/* 封面标题 */
+.diary-book-cover-title {
+font-size: 36px !important;
+font-weight: 900 !important;
+color: #3e2723 !important;
+margin-bottom: 12px !important;
+text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2) !important;
+letter-spacing: 1px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+z-index: 2;
+}
+
+/* 封面副标题 */
+.diary-book-cover-subtitle {
+font-size: 16px !important;
+color: #5d4037 !important;
+font-style: italic !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15) !important;
+position: relative;
+z-index: 2;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+line-height: 1.4 !important;
+margin-bottom: 20px !important;
+}
+
+/* 进入按钮 */
+.diary-book-cover-button {
+background: 
+  linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
+color: #3e2723 !important;
+border: 2px solid #bc9a6a !important;
+padding: 12px 24px !important;
+border-radius: 25px !important;
+cursor: pointer;
+font-size: 14px !important;
+font-weight: 700 !important;
+transition: all 0.3s ease;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2) !important;
+box-shadow: 
+  0 4px 12px rgba(0, 0, 0, 0.2),
+  inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+z-index: 2;
+display: inline-block;
+}
+
+.diary-book-cover-button:hover {
+background: 
+  linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
+transform: translateY(-2px) scale(1.05) !important;
+box-shadow: 
+  0 8px 20px rgba(0, 0, 0, 0.3),
+  inset 0 2px 0 rgba(255, 255, 255, 0.4) !important;
+color: #2e1a14 !important;
+}
+
+
+/* ========== 6. 预设设置对话框样式 ========== */
+
+/* 预设对话框遮罩层 */
+.diary-preset-dialog {
+background: rgba(0, 0, 0, 0.7) !important;
+background-image: 
+  radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
+  radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.1) 0%, transparent 50%) !important;
+backdrop-filter: blur(4px) !important;
+-webkit-backdrop-filter: blur(4px) !important;
+padding-top: max(20px, env(safe-area-inset-top));
+padding-bottom: max(20px, env(safe-area-inset-bottom));
+padding-left: max(20px, env(safe-area-inset-left));
+padding-right: max(20px, env(safe-area-inset-right));
+overscroll-behavior: contain;
+}
+
+@supports not (backdrop-filter: blur(4px)) {
+.diary-preset-dialog {
+  background: rgba(0, 0, 0, 0.85) !important;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(40, 30, 20, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(30, 20, 15, 0.2) 0%, transparent 40%) !important;
+}
+}
+
+/* 预设对话框主体容器 */
+.diary-preset-content {
+background: 
+  linear-gradient(145deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
+border: 4px solid #c4a87c !important;
+border-radius: 16px !important;
+box-shadow: 
+  0 30px 100px rgba(0, 0, 0, 0.5),
+  0 15px 60px rgba(210, 180, 140, 0.3),
+  0 8px 30px rgba(222, 184, 135, 0.25),
+  inset 0 2px 0 rgba(255, 255, 255, 0.7),
+  inset 0 -2px 0 rgba(210, 180, 140, 0.2) !important;
+padding: 0 !important;
+max-width: 900px !important;
+min-width: 600px !important;
+max-height: 80vh !important;
+overflow: hidden !important;
+position: relative !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+animation: dialogFadeIn 0.3s ease !important;
+}
+
+/* 预设内容容器纸张纹理 */
+.diary-preset-content::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 26px,
+    rgba(210, 180, 140, 0.08) 26px,
+    rgba(210, 180, 140, 0.08) 28px
+  );
+pointer-events: none;
+z-index: 0;
+}
+
+/* 预设左侧装饰线 */
+.diary-preset-content::after {
+content: '';
+position: absolute;
+left: 25px;
+top: 0;
+bottom: 0;
+width: 2px;
+background: rgba(210, 180, 140, 0.25);
+box-shadow: 
+  1px 0 0 rgba(255, 255, 255, 0.3),
+  -1px 0 0 rgba(210, 180, 140, 0.1);
+z-index: 0;
+}
+
+/* 预设对话框标题栏 - 复用主弹窗样式 */
+.diary-preset-header {
+background:
+  linear-gradient(135deg,
+    #7a4d2a 0%,
+    #6b3511 25%,
+    #7a4d2a 50%,
+    #6b3511 75%,
+    #562a17 100%
+  ) !important;
+box-shadow:
+  0 4px 15px rgba(0, 0, 0, 0.4),
+  inset 0 2px 0 rgba(255, 255, 255, 0.3),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+border-bottom: 5px solid rgba(196, 168, 124, 0.7) !important;
+overflow: hidden;
+position: relative;
+padding: 28px 30px !important;
+display: flex;
+align-items: center;
+justify-content: space-between;
+border-radius: 12px 12px 0 0 !important;
+z-index: 2;
+}
+
+.diary-preset-header::before {
+content: '';
+position: absolute;
+top: 50%;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg,
+  transparent 0%,
+  rgba(205, 133, 63, 0.8) 25%,
+  rgba(255, 215, 0, 0.6) 50%,
+  rgba(205, 133, 63, 0.8) 75%,
+  transparent 100%
+);
+animation: shimmerDecoration 4s ease-in-out infinite;
+transform: translateY(-50%);
+}
+
+/* 预设对话框标题 - 复用主弹窗样式 */
+.diary-preset-title {
+color: #f9f6f1 !important;
+text-shadow:
+  3px 3px 6px rgba(0, 0, 0, 0.6),
+  0 0 20px rgba(255, 215, 0, 0.3),
+  0 0 40px rgba(255, 215, 0, 0.1) !important;
+letter-spacing: 1px;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 22px !important;
+font-weight: 800 !important;
+margin: 0 !important;
+position: relative;
+z-index: 2;
+}
+
+/* 预设关闭按钮 - 复用主弹窗样式 */
+.diary-preset-close {
+background:
+  radial-gradient(circle at center, rgba(245, 241, 234, 0.2) 0%, rgba(211, 47, 47, 0.1) 70%) !important;
+border: 3px solid rgba(245, 241, 234, 0.4) !important;
+color: #f9f6f1 !important;
+backdrop-filter: blur(10px);
+border-radius: 50% !important;
+width: 32px !important;
+height: 32px !important;
+position: relative;
+z-index: 2;
+overflow: hidden;
+cursor: pointer;
+border-radius: 50%;
+width: 42px;
+height: 42px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 24px;
+font-weight: bold;
+transition: all 0.4s ease;
+}
+
+.diary-preset-close::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: radial-gradient(circle at center, transparent 0%, rgba(211, 47, 47, 0.3) 100%);
+transform: scale(0);
+transition: transform 0.3s ease;
+}
+
+.diary-preset-close:hover {
+background: rgba(211, 47, 47, 0.9) !important;
+border-color: #d32f2f !important;
+transform: scale(1.15) rotate(90deg) !important;
+box-shadow:
+  0 8px 25px rgba(211, 47, 47, 0.5),
+  inset 0 2px 10px rgba(255, 255, 255, 0.2) !important;
+}
+
+.diary-preset-close:hover::before {
+transform: scale(1);
+}
+
+/* 预设对话框主体内容 */
+.diary-preset-body {
+scrollbar-width: thin;
+scrollbar-color: rgba(196, 168, 124, 0.6) transparent;
+}
+
+.diary-preset-body::-webkit-scrollbar {
+width: 8px;
+}
+
+.diary-preset-body::-webkit-scrollbar-track {
+background: transparent;
+}
+
+.diary-preset-body::-webkit-scrollbar-thumb {
+background-color: rgba(196, 168, 124, 0.6);
+border-radius: 4px;
+border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diary-preset-body::-webkit-scrollbar-thumb:hover {
+background-color: rgba(196, 168, 124, 0.8);
+}
+
+/* 预设分隔线 */
+.diary-preset-divider {
+border: none;
+border-top: 2px solid rgba(196, 168, 124, 0.4) !important;
+margin: 25px 0 !important;
+opacity: 0.6;
+}
+
+/* 预设列表容器 */
+.diary-preset-list-container {
+margin-top: 20px;
+}
+
+/* 预设列表标题 */
+.diary-preset-list-title {
+font-size: 20px !important;
+font-weight: 800 !important;
+color: #3e2723 !important;
+margin: 0 0 20px 0 !important;
+text-align: center !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: none !important;
+}
+
+/* 预设列表 */
+.diary-preset-list {
+display: grid;
+grid-template-columns: 1fr;
+gap: 12px;
+margin-bottom: 20px;
+}
+
+/* 预设信息框 */
+.diary-preset-info-box {
+border: 2px solid rgba(196, 168, 124, 0.5) !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+background: 
+  linear-gradient(135deg, rgba(255, 250, 240, 0.8) 0%, rgba(250, 245, 235, 0.8) 100%) !important;
+padding: 18px 20px !important;
+border-radius: 10px !important;
+margin-bottom: 18px !important;
+box-shadow: 
+  0 2px 8px rgba(0, 0, 0, 0.08),
+  inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.diary-preset-info-label {
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 14px !important;
+font-weight: 600 !important;
+color: #5d4037 !important;
+margin-bottom: 8px;
+text-shadow: none !important;
+}
+
+.diary-preset-info-value {
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 16px !important;
+font-weight: 700 !important;
+color: #3e2723 !important;
+text-shadow: none !important;
+}
+
+.diary-preset-info-hint {
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 13px !important;
+color: #6d4c41 !important;
+margin-top: 8px;
+font-style: italic;
+text-shadow: none !important;
+}
+
+/* 预设空状态 */
+.diary-preset-empty-state {
+text-align: center;
+padding: 50px 20px;
+color: #6d4c41;
+}
+
+.diary-preset-empty-icon {
+font-size: 56px;
+margin-bottom: 16px;
+opacity: 0.5;
+}
+
+.diary-preset-empty-text {
+font-size: 18px !important;
+font-weight: 700 !important;
+color: #5d4037 !important;
+margin-bottom: 10px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+}
+
+.diary-preset-empty-hint {
+font-size: 14px !important;
+color: #8d6e63 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-style: italic;
+}
+
+/* 预设列表项 */
+.diary-preset-item {
+background: 
+  linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
+border: 2px solid #c4a87c !important;
+border-radius: 10px !important;
+padding: 18px 20px !important;
+cursor: pointer;
+transition: all 0.3s ease;
+position: relative;
+box-shadow: 
+  0 3px 10px rgba(0, 0, 0, 0.12),
+  inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.diary-preset-item:hover {
+background: 
+  linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 100%) !important;
+border-color: #deb887 !important;
+transform: translateY(-3px) !important;
+box-shadow: 
+  0 8px 20px rgba(0, 0, 0, 0.18),
+  inset 0 2px 0 rgba(255, 255, 255, 0.8),
+  0 0 0 2px rgba(210, 180, 140, 0.1) !important;
+}
+
+.diary-preset-item-name {
+color: #a0826d !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 16px !important;
+font-weight: 700 !important;
+text-shadow: none !important;
+}
+
+/* 隐藏预设图标 */
+.diary-preset-item-icon {
+display: none !important;
+}
+
+/* 预设列表徽章 */
+.diary-preset-badge {
+font-family: 'Georgia', 'Times New Roman', serif !important;
+padding: 4px 12px !important;
+border-radius: 12px !important;
+font-size: 12px !important;
+font-weight: 600 !important;
+margin-left: 8px !important;
+text-shadow: none !important;
+}
+
+.diary-preset-badge-current {
+background: linear-gradient(135deg, #e0c097 0%, #d2b48c 100%) !important;
+color: #3e2723 !important;
+border: 2px solid #bc9a6a !important;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+text-shadow: none !important;
+}
+
+.diary-preset-badge-selected {
+background: linear-gradient(135deg, #daa520 0%, #cd853f 100%) !important;
+color: #f9f6f1 !important;
+border: 2px solid #b8860b !important;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+text-shadow: none !important;
+}
+
+/* 预设分页控件 */
+.diary-preset-pagination {
+display: flex;
+justify-content: center;
+align-items: center;
+gap: 15px !important;
+margin-top: 30px !important;
+padding-top: 25px !important;
+border-top: 2px solid #c4a87c !important;
+}
+
+/* 预设分页按钮 */
+.diary-preset-page-btn {
+background: linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
+border: 2px solid #bc9a6a !important;
+color: #f9f6f1 !important;
+padding: 10px 18px !important;
+border-radius: 20px !important;
+font-size: 13px !important;
+font-weight: 600 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+cursor: pointer;
+transition: all 0.3s ease;
+box-shadow: 
+  0 4px 8px rgba(0, 0, 0, 0.15),
+  inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+.diary-preset-page-btn:hover:not(:disabled) {
+background: linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
+transform: translateY(-2px);
+box-shadow: 
+  0 6px 12px rgba(0, 0, 0, 0.2),
+  inset 0 1px 0 rgba(255, 255, 255, 0.5),
+  0 0 15px rgba(255, 215, 0, 0.2) !important;
+}
+
+.diary-preset-page-btn:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+/* 预设页面信息 */
+.diary-preset-page-info {
+color: #3e2723 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-size: 14px !important;
+font-weight: 600 !important;
+text-shadow: none !important;
+}
+
+/* 预设空状态 */
+.diary-preset-empty-state {
+text-align: center;
+padding: 60px 20px;
+}
+
+.diary-preset-empty-icon {
+font-size: 48px;
+margin-bottom: 16px;
+opacity: 0.5;
+}
+
+.diary-preset-empty-text {
+font-size: 18px;
+font-weight: 700;
+color: #5d4037;
+margin-bottom: 8px;
+font-family: 'Georgia', 'Times New Roman', serif;
+text-shadow: none !important;
+}
+
+.diary-preset-empty-hint {
+font-size: 14px;
+color: #8b7355;
+font-style: italic;
+font-family: 'Georgia', 'Times New Roman', serif;
+text-shadow: none !important;
+}
+
+
+/* ========== 7. 角色列表页面样式 ========== */
+
+/* 角色列表容器 */
+.diary-book-character-list {
+background: 
+  linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 50%, #e8e0d6 100%) !important;
+padding: 40px 35px !important;
+border: 3px solid #c4a87c !important;
+margin: 20px !important;
+border-radius: 16px !important;
+position: relative;
+box-shadow: 
+  inset 0 3px 8px rgba(0, 0, 0, 0.15),
+  inset 0 -2px 0 rgba(255, 255, 255, 0.6),
+  0 10px 30px rgba(0, 0, 0, 0.2) !important;
+overflow: hidden;
+}
+
+.diary-book-character-list::before {
+content: '';
+position: absolute;
+top: 20px;
+left: 20px;
+right: 20px;
+bottom: 20px;
+border: 2px dashed rgba(210, 180, 140, 0.3);
+border-radius: 12px;
+pointer-events: none;
+}
+
+.diary-book-character-list::after {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(210, 180, 140, 0.06) 28px,
+    rgba(210, 180, 140, 0.06) 30px
+  );
+pointer-events: none;
+}
+
+/* 角色列表标题 */
+.diary-book-character-list .diary-book-view-title {
+font-size: 24px !important;
+font-weight: 800 !important;
+color: #2d1810 !important;
+border-bottom: none !important;
+padding-bottom: 0 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1) !important;
+background: transparent !important;
+text-align: center !important;
+flex: 1 !important;
+}
+
+.diary-book-character-list .diary-book-nav-header::before,
+.diary-book-character-list .diary-book-nav-header::after {
+content: '❀';
+position: absolute;
+color: #deb887;
+font-size: 20px;
+top: 50%;
+transform: translateY(-50%);
+animation: sparkle 4s ease-in-out infinite;
+text-shadow: none !important;
+filter: none !important;
+box-shadow: none !important;
+-webkit-filter: none !important;
+}
+
+.diary-book-character-list .diary-book-nav-header::before {
+left: 15px;
+}
+
+.diary-book-character-list .diary-book-nav-header::after {
+right: 15px;
+animation-delay: 2s;
+}
+
+/* 角色网格 */
+.diary-book-character-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr) !important;
+gap: 25px !important;
+margin-bottom: 25px;
+}
+
+/* 角色卡片 */
+.diary-book-character-card {
+background: 
+  linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 50%, #d5cbb8 100%) !important;
+border: 3px solid #c4a87c !important;
+border-radius: 16px !important;
+padding: 30px 25px !important;
+cursor: pointer;
+transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+text-align: center;
+position: relative;
+overflow: hidden;
+box-shadow: 
+  0 8px 20px rgba(0, 0, 0, 0.15),
+  inset 0 2px 0 rgba(255, 255, 255, 0.6),
+  inset 0 -1px 0 rgba(210, 180, 140, 0.2) !important;
+}
+
+.diary-book-character-card::before {
+content: '';
+position: absolute;
+top: 10px;
+left: 10px;
+right: 10px;
+bottom: 10px;
+border: 1px solid rgba(210, 180, 140, 0.2);
+border-radius: 12px;
+background: 
+  radial-gradient(circle at 50% 50%, rgba(210, 180, 140, 0.08) 0%, transparent 80%);
+transform: scale(0.95);
+transition: all 0.4s ease;
+pointer-events: none;
+}
+
+.diary-book-character-card::after {
+content: '✦';
+position: absolute;
+top: 15px;
+right: 15px;
+color: rgba(222, 184, 135, 0.5);
+font-size: 16px;
+transform: rotate(0deg);
+transition: all 0.4s ease;
+text-shadow: none !important;
+filter: none !important;
+}
+
+.diary-book-character-card:hover {
+background: 
+  linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 50%, #ddd2c0 100%) !important;
+transform: translateY(-8px) scale(1.05) rotateX(5deg) !important;
+box-shadow: 
+  0 20px 40px rgba(0, 0, 0, 0.25),
+  inset 0 3px 0 rgba(255, 255, 255, 0.8),
+  0 0 0 4px rgba(210, 180, 140, 0.15),
+  0 0 30px rgba(255, 215, 0, 0.2) !important;
+border-color: #deb887 !important;
+}
+
+.diary-book-character-card:hover::before {
+transform: scale(1);
+background: 
+  radial-gradient(circle at 50% 50%, rgba(210, 180, 140, 0.12) 0%, transparent 80%);
+}
+
+.diary-book-character-card:hover::after {
+transform: rotate(180deg) scale(1.2);
+color: rgba(255, 215, 0, 0.8);
+text-shadow: none !important;
+filter: none !important;
+}
+
+/* 角色名称 */
+.diary-book-character-name {
+font-size: 20px !important;
+font-weight: 700 !important;
+color: #2d1810 !important;
+margin-bottom: 12px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 角色统计 */
+.diary-book-character-count {
+font-size: 13px !important;
+color: #d2b48c !important;
+font-style: italic !important;
+font-weight: 500 !important;
+text-shadow: none !important;
+filter: none !important;
+box-shadow: none !important;
+}
+
+
+/* ========== 8. 日记目录页面样式 ========== */
+
+/* 日记目录容器 */
+.diary-book-diary-list {
+background: 
+  linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
+padding: 40px 35px !important;
+border: 3px solid #c4a87c !important;
+margin: 20px !important;
+border-radius: 16px !important;
+position: relative;
+box-shadow: 
+  inset 0 3px 8px rgba(0, 0, 0, 0.15),
+  inset 0 -2px 0 rgba(255, 255, 255, 0.6),
+  0 10px 30px rgba(0, 0, 0, 0.2) !important;
+overflow: hidden;
+}
+
+.diary-book-diary-list::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 30px,
+    rgba(210, 180, 140, 0.04) 30px,
+    rgba(210, 180, 140, 0.04) 32px
+  );
+pointer-events: none;
+}
+
+/* 导航头部 */
+.diary-book-nav-header {
+margin-bottom: 30px !important;
+display: flex;
+align-items: center;
+justify-content: center;
+border-bottom: 3px solid #c4a87c !important;
+padding-bottom: 20px !important;
+padding-top: 0 !important;
+position: relative;
+background: transparent !important;
+box-shadow: none !important;
+}
+
+/* 导航占位符 */
+.diary-book-nav-spacer {
+display: none !important;
+}
+
+/* 角色内容容器 */
+.diary-book-character-content {
+position: relative;
+min-height: 200px;
+}
+
+/* 日记内容容器 */
+.diary-book-diary-content {
+position: relative;
+min-height: 200px;
+}
+
+/* 日记本空状态 */
+.diary-book-empty-state {
+text-align: center;
+padding: 80px 30px;
+color: #6d4c41;
+}
+
+.diary-book-empty-icon {
+font-size: 72px;
+margin-bottom: 24px;
+opacity: 0.4;
+animation: pulse 3s ease-in-out infinite;
+}
+
+.diary-book-empty-text {
+font-size: 22px !important;
+font-weight: 700 !important;
+color: #5d4037 !important;
+margin-bottom: 14px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.diary-book-empty-hint {
+font-size: 16px !important;
+color: #8d6e63 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+font-style: italic;
+line-height: 1.6;
+}
+
+/* 详情内容容器 */
+.diary-book-detail-content {
+padding: 40px 50px;
+position: relative;
+z-index: 10;
+overflow-y: auto;
+overflow-x: hidden;
+flex: 1;
+min-height: 0;
+}
+
+/* 详情页面容器 - 删除卡片样式 */
+.diary-book-detail-page {
+padding: 40px 0 0 0 !important;
+position: relative;
+margin-top: 40px;
+z-index: 20;
+}
+
+/* 详情装饰分隔线 */
+.diary-book-detail-divider {
+text-align: center;
+margin: 25px 0 !important;
+position: relative;
+display: none !important;
+}
+
+.diary-book-detail-divider::before,
+.diary-book-detail-divider::after {
+content: '';
+position: absolute;
+top: 50%;
+width: calc(50% - 30px);
+height: 2px;
+background: linear-gradient(to right, transparent, rgba(196, 168, 124, 0.5), transparent);
+}
+
+.diary-book-detail-divider::before {
+left: 0;
+}
+
+.diary-book-detail-divider::after {
+right: 0;
+}
+
+/* 详情装饰符号 */
+.diary-book-detail-ornament {
+display: inline-block;
+font-size: 20px;
+color: #c4a87c;
+opacity: 0.7;
+animation: sparkle 4s ease-in-out infinite;
+}
+
+/* 返回按钮 - 移出卡片外 */
+.diary-book-character-list .diary-book-nav-btn,
+.diary-book-diary-list .diary-book-nav-btn,
+.diary-book-detail .diary-book-nav-btn {
+background: 
+  linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
+color: #f9f6f1 !important;
+border: 3px solid #bc9a6a !important;
+padding: 12px 22px !important;
+border-radius: 25px !important;
+cursor: pointer;
+font-size: 14px !important;
+font-weight: 700 !important;
+transition: all 0.4s ease;
+flex-shrink: 0;
+text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4) !important;
+box-shadow: 
+  0 6px 12px rgba(0, 0, 0, 0.25),
+  inset 0 2px 0 rgba(255, 255, 255, 0.3) !important;
+position: fixed !important;
+overflow: hidden;
+z-index: 1000 !important;
+}
+
+/* 角色列表页的返回按钮 */
+#diary-book-character-list-view .diary-book-nav-btn {
+left: calc(2.5% + 35px) !important;
+top: calc(50vh - 39vh + 35px) !important;
+}
+
+/* 日记列表页的返回按钮 */
+#diary-book-diary-list-view .diary-book-nav-btn {
+left: calc(2.5% + 35px) !important;
+top: calc(50vh - 39vh + 35px) !important;
+}
+
+/* 日记详情页的返回按钮 - 固定在内容卡片上 */
+.diary-book-detail-page .diary-book-back-btn-in-content {
+position: absolute !important;
+top: -20px !important;
+left: -20px !important;
+z-index: 2000 !important;
+background: 
+  linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
+color: #f9f6f1 !important;
+border: 2px solid rgba(196, 168, 124, 0.6) !important;
+padding: 12px 20px !important;
+border-radius: 8px !important;
+font-size: 14px !important;
+font-weight: 600 !important;
+font-family: 'Georgia', serif !important;
+cursor: pointer !important;
+transition: all 0.4s ease !important;
+letter-spacing: 0.5px !important;
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) !important;
+box-shadow: 
+  0 8px 24px rgba(0, 0, 0, 0.15),
+  inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 经典主题返回按钮悬停效果 */
+.diary-book-detail-page .diary-book-back-btn-in-content:hover {
+background: 
+  linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
+transform: translateY(-2px) scale(1.05) !important;
+box-shadow: 
+  0 12px 32px rgba(0, 0, 0, 0.2),
+  inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+.diary-book-nav-btn::before {
+content: '';
+position: absolute;
+top: 0;
+left: -100%;
+width: 100%;
+height: 100%;
+background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+transition: left 0.5s ease;
+}
+
+.diary-book-character-list .diary-book-nav-btn:hover,
+.diary-book-diary-list .diary-book-nav-btn:hover,
+.diary-book-detail .diary-book-nav-btn:hover {
+background: 
+  linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
+transform: translateY(-3px) scale(1.08) !important;
+box-shadow: 
+  0 10px 20px rgba(0, 0, 0, 0.35),
+  inset 0 3px 0 rgba(255, 255, 255, 0.4),
+  0 0 20px rgba(255, 215, 0, 0.3) !important;
+}
+
+.diary-book-character-list .diary-book-nav-btn:hover::before,
+.diary-book-diary-list .diary-book-nav-btn:hover::before,
+.diary-book-detail .diary-book-nav-btn:hover::before {
+left: 100%;
+}
+
+/* 日记网格 */
+.diary-book-diary-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr) !important;
+gap: 20px !important;
+margin-bottom: 30px;
+}
+
+/* 日记卡片 */
+.diary-book-diary-card {
+background: 
+  linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
+border: 2px solid #c4a87c !important;
+border-radius: 12px !important;
+padding: 20px 18px !important;
+cursor: pointer;
+transition: all 0.4s ease;
+text-align: left;
+position: relative;
+overflow: hidden;
+box-shadow: 
+  0 4px 12px rgba(0, 0, 0, 0.12),
+  inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.diary-book-diary-card::before {
+content: '';
+position: absolute;
+left: 0;
+top: 0;
+bottom: 0;
+width: 5px;
+background: linear-gradient(to bottom, #deb887, #d2b48c);
+border-radius: 12px 0 0 12px;
+transform: scaleY(0);
+transition: transform 0.4s ease;
+}
+
+.diary-book-diary-card::after {
+content: '✧';
+position: absolute;
+top: 15px;
+right: 15px;
+color: rgba(222, 184, 135, 0.4);
+font-size: 14px;
+transform: scale(0) rotate(0deg);
+transition: all 0.4s ease;
+text-shadow: none !important;
+filter: none !important;
+}
+
+.diary-book-diary-card:hover {
+background: 
+  linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 100%) !important;
+transform: translateY(-5px) scale(1.03) !important;
+box-shadow: 
+  0 12px 30px rgba(0, 0, 0, 0.2),
+  inset 0 2px 0 rgba(255, 255, 255, 0.8),
+  0 0 0 3px rgba(210, 180, 140, 0.1),
+  0 0 20px rgba(255, 215, 0, 0.15) !important;
+border-color: #deb887 !important;
+}
+
+.diary-book-diary-card:hover::before {
+transform: scaleY(1);
+}
+
+.diary-book-diary-card:hover::after {
+transform: scale(1) rotate(180deg);
+color: rgba(255, 215, 0, 0.8);
+text-shadow: none !important;
+filter: none !important;
+}
+
+/* 日记标题 */
+.diary-book-diary-title {
+font-size: 16px !important;
+font-weight: 700 !important;
+color: #2d1810 !important;
+margin-bottom: 10px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05) !important;
+width: calc(100% - 30px);
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+display: block;
+}
+
+/* 日记时间 */
+.diary-book-diary-time {
+font-size: 13px !important;
+color: #d2b48c !important;
+font-style: italic !important;
+font-weight: 500 !important;
+text-shadow: none !important;
+filter: none !important;
+}
+
+/* 分页控件 */
+.diary-book-pagination {
+display: flex;
+justify-content: center;
+align-items: center;
+gap: 15px !important;
+margin-top: 30px !important;
+padding-top: 25px !important;
+border-top: 2px solid #c4a87c !important;
+position: relative;
+}
+
+.diary-book-page-btn {
+background: 
+  linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
+color: #f9f6f1 !important;
+border: 2px solid #bc9a6a !important;
+padding: 10px 18px !important;
+border-radius: 20px !important;
+cursor: pointer;
+font-size: 13px !important;
+font-weight: 600 !important;
+transition: all 0.3s ease;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4) !important;
+box-shadow: 
+  0 4px 8px rgba(0, 0, 0, 0.25),
+  inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.diary-book-page-btn:hover:not(:disabled) {
+background: 
+  linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
+transform: translateY(-2px) scale(1.08) !important;
+box-shadow: 
+  0 8px 16px rgba(0, 0, 0, 0.35),
+  inset 0 2px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.diary-book-page-btn:disabled {
+background: #c4a87c !important;
+border-color: #a0916f !important;
+color: rgba(245, 241, 234, 0.6) !important;
+cursor: not-allowed;
+transform: none !important;
+box-shadow: none !important;
+}
+
+.diary-book-page-info {
+font-size: 14px !important;
+color: #d2b48c !important;
+font-weight: 700 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* ========== 9. 日记详情页面样式 ========== */
+
+/* 详情容器 - 保持正常布局但扩展背景 */
+.diary-book-detail {
+background: 
+  linear-gradient(135deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
+position: relative !important;
+overflow: visible;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+z-index: 1;
+/* 适度扩展背景 */
+margin: -15px !important;
+padding: 15px !important;
+}
+
+.diary-book-detail::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 26px,
+    rgba(210, 180, 140, 0.08) 26px,
+    rgba(210, 180, 140, 0.08) 28px
+  );
+pointer-events: none;
+}
+
+.diary-book-detail::after {
+content: '';
+position: absolute;
+left: 50px;
+top: 0;
+bottom: 0;
+width: 2px;
+background: rgba(210, 180, 140, 0.25);
+box-shadow: 
+  1px 0 0 rgba(255, 255, 255, 0.3),
+  -1px 0 0 rgba(210, 180, 140, 0.1);
+}
+
+/* 详情标题 */
+.diary-book-detail-title {
+font-size: 26px !important;
+font-weight: 800 !important;
+color: #2d1810 !important;
+margin-bottom: 20px !important;
+text-align: center !important;
+border-bottom: 3px solid #c4a87c !important;
+padding-bottom: 20px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.diary-book-detail-title::before,
+.diary-book-detail-title::after {
+content: '✿';
+position: absolute;
+color: #deb887;
+font-size: 18px;
+top: 50%;
+transform: translateY(-50%);
+animation: sparkle 5s ease-in-out infinite;
+}
+
+.diary-book-detail-title::before {
+left: 20px;
+}
+
+.diary-book-detail-title::after {
+right: 20px;
+animation-delay: 2.5s;
+}
+
+/* 详情时间 */
+.diary-book-detail-time {
+font-size: 16px !important;
+color: #d2b48c !important;
+text-align: center !important;
+margin-bottom: 30px !important;
+font-style: italic !important;
+font-weight: 600 !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 详情内容文本 */
+.diary-book-detail-text {
+font-size: 16px !important;
+line-height: 1.8 !important;
+color: #2d1810 !important;
+background: 
+  linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
+padding: 30px !important;
+border-radius: 12px !important;
+border: 2px solid #c4a87c !important;
+white-space: pre-wrap;
+box-shadow: 
+  inset 0 3px 8px rgba(0, 0, 0, 0.12),
+  inset 0 -1px 0 rgba(255, 255, 255, 0.6) !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+margin-top: 20px;
+text-shadow: none !important;
+text-align: left !important;
+}
+
+.diary-book-detail-text::before {
+content: '';
+position: absolute;
+left: -35px;
+top: 0;
+bottom: 0;
+width: 2px;
+background: rgba(210, 180, 140, 0.3);
+border-radius: 2px;
+}
+
+.diary-book-detail-text p {
+margin-bottom: 16px;
+text-indent: 2em;
+font-family: inherit !important;
+text-shadow: none !important;
+text-align: left !important;
+}
+
+/* 日记详情操作按钮区域 */
+.diary-book-detail-actions {
+margin-top: 35px !important;
+text-align: center;
+padding-top: 25px !important;
+border-top: 2px solid rgba(196, 168, 124, 0.4) !important;
+position: relative;
+}
+
+.diary-book-delete-btn {
+background: 
+  linear-gradient(135deg, #8b2e2e 0%, #6d1f1f 50%, #4a1111 100%) !important;
+color: #f5e6d3 !important;
+border: 3px solid #daa520 !important;
+padding: 12px 32px !important;
+border-radius: 8px !important;
+font-size: 14px !important;
+font-weight: 700 !important;
+cursor: pointer;
+transition: all 0.4s ease;
+text-shadow: 
+  2px 2px 4px rgba(0, 0, 0, 0.6),
+  0 0 10px rgba(218, 165, 32, 0.3) !important;
+box-shadow: 
+  0 4px 15px rgba(139, 46, 46, 0.4),
+  inset 0 2px 0 rgba(255, 255, 255, 0.15),
+  inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+  0 0 20px rgba(218, 165, 32, 0.2) !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+position: relative;
+overflow: hidden;
+letter-spacing: 1px;
+}
+
+.diary-book-delete-btn::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: 
+  repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(218, 165, 32, 0.05) 10px,
+    rgba(218, 165, 32, 0.05) 20px
+  );
+pointer-events: none;
+}
+
+.diary-book-delete-btn::after {
+content: '';
+position: absolute;
+top: 3px;
+left: 3px;
+right: 3px;
+bottom: 3px;
+border: 1px solid rgba(218, 165, 32, 0.3);
+border-radius: 5px;
+pointer-events: none;
+}
+
+.diary-book-delete-btn:hover {
+background: 
+  linear-gradient(135deg, #a03838 0%, #8b2e2e 50%, #6d1f1f 100%) !important;
+transform: translateY(-3px) scale(1.03) !important;
+box-shadow: 
+  0 8px 25px rgba(139, 46, 46, 0.5),
+  inset 0 3px 0 rgba(255, 255, 255, 0.2),
+  inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+  0 0 30px rgba(218, 165, 32, 0.4),
+  0 0 15px rgba(139, 46, 46, 0.3) !important;
+border-color: #f0c040 !important;
+text-shadow: 
+  2px 2px 4px rgba(0, 0, 0, 0.7),
+  0 0 15px rgba(218, 165, 32, 0.5) !important;
+}
+
+.diary-book-delete-btn:active {
+transform: translateY(-1px) scale(1.01) !important;
+box-shadow: 
+  0 4px 15px rgba(139, 46, 46, 0.4),
+  inset 0 2px 5px rgba(0, 0, 0, 0.4),
+  0 0 20px rgba(218, 165, 32, 0.3) !important;
+}
+
+
+/* ========== 10. 自定义角色弹窗样式 ========== */
+
+/* 弹窗动画 */
+@keyframes diary-char-fade-in {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+@keyframes diary-char-slide-in {
+from {
+  transform: scale(0.8) translateY(20px);
+  opacity: 0;
+}
+to {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+}
+
+/* 弹窗遮罩 */
+.diary-custom-character-dialog {
+z-index: 10000 !important;
+background: 
+  radial-gradient(circle at 20% 80%, rgba(205, 133, 63, 0.15) 0%, transparent 50%),
+  radial-gradient(circle at 80% 20%, rgba(210, 180, 140, 0.15) 0%, transparent 50%),
+  linear-gradient(145deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.85) 100%) !important;
+backdrop-filter: blur(4px) !important;
+-webkit-backdrop-filter: blur(4px) !important;
+animation: diary-char-fade-in 0.3s ease !important;
+}
+
+/* 为不支持backdrop-filter的浏览器提供fallback */
+@supports not (backdrop-filter: blur(4px)) {
+.diary-custom-character-dialog {
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(205, 133, 63, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(210, 180, 140, 0.2) 0%, transparent 50%),
+    linear-gradient(145deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.92) 100%) !important;
+}
+}
+
+/* 弹窗主体 */
+.diary-custom-character-content {
+max-width: 500px !important;
+min-width: 450px !important;
+width: 90% !important;
+max-height: 90vh !important;
+overflow-y: auto !important;
+background: linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 50%, #e8e0d6 100%) !important;
+border-radius: 16px !important;
+border: 4px solid #c4a87c !important;
+box-shadow: 
+  0 15px 40px rgba(0, 0, 0, 0.3),
+  0 0 60px rgba(210, 180, 140, 0.4),
+  inset 0 2px 0 rgba(255, 255, 255, 0.6),
+  0 0 0 1px rgba(210, 180, 140, 0.2) !important;
+animation: diary-char-slide-in 0.3s ease !important;
+position: relative !important;
+}
+
+/* 纸质纹理效果 */
+.diary-custom-character-content::before {
+content: '';
+position: absolute;
+top: 6px;
+left: 6px;
+right: 6px;
+bottom: 6px;
+border-radius: 12px;
+background: 
+  repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(210, 180, 140, 0.08) 29px, rgba(210, 180, 140, 0.08) 30px),
+  linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(210, 180, 140, 0.1) 100%);
+pointer-events: none;
+z-index: -1;
+}
+
+/* 左侧装饰线 */
+.diary-custom-character-content::after {
+content: '';
+position: absolute;
+left: 24px;
+top: 4px;
+bottom: 4px;
+width: 3px;
+background: linear-gradient(to bottom, rgba(205, 133, 63, 0.35), rgba(210, 180, 140, 0.55), rgba(205, 133, 63, 0.35));
+box-shadow: 
+  2px 0 0 rgba(255, 255, 255, 0.5), 
+  -2px 0 0 rgba(120, 80, 40, 0.15);
+border-radius: 2px;
+z-index: 0;
+}
+
+/* 弹窗标题栏 - 皮革质感背景 */
+.diary-custom-character-header {
+background: 
+  linear-gradient(135deg, 
+    #7a4d2a 0%, 
+    #6b3511 25%, 
+    #7a4d2a 50%, 
+    #6b3511 75%, 
+    #562a17 100%
+  ) !important;
+box-shadow: 
+  0 4px 15px rgba(0, 0, 0, 0.4),
+  inset 0 2px 0 rgba(255, 255, 255, 0.3),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+overflow: hidden !important;
+position: relative !important;
+border-bottom: 5px solid rgba(196, 168, 124, 0.7) !important;
+padding: 28px 30px !important;
+border-radius: 16px 16px 0 0 !important;
+}
+
+/* 标题栏闪光装饰 */
+.diary-custom-character-header::before {
+content: '';
+position: absolute;
+top: 50%;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg, 
+  transparent 0%, 
+  rgba(205, 133, 63, 0.8) 25%, 
+  rgba(255, 215, 0, 0.6) 50%, 
+  rgba(205, 133, 63, 0.8) 75%, 
+  transparent 100%
+);
+animation: shimmerDecoration 4s ease-in-out infinite;
+transform: translateY(-50%);
+}
+
+.diary-custom-character-header h3 {
+color: #f9f6f1 !important;
+text-shadow: 
+  3px 3px 6px rgba(0, 0, 0, 0.6),
+  0 0 20px rgba(255, 215, 0, 0.3),
+  0 0 40px rgba(255, 215, 0, 0.1) !important;
+letter-spacing: 1px !important;
+font-family: 'Georgia', 'Times New Roman', serif !important;
+margin: 0 !important;
+font-size: 22px !important;
+font-weight: 800 !important;
+position: relative !important;
+z-index: 1 !important;
+}
+
+/* 关闭按钮 */
+.diary-character-close {
+background: 
+  radial-gradient(circle at center, rgba(245, 241, 234, 0.25) 0%, rgba(211, 47, 47, 0.12) 70%) !important;
+border: 3px solid rgba(245, 241, 234, 0.45) !important;
+color: #f9f6f1 !important;
+backdrop-filter: blur(10px);
+position: relative !important;
+overflow: hidden !important;
+cursor: pointer !important;
+border-radius: 50% !important;
+width: 32px !important;
+height: 32px !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+font-size: 20px !important;
+font-weight: bold !important;
+transition: all 0.4s ease !important;
+z-index: 2 !important;
+text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.diary-character-close::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: radial-gradient(circle at center, transparent 0%, rgba(211, 47, 47, 0.3) 100%);
+transform: scale(0);
+transition: transform 0.3s ease;
+}
+
+.diary-character-close:hover {
+background: rgba(211, 47, 47, 0.92) !important;
+border-color: #d32f2f !important;
+color: #fff !important;
+transform: scale(1.15) rotate(90deg) !important;
+box-shadow: 
+  0 8px 25px rgba(211, 47, 47, 0.55),
+  inset 0 2px 10px rgba(255, 255, 255, 0.25) !important;
+}
+
+.diary-character-close:hover::before {
+transform: scale(1);
+}
+
+/* 弹窗内容区域 */
+.diary-custom-character-body {
+padding: 32px 30px 28px 30px !important;
+text-align: center !important;
+}
+
+/* 提示文字 */
+.diary-custom-character-body p {
+color: #5d4037 !important;
+font-size: 14px !important;
+line-height: 1.5 !important;
+margin-bottom: 20px !important;
+padding-left: 20px !important;
+font-weight: 500 !important;
+text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+font-family: inherit !important;
+}
+
+/* 输入框容器 */
+.diary-custom-character-body > div:nth-child(2) {
+margin-bottom: 25px !important;
+padding-left: 20px !important;
+}
+
+/* 输入框 */
+.diary-character-input {
+width: 100% !important;
+padding: 12px 16px !important;
+font-size: 14px !important;
+border: 2px solid rgba(188, 154, 106, 0.3) !important;
+border-radius: 8px !important;
+background: rgba(255, 255, 255, 0.8) !important;
+color: #3e2723 !important;
+box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+transition: all 0.3s ease !important;
+font-family: inherit !important;
+font-weight: 500 !important;
+}
+
+.diary-character-input::placeholder {
+color: rgba(93, 64, 55, 0.5) !important;
+font-weight: 400 !important;
+}
+
+.diary-character-input:focus {
+outline: none !important;
+border-color: rgba(188, 154, 106, 0.6) !important;
+box-shadow: 
+  0 0 0 2px rgba(188, 154, 106, 0.3),
+  inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.diary-character-input:hover {
+border-color: rgba(188, 154, 106, 0.4) !important;
+}
+
+
+
+/* 按钮区域 */
+.diary-custom-character-footer {
+display: flex !important;
+justify-content: center !important;
+gap: 15px !important;
+flex-wrap: nowrap !important;
+padding: 0 30px 28px 30px !important;
+padding-left: 50px !important;
+}
+
+.diary-character-btn {
+padding: 12px 24px !important;
+border: none !important;
+border-radius: 8px !important;
+font-size: 14px !important;
+font-weight: 600 !important;
+cursor: pointer !important;
+transition: all 0.3s ease !important;
+min-width: 80px !important;
+font-family: inherit !important;
+text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 发送按钮 */
+.diary-character-send {
+background: linear-gradient(145deg, #daa520 0%, #cd853f 50%, #b8860b 100%) !important;
+color: white !important;
+box-shadow: 
+  0 4px 12px rgba(205, 133, 63, 0.35),
+  inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.diary-character-send:hover {
+background: linear-gradient(145deg, #e6b800 0%, #daa520 50%, #cd853f 100%) !important;
+transform: translateY(-1px) !important;
+box-shadow: 
+  0 6px 16px rgba(205, 133, 63, 0.45),
+  inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.diary-character-send:active {
+transform: translateY(0) !important;
+box-shadow: 
+  0 2px 8px rgba(205, 133, 63, 0.3),
+  inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 取消按钮 */
+.diary-character-cancel {
+background: linear-gradient(145deg, #f5f2ec 0%, #e8e0d6 50%, #ddd5cb 100%) !important;
+color: #5d4e37 !important;
+box-shadow: 
+  0 4px 12px rgba(0, 0, 0, 0.12),
+  inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+}
+
+.diary-character-cancel:hover {
+background: linear-gradient(145deg, #f0ebe3 0%, #e0d5c3 50%, #d2c7bb 100%) !important;
+transform: translateY(-1px) !important;
+box-shadow: 
+  0 6px 16px rgba(0, 0, 0, 0.18),
+  inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+.diary-character-cancel:active {
+transform: translateY(0) !important;
+box-shadow: 
+  0 2px 8px rgba(0, 0, 0, 0.1),
+  inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+
+/* ========== 11. 响应式设计 - 移动端优化 ========== */
+
+@media (max-width: 768px) {
+/* 主弹窗背景增强 */
+.diary-book-dialog {
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(210, 180, 140, 0.08) 0%, transparent 30%),
+    radial-gradient(circle at 75% 75%, rgba(222, 184, 135, 0.06) 0%, transparent 30%),
+    radial-gradient(circle at 50% 10%, rgba(205, 133, 63, 0.04) 0%, transparent 20%),
+    linear-gradient(135deg, rgba(0, 0, 0, 0.96) 0%, rgba(10, 5, 5, 0.94) 100%) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  height: 100vh;
+  height: 100dvh;
+}
+
+@supports not (backdrop-filter: blur(15px)) {
+  .diary-book-dialog {
+    background: rgba(0, 0, 0, 0.95) !important;
+    background-image: 
+      radial-gradient(circle at 30% 30%, rgba(40, 30, 20, 0.4) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(30, 20, 15, 0.3) 0%, transparent 50%),
+      linear-gradient(135deg, rgba(15, 10, 5, 0.2) 0%, rgba(25, 15, 10, 0.1) 100%) !important;
+  }
+}
+
+.diary-book-content {
+  width: 95% !important;
+  min-width: 340px !important;
+  max-width: 450px !important;
+  transform: perspective(800px) rotateX(1deg) !important;
+  box-shadow: 
+    0 30px 120px rgba(0, 0, 0, 0.6),
+    0 15px 80px rgba(210, 180, 140, 0.4),
+    0 8px 40px rgba(222, 184, 135, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 0 rgba(210, 180, 140, 0.2),
+    0 0 60px rgba(255, 215, 0, 0.15) !important;
+}
+
+.diary-book-content:hover {
+  transform: perspective(800px) rotateX(0deg) !important;
+  box-shadow: 
+    0 35px 140px rgba(0, 0, 0, 0.7),
+    0 20px 100px rgba(210, 180, 140, 0.5),
+    0 10px 50px rgba(222, 184, 135, 0.4),
+    inset 0 3px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -2px 0 rgba(210, 180, 140, 0.3),
+    0 0 80px rgba(255, 215, 0, 0.2) !important;
+}
+
+/* 网格布局调整 */
+.diary-book-character-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+  margin-bottom: 15px !important;
+}
+
+.diary-book-diary-grid {
+  grid-template-columns: 1fr !important;
+  gap: 15px !important;
+}
+
+.diary-book-body {
+  padding: 20px 15px !important;
+}
+
+.diary-book-cover {
+  margin: 0 !important;
+  padding: 35px 30px 30px !important;
+}
+
+.diary-book-cover-title {
+  font-size: 28px !important;
+}
+
+.diary-book-cover-subtitle {
+  font-size: 14px !important;
+}
+
+/* 导航头部调整 */
+.diary-book-nav-header {
+  flex-direction: column !important;
+  gap: 15px !important;
+  align-items: stretch !important;
+}
+
+.diary-book-nav-btn {
+  align-self: flex-start !important;
+}
+
+.diary-book-view-title {
+  margin: 0 !important;
+  text-align: center !important;
+}
+
+/* 角色列表导航头部调整 */
+.diary-book-character-list .diary-book-nav-header {
+  padding-top: 15px !important;
+  padding-bottom: 20px !important;
+  align-items: center !important;
+}
+
+/* 页面容器调整 */
+.diary-book-character-list {
+  padding: 15px !important;
+  margin: 60px 0 0 0 !important;
+  border-width: 2px !important;
+  border-radius: 12px !important;
+}
+
+.diary-book-character-list::before {
+  top: 10px !important;
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 10px !important;
+  border-radius: 8px !important;
+}
+
+.diary-book-diary-list {
+  padding: 15px !important;
+  margin: 60px 0 0 0 !important;
+  border-width: 2px !important;
+  border-radius: 12px !important;
+}
+
+.diary-book-detail {
+  padding: 15px !important;
+  margin: 60px 0 0 0 !important;
+  border-width: 2px !important;
+  border-radius: 12px !important;
+}
+
+/* 角色卡片移动端优化 */
+.diary-book-character-card {
+  padding: 18px 15px !important;
+  border-width: 2px !important;
+  border-radius: 12px !important;
+}
+
+.diary-book-character-card::before {
+  top: 6px !important;
+  left: 6px !important;
+  right: 6px !important;
+  bottom: 6px !important;
+  border-radius: 8px !important;
+}
+
+.diary-book-character-card::after {
+  top: 10px !important;
+  right: 10px !important;
+  font-size: 14px !important;
+}
+
+.diary-book-character-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 
+    0 10px 20px rgba(0, 0, 0, 0.2),
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    0 0 0 2px rgba(210, 180, 140, 0.1) !important;
+}
+
+.diary-book-character-name {
+  font-size: 18px !important;
+  margin-bottom: 8px !important;
+  margin-top: 6px !important;
+}
+
+.diary-book-character-count {
+  font-size: 13px !important;
+  margin-top: 4px !important;
+}
+
+/* 返回按钮位置调整 */
+#diary-book-character-list-view .diary-book-nav-btn {
+  left: calc(2.5% + 15px) !important;
+  top: calc(50vh - 39vh + 20px) !important;
+}
+
+#diary-book-diary-list-view .diary-book-nav-btn {
+  left: calc(2.5% + 15px) !important;
+  top: calc(50vh - 39vh + 20px) !important;
+}
+
+#diary-book-detail-view .diary-book-nav-btn {
+  left: calc(2.5% + 15px) !important;
+  top: calc(50vh - 39vh + 20px) !important;
+}
+
+/* 角色列表标题和装饰调整 */
+.diary-book-character-list .diary-book-view-title {
+  font-size: 24px !important;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+}
+
+.diary-book-character-list .diary-book-nav-header::before {
+  left: 12px !important;
+  font-size: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.diary-book-character-list .diary-book-nav-header::after {
+  right: 12px !important;
+  font-size: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.diary-book-diary-title {
+  font-size: 15px !important;
+  width: calc(100% - 25px) !important;
+}
+
+/* 经典主题滚动条样式 */
+.diary-book-detail-content::-webkit-scrollbar {
+width: 8px;
+}
+
+.diary-book-detail-content::-webkit-scrollbar-track {
+background: rgba(196, 168, 124, 0.1);
+border-radius: 4px;
+}
+
+.diary-book-detail-content::-webkit-scrollbar-thumb {
+background: linear-gradient(to bottom,
+  rgba(196, 168, 124, 0.4) 0%,
+  rgba(210, 180, 140, 0.5) 50%,
+  rgba(196, 168, 124, 0.4) 100%);
+border-radius: 4px;
+transition: all 0.3s ease;
+}
+
+.diary-book-detail-content::-webkit-scrollbar-thumb:hover {
+background: linear-gradient(to bottom,
+  rgba(196, 168, 124, 0.6) 0%,
+  rgba(210, 180, 140, 0.7) 50%,
+  rgba(196, 168, 124, 0.6) 100%);
+}
+
+
+.diary-book-detail-title::before {
+  left: 8px !important;
+  font-size: 16px !important;
+}
+
+.diary-book-detail-title::after {
+  right: 8px !important;
+  font-size: 16px !important;
+}
+
+.diary-book-detail-time {
+  font-size: 14px !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 8px !important;
+}
+
+.diary-book-detail-text {
+  padding: 15px 12px !important;
+  border-width: 2px !important;
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+.diary-book-detail-text::before {
+  display: none !important;
+  left: 0 !important;
+}
+
+.diary-book-detail-text p {
+  margin-bottom: 12px !important;
+  text-indent: 2em !important;
+  text-align: left !important;
+}
+
+.diary-book-detail-actions {
+  margin: 15px 0 0 0 !important;
+  padding: 15px 0 0 0 !important;
+}
+
+.diary-book-delete-btn {
+  width: 100% !important;
+  padding: 14px 24px !important;
+  font-size: 15px !important;
+}
+
+/* 预设对话框优化 */
+.diary-preset-dialog {
+  height: 100vh;
+  height: 100dvh;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.diary-preset-content {
+  min-width: 300px !important;
+  max-width: 95vw !important;
+  width: 100% !important;
+  max-height: 85vh;
+  max-height: 85dvh;
+  border-radius: 12px !important;
+}
+
+.diary-preset-header {
+  padding: 22px 25px !important;
+}
+
+.diary-preset-body {
+  padding: 30px 25px !important;
+}
+
+.diary-preset-title {
+  font-size: 18px !important;
+  margin-bottom: 15px !important;
+}
+
+/* 自定义角色弹窗移动端 */
+.diary-custom-character-dialog {
+  height: 100vh !important;
+  height: 100dvh !important;
+}
+
+.diary-custom-character-content {
+  width: 95% !important;
+  max-width: 450px !important;
+  min-width: unset !important;
+  max-height: 85vh !important;
+  max-height: 85dvh !important;
+  padding: 0 !important;
+}
+
+.diary-custom-character-header {
+  margin: 0 !important;
+  padding: 22px 20px 12px !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+
+.diary-custom-character-body {
+  padding: 28px 20px 24px 20px !important;
+}
+
+.diary-custom-character-content::after {
+  left: 18px;
+  top: 40px;
+  bottom: 40px;
+}
+
+.diary-custom-character-body p {
+  font-size: 13px !important;
+  margin-bottom: 18px !important;
+  padding-left: 10px !important;
+}
+
+.diary-custom-character-body > div:nth-child(2) {
+  padding-left: 10px !important;
+  margin-bottom: 20px !important;
+}
+
+.diary-character-input {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+
+.diary-custom-character-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 0 20px 24px 30px !important;
+  margin: 0 !important;
+}
+
+.diary-character-btn {
+  flex: 1 !important;
+  max-width: 150px !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+}
+
+.diary-character-close {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 24px !important;
+}
+
+/* 日记详情移动端优化 */
+.diary-book-detail {
+  margin: -8px !important;
+  padding: 8px !important;
+  position: relative !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+
+.diary-book-detail::before {
+  display: none !important;
+}
+
+.diary-book-detail::after {
+  display: none !important;
+  left: 0 !important;
+}
+
+/* 关键：移动端内容容器 */
+.diary-book-detail-content {
+  padding: 20px 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+.diary-book-detail-page {
+  padding: 140px 0 0 0 !important;
+  margin-top: 0 !important;
+}
+
+/* 移动端返回按钮 */
+.diary-book-detail-page .diary-book-back-btn-in-content {
+  top: -140px !important;
+  left: 8px !important;
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  z-index: 2000 !important;
+}
+
+.diary-book-detail-title {
+  font-size: 22px !important;
+  margin: 20px 0 12px 0 !important;
+  padding: 0 8px 12px 8px !important;
+  border-bottom-width: 2px !important;
+}
+}
+
+/* 横屏模式优化 */
+@media (max-height: 500px) and (orientation: landscape) {
+.diary-book-body {
+  max-height: 45vh !important;
+  min-height: 150px !important;
+}
+
+.diary-preset-dialog {
+  padding: 5px !important;
+}
+
+.diary-preset-content {
+  max-height: 95vh;
+  max-height: 95dvh;
+  padding: 15px !important;
+  overflow-y: auto;
+}
+
+.diary-preset-title {
+  font-size: 16px !important;
+  margin-bottom: 10px !important;
+}
+}
+
+
+/* ========== 🎉 原版主题CSS适配完成 ========== */
+/* 
+本主题完整还原了2.3版本的视觉效果
+包含11个功能模块和完整的响应式设计
+
+版本: v1.0.0
+创建时间: 2025-10-03
+维护者: 日记本插件开发团队
+*/
+
