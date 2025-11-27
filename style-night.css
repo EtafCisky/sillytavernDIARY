@@ -1,26 +1,26 @@
 /**
  * ============================================================================
  * 日记本插件 - 夜间主题样式表
- * SillyTavern-Diary Plugin - Night Theme Stylesheet
+ * sillytavernDIARY Plugin - Night Theme Stylesheet
  * ============================================================================
- * 
+ *
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
  * @version   3.3.0
- * @link      https://github.com/EtafCisky/SillyTavern-Diary
- * 
+ * @link      https://github.com/EtafCisky/sillytavernDIARY
+ *
  * ============================================================================
  * 版权声明 (COPYRIGHT NOTICE)
  * ============================================================================
- * 
+ *
  * 本文件是日记本插件的一部分，受 CC BY-NC-ND 4.0 许可协议保护。
  * 禁止商业使用、禁止修改、必须保留原作者署名。
- * 
- * This file is part of the SillyTavern-Diary plugin and is protected
+ *
+ * This file is part of the sillytavernDIARY plugin and is protected
  * under CC BY-NC-ND 4.0 License. Commercial use and modifications are
  * prohibited. Author attribution must be retained.
- * 
+ *
  * ============================================================================
  */
 
@@ -47,56 +47,56 @@
     --night-space: #141420;                /* 太空蓝黑 - 主背景 */
     --night-nebula: #1f1f35;               /* 星云紫黑 - 次背景 */
     --night-cosmos: #2a2a45;               /* 宇宙灰紫 - 浅背景 */
-    
+
     /* === ✨ 星光色彩系统 === */
     --night-star-gold: #4682b4;            /* 深蓝星光 */
     --night-star-silver: #c0c0d0;          /* 银星光 */
     --night-star-blue: #87ceeb;            /* 蓝星光 */
     --night-star-purple: #dda0dd;          /* 紫星光 */
     --night-star-cyan: #40e0d0;            /* 青星光 */
-    
+
     /* === 🌈 极光渐变系统 === */
     --night-aurora-green: rgba(64, 224, 208, 0.2);   /* 青绿极光 */
     --night-aurora-purple: rgba(221, 160, 221, 0.15); /* 紫色极光 */
     --night-aurora-blue: rgba(135, 206, 235, 0.1);    /* 蓝色极光 */
     --night-aurora-gold: rgba(70, 130, 180, 0.08);     /* 深蓝极光 */
-    
+
     /* === 📖 阅读文字系统 === */
     --night-text-bright: #f0f0f5;          /* 明亮文字 - 标题用 */
     --night-text-normal: #d0d0d8;          /* 正常文字 - 正文用 */
     --night-text-soft: #a0a0b0;            /* 柔和文字 - 次要用 */
     --night-text-dim: #707080;             /* 暗淡文字 - 提示用 */
     --night-text-glow: var(--night-star-gold); /* 发光文字 */
-    
+
     /* === 🔷 几何边框系统 === */
     --night-border-sharp: #404055;         /* 锐利边框 */
     --night-border-soft: #353545;          /* 柔和边框 */
     --night-border-glow: var(--night-star-blue); /* 发光边框 */
-    
+
     /* === 🎭 3D阴影系统 === */
     --night-shadow-float: 0 8px 32px rgba(0, 0, 0, 0.6);
     --night-shadow-deep: 0 16px 64px rgba(0, 0, 0, 0.8);
     --night-shadow-glow: 0 0 30px rgba(135, 206, 235, 0.3);
     --night-shadow-aurora: 0 0 50px var(--night-aurora-green);
-    
+
     /* === 🌊 流动渐变系统 === */
-    --night-flow-aurora: linear-gradient(45deg, 
-        var(--night-aurora-green) 0%, 
-        var(--night-aurora-purple) 25%, 
-        var(--night-aurora-blue) 50%, 
-        var(--night-aurora-gold) 75%, 
+    --night-flow-aurora: linear-gradient(45deg,
+        var(--night-aurora-green) 0%,
+        var(--night-aurora-purple) 25%,
+        var(--night-aurora-blue) 50%,
+        var(--night-aurora-gold) 75%,
         var(--night-aurora-green) 100%);
-    --night-flow-space: radial-gradient(ellipse at center, 
-        var(--night-nebula) 0%, 
-        var(--night-space) 50%, 
+    --night-flow-space: radial-gradient(ellipse at center,
+        var(--night-nebula) 0%,
+        var(--night-space) 50%,
         var(--night-void) 100%);
-    --night-flow-stars: conic-gradient(from 0deg, 
-        transparent 0deg, 
-        var(--night-star-gold) 30deg, 
-        transparent 60deg, 
-        var(--night-star-blue) 120deg, 
-        transparent 150deg, 
-        var(--night-star-purple) 240deg, 
+    --night-flow-stars: conic-gradient(from 0deg,
+        transparent 0deg,
+        var(--night-star-gold) 30deg,
+        transparent 60deg,
+        var(--night-star-blue) 120deg,
+        transparent 150deg,
+        var(--night-star-purple) 240deg,
         transparent 270deg);
 }
 
@@ -106,23 +106,23 @@
 
 /* 🌌 极光流动动画 */
 @keyframes auroraFlow {
-    0% { 
+    0% {
         background-position: 0% 50%;
         filter: hue-rotate(0deg);
     }
-    25% { 
+    25% {
         background-position: 50% 0%;
         filter: hue-rotate(90deg);
     }
-    50% { 
+    50% {
         background-position: 100% 50%;
         filter: hue-rotate(180deg);
     }
-    75% { 
+    75% {
         background-position: 50% 100%;
         filter: hue-rotate(270deg);
     }
-    100% { 
+    100% {
         background-position: 0% 50%;
         filter: hue-rotate(360deg);
     }
@@ -130,17 +130,17 @@
 
 /* ✨ 星光闪烁动画 */
 @keyframes starTwinkle {
-    0%, 100% { 
+    0%, 100% {
         opacity: 0.2;
         transform: scale(0.8) rotate(0deg);
         filter: brightness(0.8);
     }
-    33% { 
+    33% {
         opacity: 0.8;
         transform: scale(1.2) rotate(120deg);
         filter: brightness(1.5);
     }
-    66% { 
+    66% {
         opacity: 0.4;
         transform: scale(0.9) rotate(240deg);
         filter: brightness(1.1);
@@ -149,15 +149,15 @@
 
 /* 🌊 深空漂浮动画 */
 @keyframes spaceFloat {
-    0%, 100% { 
+    0%, 100% {
         transform: translateY(0px) rotateX(0deg);
         box-shadow: var(--night-shadow-float);
     }
-    33% { 
+    33% {
         transform: translateY(-8px) rotateX(2deg);
         box-shadow: var(--night-shadow-deep);
     }
-    66% { 
+    66% {
         transform: translateY(4px) rotateX(-1deg);
         box-shadow: var(--night-shadow-glow);
     }
@@ -165,11 +165,11 @@
 
 /* 🔷 六边形呼吸动画 */
 @keyframes hexBreath {
-    0%, 100% { 
+    0%, 100% {
         clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
         filter: drop-shadow(0 0 10px var(--night-aurora-blue));
     }
-    50% { 
+    50% {
         clip-path: polygon(20% 5%, 80% 5%, 95% 50%, 80% 95%, 20% 95%, 5% 50%);
         filter: drop-shadow(0 0 20px var(--night-aurora-green));
     }
@@ -177,12 +177,12 @@
 
 /* 🎭 3D翻转进入动画 */
 @keyframes cosmicEntry {
-    from { 
+    from {
         opacity: 0;
         transform: perspective(1000px) rotateY(-90deg) rotateX(30deg) translateZ(-100px);
         filter: blur(5px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: perspective(1000px) rotateY(0deg) rotateX(0deg) translateZ(0px);
         filter: blur(0px);
@@ -204,19 +204,19 @@
 
 /* 🌟 粒子漂移动画 */
 @keyframes particleDrift {
-    0% { 
+    0% {
         transform: translate(0, 0) scale(0.5);
         opacity: 0;
     }
-    10% { 
+    10% {
         opacity: 1;
     }
-    90% { 
+    90% {
         opacity: 1;
     }
-    100% { 
+    100% {
         transform: translate(100px, -50px) scale(1.2);
-    opacity: 0; 
+    opacity: 0;
     }
 }
 
@@ -338,7 +338,7 @@
     text-align: center;
     letter-spacing: 3px;
     line-height: 1.2;
-    text-shadow: 0 0 20px var(--night-aurora-gold), 
+    text-shadow: 0 0 20px var(--night-aurora-gold),
                  0 0 40px var(--night-aurora-blue);
     animation: spectrumCycle 12s ease-in-out infinite;
 }
@@ -416,8 +416,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, 
-        rgba(0, 0, 0, 0.90) 0%, 
+    background: linear-gradient(135deg,
+        rgba(0, 0, 0, 0.90) 0%,
         rgba(0, 0, 0, 0.93) 100%);
     backdrop-filter: blur(10px);
     z-index: 9999;
@@ -427,8 +427,8 @@
 }
 
 .diary-custom-character-content {
-    background: linear-gradient(155deg, 
-        rgba(20, 20, 32, 0.95) 0%, 
+    background: linear-gradient(155deg,
+        rgba(20, 20, 32, 0.95) 0%,
         rgba(15, 15, 25, 0.98) 50%,
         rgba(10, 10, 20, 1) 100%);
     border-radius: 24px 24px 24px 0;
@@ -448,10 +448,10 @@
   left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, 
-        rgba(64, 224, 208, 0.3) 0%, 
-        rgba(135, 206, 235, 0.4) 30%, 
-        rgba(70, 130, 180, 0.3) 60%, 
+    background: linear-gradient(90deg,
+        rgba(64, 224, 208, 0.3) 0%,
+        rgba(135, 206, 235, 0.4) 30%,
+        rgba(70, 130, 180, 0.3) 60%,
         transparent 100%);
 }
 
@@ -480,9 +480,9 @@
     left: 44px;
     right: 44px;
     height: 1px;
-    background: linear-gradient(90deg, 
-        rgba(64, 224, 208, 0.3) 0%, 
-        rgba(135, 206, 235, 0.2) 50%, 
+    background: linear-gradient(90deg,
+        rgba(64, 224, 208, 0.3) 0%,
+        rgba(135, 206, 235, 0.2) 50%,
         transparent 100%);
 }
 
@@ -491,9 +491,9 @@
     font-family: 'Georgia', serif;
     font-size: 1.7rem;
     font-weight: 300;
-    background: linear-gradient(120deg, 
-        var(--night-star-cyan) 0%, 
-        var(--night-star-blue) 50%, 
+    background: linear-gradient(120deg,
+        var(--night-star-cyan) 0%,
+        var(--night-star-blue) 50%,
         var(--night-star-gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -580,8 +580,8 @@
     display: flex;
     justify-content: flex-end;
     gap: 16px;
-    background: linear-gradient(180deg, 
-        transparent 0%, 
+    background: linear-gradient(180deg,
+        transparent 0%,
         rgba(10, 10, 20, 0.4) 100%);
 }
 
@@ -598,8 +598,8 @@
 }
 
 .diary-character-send {
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.2) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.2) 0%,
         rgba(70, 130, 180, 0.15) 100%);
     border: 1px solid rgba(64, 224, 208, 0.4);
     color: var(--night-star-cyan);
@@ -607,8 +607,8 @@
 }
 
 .diary-character-send:hover {
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.3) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.3) 0%,
         rgba(70, 130, 180, 0.25) 100%);
     border-color: var(--night-star-cyan);
     color: var(--night-text-bright);
@@ -636,9 +636,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, 
-        rgba(0, 0, 0, 0.92) 0%, 
-        rgba(0, 0, 0, 0.95) 50%, 
+    background: linear-gradient(135deg,
+        rgba(0, 0, 0, 0.92) 0%,
+        rgba(0, 0, 0, 0.95) 50%,
         rgba(0, 0, 0, 0.92) 100%);
     backdrop-filter: blur(10px);
     z-index: 9998;
@@ -655,7 +655,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-  background: 
+  background:
         radial-gradient(circle at 5% 12%, var(--night-star-blue) 1.5px, transparent 1.5px),
         radial-gradient(circle at 12% 25%, var(--night-star-purple) 1.5px, transparent 1.5px),
         radial-gradient(circle at 18% 8%, var(--night-star-cyan) 1.5px, transparent 1.5px),
@@ -679,7 +679,7 @@
     background-size: 100% 100%;
     background-repeat: no-repeat;
     pointer-events: none;
-    animation: 
+    animation:
         starBlink1 3s ease-in-out infinite,
         colorShift1 10s linear infinite;
 }
@@ -692,7 +692,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-  background: 
+  background:
         radial-gradient(circle at 8% 22%, var(--night-star-cyan) 1.5px, transparent 1.5px),
         radial-gradient(circle at 15% 48%, var(--night-star-gold) 1.5px, transparent 1.5px),
         radial-gradient(circle at 22% 15%, var(--night-star-purple) 1.5px, transparent 1.5px),
@@ -716,7 +716,7 @@
     background-size: 100% 100%;
     background-repeat: no-repeat;
   pointer-events: none;
-    animation: 
+    animation:
         starBlink1 3s ease-in-out infinite 0.75s,
         colorShift1 10s linear infinite;
 }
@@ -729,7 +729,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
+    background:
         radial-gradient(circle at 10% 18%, var(--night-star-gold) 1.5px, transparent 1.5px),
         radial-gradient(circle at 17% 52%, var(--night-star-blue) 1.5px, transparent 1.5px),
         radial-gradient(circle at 23% 28%, var(--night-star-cyan) 1.5px, transparent 1.5px),
@@ -754,7 +754,7 @@
     background-repeat: no-repeat;
     pointer-events: none;
     z-index: -1;
-    animation: 
+    animation:
         starBlink1 3s ease-in-out infinite 1.5s,
         colorShift1 10s linear infinite;
 }
@@ -767,7 +767,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-  background: 
+  background:
         radial-gradient(circle at 6% 35%, var(--night-star-purple) 1.5px, transparent 1.5px),
         radial-gradient(circle at 14% 62%, var(--night-star-cyan) 1.5px, transparent 1.5px),
         radial-gradient(circle at 20% 5%, var(--night-star-gold) 1.5px, transparent 1.5px),
@@ -792,7 +792,7 @@
     background-repeat: no-repeat;
     pointer-events: none;
     z-index: -1;
-    animation: 
+    animation:
         starBlink1 3s ease-in-out infinite 2.25s,
         colorShift1 10s linear infinite;
 }
@@ -818,23 +818,23 @@
 .diary-book-header {
     padding: 24px 28px 18px;
     border-bottom: 3px solid transparent;
-    border-image: linear-gradient(90deg, 
-        transparent 0%, 
-        var(--night-star-blue) 20%, 
-        var(--night-star-cyan) 40%, 
-        var(--night-text-glow) 50%, 
-        var(--night-star-cyan) 60%, 
-        var(--night-star-blue) 80%, 
+    border-image: linear-gradient(90deg,
+        transparent 0%,
+        var(--night-star-blue) 20%,
+        var(--night-star-cyan) 40%,
+        var(--night-text-glow) 50%,
+        var(--night-star-cyan) 60%,
+        var(--night-star-blue) 80%,
         transparent 100%) 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, 
-        var(--night-nebula) 0%, 
-        var(--night-cosmos) 50%, 
+    background: linear-gradient(135deg,
+        var(--night-nebula) 0%,
+        var(--night-cosmos) 50%,
         var(--night-space) 100%);
     position: relative;
-    box-shadow: inset 0 1px 0 rgba(135, 206, 235, 0.2), 
+    box-shadow: inset 0 1px 0 rgba(135, 206, 235, 0.2),
                 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -855,11 +855,11 @@
     left: 10%;
     right: 10%;
   height: 1px;
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-        var(--night-star-cyan) 25%, 
-        var(--night-text-glow) 50%, 
-        var(--night-star-cyan) 75%, 
+    background: linear-gradient(90deg,
+      transparent 0%,
+        var(--night-star-cyan) 25%,
+        var(--night-text-glow) 50%,
+        var(--night-star-cyan) 75%,
         transparent 100%);
     opacity: 0.8;
     animation: spectrumCycle 8s ease-in-out infinite;
@@ -872,7 +872,7 @@
     font-size: 1.8rem;
     font-weight: 300;
     color: var(--night-text-glow);
-    text-shadow: 0 0 30px var(--night-aurora-gold), 
+    text-shadow: 0 0 30px var(--night-aurora-gold),
                  0 0 60px var(--night-aurora-blue),
                  0 2px 4px rgba(0, 0, 0, 0.6);
     letter-spacing: 3px;
@@ -923,8 +923,8 @@
 }
 
 .diary-book-body::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, 
-        var(--night-star-blue) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-star-blue) 0%,
         var(--night-star-cyan) 100%);
     border-radius: 5px;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
@@ -939,9 +939,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(ellipse at center, 
-        var(--night-void) 0%, 
-        var(--night-space) 40%, 
+    background: radial-gradient(ellipse at center,
+        var(--night-void) 0%,
+        var(--night-space) 40%,
         var(--night-nebula) 100%);
     backdrop-filter: blur(15px);
     display: flex;
@@ -978,8 +978,8 @@
 }
 
 .diary-preset-header {
-    background: linear-gradient(135deg, 
-        var(--night-nebula) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-nebula) 0%,
         var(--night-cosmos) 100%);
     color: var(--night-text-bright);
     padding: 24px 28px;
@@ -1052,8 +1052,8 @@
 }
 
 .diary-preset-body::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, 
-        var(--night-star-blue) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-star-blue) 0%,
         var(--night-star-cyan) 100%);
     border-radius: 5px;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
@@ -1063,8 +1063,8 @@
 /* === 📋 预设信息框样式 === */
 
 .diary-preset-info-box {
-    background: linear-gradient(135deg, 
-        rgba(20, 20, 32, 0.6) 0%, 
+    background: linear-gradient(135deg,
+        rgba(20, 20, 32, 0.6) 0%,
         rgba(15, 15, 25, 0.7) 100%);
     border-radius: 16px;
     padding: 20px 24px;
@@ -1083,11 +1083,11 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(64, 224, 208, 0.4) 20%, 
-        rgba(135, 206, 235, 0.3) 50%, 
-        rgba(64, 224, 208, 0.4) 80%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(64, 224, 208, 0.4) 20%,
+        rgba(135, 206, 235, 0.3) 50%,
+        rgba(64, 224, 208, 0.4) 80%,
         transparent 100%);
     border-radius: 16px 16px 0 0;
 }
@@ -1146,11 +1146,11 @@
 .diary-preset-divider {
     border: none;
     height: 2px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(135, 206, 235, 0.2) 20%, 
-        rgba(64, 224, 208, 0.3) 50%, 
-        rgba(135, 206, 235, 0.2) 80%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(135, 206, 235, 0.2) 20%,
+        rgba(64, 224, 208, 0.3) 50%,
+        rgba(135, 206, 235, 0.2) 80%,
         transparent 100%);
     margin: 28px 0;
     position: relative;
@@ -1196,11 +1196,11 @@
     transform: translateX(-50%);
     width: 100px;
     height: 2px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        var(--night-star-cyan) 30%, 
-        var(--night-star-blue) 50%, 
-        var(--night-star-cyan) 70%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--night-star-cyan) 30%,
+        var(--night-star-blue) 50%,
+        var(--night-star-cyan) 70%,
         transparent 100%);
     animation: shimmerDecoration 3s ease-in-out infinite;
 }
@@ -1216,8 +1216,8 @@
 /* === 🎴 预设卡片样式 === */
 
 .diary-preset-item {
-    background: linear-gradient(135deg, 
-        rgba(15, 15, 25, 0.7) 0%, 
+    background: linear-gradient(135deg,
+        rgba(15, 15, 25, 0.7) 0%,
         rgba(20, 20, 32, 0.6) 100%);
     border-radius: 0 14px 14px 0;
     padding: 20px 28px 20px 32px;
@@ -1240,9 +1240,9 @@
     top: 0;
     bottom: 0;
     width: 4px;
-    background: linear-gradient(to bottom, 
-        rgba(135, 206, 235, 0.6) 0%, 
-        rgba(70, 130, 180, 0.4) 50%, 
+    background: linear-gradient(to bottom,
+        rgba(135, 206, 235, 0.6) 0%,
+        rgba(70, 130, 180, 0.4) 50%,
         rgba(64, 224, 208, 0.5) 100%);
     transition: all 0.4s ease;
 }
@@ -1256,16 +1256,16 @@
     transform: translateY(-50%);
     width: 150px;
     height: 150px;
-    background: radial-gradient(circle, 
-        rgba(135, 206, 235, 0.08) 0%, 
+    background: radial-gradient(circle,
+        rgba(135, 206, 235, 0.08) 0%,
         transparent 60%);
     opacity: 0;
     transition: all 0.5s ease;
 }
 
 .diary-preset-item:hover {
-    background: linear-gradient(135deg, 
-        rgba(20, 20, 32, 0.8) 0%, 
+    background: linear-gradient(135deg,
+        rgba(20, 20, 32, 0.8) 0%,
         rgba(15, 15, 25, 0.9) 100%);
     border-color: rgba(135, 206, 235, 0.2);
     box-shadow: -6px 0 20px rgba(135, 206, 235, 0.15),
@@ -1285,8 +1285,8 @@
 
 /* 🎯 当前系统预设样式 */
 .diary-preset-item-current::before {
-    background: linear-gradient(to bottom, 
-        rgba(70, 130, 180, 0.8) 0%, 
+    background: linear-gradient(to bottom,
+        rgba(70, 130, 180, 0.8) 0%,
         rgba(70, 130, 180, 0.6) 100%);
 }
 
@@ -1296,16 +1296,16 @@
 
 /* ✅ 已选择预设样式 */
 .diary-preset-item-selected::before {
-    background: linear-gradient(to bottom, 
-        rgba(64, 224, 208, 0.9) 0%, 
+    background: linear-gradient(to bottom,
+        rgba(64, 224, 208, 0.9) 0%,
         rgba(64, 224, 208, 0.7) 100%);
     width: 6px;
     box-shadow: 3px 0 16px rgba(64, 224, 208, 0.5);
 }
 
 .diary-preset-item-selected {
-    background: linear-gradient(135deg, 
-        rgba(20, 20, 32, 0.85) 0%, 
+    background: linear-gradient(135deg,
+        rgba(20, 20, 32, 0.85) 0%,
         rgba(10, 10, 20, 0.95) 100%);
     border-color: rgba(64, 224, 208, 0.3);
     box-shadow: -8px 0 24px rgba(64, 224, 208, 0.2),
@@ -1314,8 +1314,8 @@
 }
 
 .diary-preset-item-selected::after {
-    background: radial-gradient(circle, 
-        rgba(64, 224, 208, 0.12) 0%, 
+    background: radial-gradient(circle,
+        rgba(64, 224, 208, 0.12) 0%,
         transparent 60%);
     opacity: 1;
     right: -40px;
@@ -1364,8 +1364,8 @@
 }
 
 .diary-preset-badge-current {
-    background: linear-gradient(135deg, 
-        rgba(70, 130, 180, 0.25) 0%, 
+    background: linear-gradient(135deg,
+        rgba(70, 130, 180, 0.25) 0%,
         rgba(70, 130, 180, 0.15) 100%);
     color: var(--night-star-gold);
     border: 1px solid rgba(70, 130, 180, 0.4);
@@ -1373,8 +1373,8 @@
 }
 
 .diary-preset-badge-selected {
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.3) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.3) 0%,
         rgba(64, 224, 208, 0.2) 100%);
     color: var(--night-star-cyan);
     border: 1px solid rgba(64, 224, 208, 0.5);
@@ -1383,11 +1383,11 @@
 }
 
 @keyframes pulse {
-    0%, 100% { 
+    0%, 100% {
         opacity: 1;
         transform: scale(1);
     }
-    50% { 
+    50% {
         opacity: 0.85;
         transform: scale(1.05);
     }
@@ -1402,8 +1402,8 @@
     justify-content: center;
     padding: 60px 20px;
     text-align: center;
-    background: radial-gradient(ellipse at center, 
-        rgba(31, 31, 53, 0.3) 0%, 
+    background: radial-gradient(ellipse at center,
+        rgba(31, 31, 53, 0.3) 0%,
         transparent 70%);
     border-radius: 16px;
     margin: 20px 0;
@@ -1441,8 +1441,8 @@
     justify-content: space-between;
     padding: 20px 24px;
     margin-top: 20px;
-    background: linear-gradient(135deg, 
-        rgba(31, 31, 53, 0.5) 0%, 
+    background: linear-gradient(135deg,
+        rgba(31, 31, 53, 0.5) 0%,
         rgba(20, 20, 32, 0.6) 100%);
     border-radius: 14px;
     border: 1px solid rgba(64, 224, 208, 0.1);
@@ -1450,8 +1450,8 @@
 }
 
 .diary-preset-page-btn {
-    background: linear-gradient(135deg, 
-        rgba(20, 20, 32, 0.8) 0%, 
+    background: linear-gradient(135deg,
+        rgba(20, 20, 32, 0.8) 0%,
         rgba(15, 15, 25, 0.9) 100%);
     border: 1px solid rgba(135, 206, 235, 0.3);
     border-radius: 10px;
@@ -1471,16 +1471,16 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.2) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.2) 0%,
         rgba(135, 206, 235, 0.1) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .diary-preset-page-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, 
-        rgba(20, 20, 32, 0.95) 0%, 
+    background: linear-gradient(135deg,
+        rgba(20, 20, 32, 0.95) 0%,
         rgba(15, 15, 25, 1) 100%);
     border-color: var(--night-star-cyan);
     color: var(--night-star-cyan);
@@ -1529,11 +1529,11 @@
 /* === 🌌 宇宙封面页面样式 === */
 
 .diary-book-cover {
-    background: linear-gradient(135deg, 
-        var(--night-void) 0%, 
-        var(--night-space) 25%, 
-        var(--night-nebula) 50%, 
-        var(--night-cosmos) 75%, 
+    background: linear-gradient(135deg,
+        var(--night-void) 0%,
+        var(--night-space) 25%,
+        var(--night-nebula) 50%,
+        var(--night-cosmos) 75%,
         var(--night-space) 100%);
     min-height: 500px;
     position: relative;
@@ -1553,7 +1553,7 @@
   content: '';
   position: absolute;
     inset: 0;
-  background: 
+  background:
         radial-gradient(circle at 15% 25%, rgba(70, 130, 180, 0.1) 0%, transparent 40%),
         radial-gradient(circle at 85% 75%, rgba(135, 206, 235, 0.08) 0%, transparent 35%),
         radial-gradient(circle at 50% 10%, rgba(64, 224, 208, 0.06) 0%, transparent 30%),
@@ -1566,7 +1566,7 @@
   content: '';
   position: absolute;
     inset: 0;
-  background: 
+  background:
         linear-gradient(45deg, transparent 48%, rgba(70, 130, 180, 0.03) 49%, rgba(70, 130, 180, 0.03) 51%, transparent 52%),
         linear-gradient(-45deg, transparent 48%, rgba(135, 206, 235, 0.02) 49%, rgba(135, 206, 235, 0.02) 51%, transparent 52%);
     background-size: 100px 100px, 150px 150px;
@@ -1596,7 +1596,7 @@
     font-weight: 300;
     margin: 40px 0 20px;
     color: var(--night-text-glow);
-    text-shadow: 0 0 40px var(--night-aurora-gold), 
+    text-shadow: 0 0 40px var(--night-aurora-gold),
                  0 0 80px var(--night-aurora-blue),
                  0 4px 8px rgba(0, 0, 0, 0.6);
     letter-spacing: 4px;
@@ -1648,7 +1648,7 @@
   position: absolute;
     inset: 0;
     background: var(--night-flow-aurora);
-    opacity: 0; 
+    opacity: 0;
     transition: opacity 0.5s ease;
     animation: auroraFlow 10s linear infinite;
 }
@@ -1656,7 +1656,7 @@
 
 .diary-book-cover-button:hover {
     transform: translateY(-6px) scale(1.08);
-    box-shadow: var(--night-shadow-aurora), 
+    box-shadow: var(--night-shadow-aurora),
                 0 0 60px var(--night-aurora-blue);
     border-color: var(--night-star-cyan);
     color: var(--night-text-bright);
@@ -1679,8 +1679,8 @@
     display: flex;
     align-items: center;
     padding: 20px 28px;
-    background: linear-gradient(135deg, 
-        var(--night-nebula) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-nebula) 0%,
         var(--night-space) 100%);
     border-bottom: 2px solid var(--night-border-soft);
     box-shadow: var(--night-shadow-float);
@@ -1716,8 +1716,8 @@
 }
 
 .diary-book-nav-btn:hover {
-    background: linear-gradient(135deg, 
-        var(--night-cosmos) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-cosmos) 0%,
         var(--night-nebula) 100%);
     border-color: var(--night-border-glow);
     color: var(--night-text-glow);
@@ -1758,11 +1758,11 @@
     transform: translateX(-50%);
     width: 120px;
     height: 2px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        #87ceeb 20%, 
-        #87ceeb 50%, 
-        #87ceeb 80%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #87ceeb 20%,
+        #87ceeb 50%,
+        #87ceeb 80%,
         transparent 100%);
     animation: shimmerDecoration 3s ease-in-out infinite;
 }
@@ -1776,10 +1776,10 @@
     transform: translateX(-50%);
     width: 80px;
     height: 2px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        #87ceeb 30%, 
-        #87ceeb 70%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #87ceeb 30%,
+        #87ceeb 70%,
         transparent 100%);
     animation: shimmerDecoration 3s ease-in-out infinite reverse;
 }
@@ -1830,9 +1830,9 @@
     flex: 1;
     min-height: 0;
     position: relative;
-    
+
     /* 🌟 背景星空效果 */
-    background: 
+    background:
         radial-gradient(circle at 15% 25%, rgba(64, 224, 208, 0.03) 0%, transparent 50%),
         radial-gradient(circle at 85% 75%, rgba(135, 206, 235, 0.02) 0%, transparent 50%),
         radial-gradient(circle at 50% 10%, rgba(70, 130, 180, 0.02) 0%, transparent 40%);
@@ -1848,7 +1848,7 @@
     height: 3px;
     background: var(--night-star-cyan);
     border-radius: 50%;
-    box-shadow: 
+    box-shadow:
         200px 50px 0 -1px var(--night-star-blue),
         400px 120px 0 -1px var(--night-star-purple),
         150px 200px 0 -1px var(--night-star-gold),
@@ -1899,8 +1899,8 @@
 /* 角色卡片样式 - 重新设计 */
 
 .diary-book-character-card {
-    background: linear-gradient(160deg, 
-        rgba(20, 20, 32, 0.7) 0%, 
+    background: linear-gradient(160deg,
+        rgba(20, 20, 32, 0.7) 0%,
         rgba(10, 10, 20, 0.85) 100%);
     border-radius: 0 20px 20px 0;
     padding: 28px 32px 28px 40px;
@@ -1923,9 +1923,9 @@
     top: 0;
     bottom: 0;
     width: 5px;
-    background: linear-gradient(to bottom, 
-        rgba(64, 224, 208, 0.8) 0%, 
-        rgba(70, 130, 180, 0.6) 50%, 
+    background: linear-gradient(to bottom,
+        rgba(64, 224, 208, 0.8) 0%,
+        rgba(70, 130, 180, 0.6) 50%,
         rgba(135, 206, 235, 0.4) 100%);
     transition: all 0.4s ease;
 }
@@ -1938,16 +1938,16 @@
     transform: translateY(-50%);
     width: 200px;
     height: 200px;
-    background: radial-gradient(circle, 
-        rgba(64, 224, 208, 0.06) 0%, 
+    background: radial-gradient(circle,
+        rgba(64, 224, 208, 0.06) 0%,
         transparent 60%);
-    opacity: 0; 
+    opacity: 0;
     transition: all 0.5s ease;
 }
 
 .diary-book-character-card:hover {
-    background: linear-gradient(160deg, 
-        rgba(20, 20, 32, 0.85) 0%, 
+    background: linear-gradient(160deg,
+        rgba(20, 20, 32, 0.85) 0%,
         rgba(10, 10, 20, 0.95) 100%);
     border-color: rgba(64, 224, 208, 0.15);
     box-shadow: -8px 0 24px rgba(64, 224, 208, 0.1),
@@ -1961,7 +1961,7 @@
 }
 
 .diary-book-character-card:hover::after {
-    opacity: 1; 
+    opacity: 1;
     right: -50px;
 }
 
@@ -1996,8 +1996,8 @@
     left: 0;
     width: 0;
     height: 2px;
-    background: linear-gradient(to right, 
-        var(--night-star-cyan) 0%, 
+    background: linear-gradient(to right,
+        var(--night-star-cyan) 0%,
         transparent 100%);
     transition: width 0.4s ease;
 }
@@ -2045,29 +2045,29 @@
 
 .diary-book-diary-card {
     /* 🌌 星系卡片基础样式 */
-    background: linear-gradient(135deg, 
-        rgba(15, 15, 25, 0.85) 0%, 
+    background: linear-gradient(135deg,
+        rgba(15, 15, 25, 0.85) 0%,
         rgba(20, 20, 32, 0.75) 30%,
         rgba(10, 10, 20, 0.90) 70%,
         rgba(5, 5, 15, 0.95) 100%);
-    
+
     /* 🔷 简洁四边形设计 - 部分圆角 */
     border-radius: 0 16px 16px 0;
-    
+
     padding: 32px 40px 32px 48px;
     margin: 24px 8px;
     cursor: pointer;
     transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     overflow: hidden;
-    
+
     /* 🌟 多层边框系统 */
     border: 2px solid transparent;
     background-clip: padding-box;
-    
+
     /* 🎭 3D悬浮效果 */
     transform: perspective(1000px) rotateX(2deg) rotateY(-1deg);
-    box-shadow: 
+    box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.6),
         0 4px 16px rgba(70, 130, 180, 0.1),
         inset 0 1px 0 rgba(135, 206, 235, 0.08);
@@ -2078,11 +2078,11 @@
     content: '';
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, 
-        rgba(64, 224, 208, 0.4) 0%, 
-        rgba(135, 206, 235, 0.3) 25%, 
-        rgba(70, 130, 180, 0.2) 50%, 
-        rgba(221, 160, 221, 0.3) 75%, 
+    background: linear-gradient(45deg,
+        rgba(64, 224, 208, 0.4) 0%,
+        rgba(135, 206, 235, 0.3) 25%,
+        rgba(70, 130, 180, 0.2) 50%,
+        rgba(221, 160, 221, 0.3) 75%,
         rgba(64, 224, 208, 0.4) 100%);
     border-radius: 0 18px 18px 0;
     z-index: -1;
@@ -2097,9 +2097,9 @@
 .diary-book-diary-card:hover {
     /* 🎭 简洁变换效果 */
     transform: translateY(-4px) translateX(6px) scale(1.01);
-    
+
     /* 🌟 简洁阴影效果 */
-    box-shadow: 
+    box-shadow:
         0 16px 48px rgba(0, 0, 0, 0.8),
         inset 0 1px 0 rgba(135, 206, 235, 0.1);
 }
@@ -2152,9 +2152,9 @@
     left: 0;
     right: 20%;
     height: 2px;
-    background: linear-gradient(90deg, 
-        rgba(64, 224, 208, 0.6) 0%, 
-        rgba(135, 206, 235, 0.4) 60%, 
+    background: linear-gradient(90deg,
+        rgba(64, 224, 208, 0.6) 0%,
+        rgba(135, 206, 235, 0.4) 60%,
         transparent 100%);
     border-radius: 1px;
 }
@@ -2167,13 +2167,13 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     padding: 8px 16px;
-    
+
     /* 🔷 六边形日期标签 */
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.2) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.2) 0%,
         rgba(70, 130, 180, 0.15) 100%);
     clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
-    
+
     border: 1px solid rgba(64, 224, 208, 0.3);
     position: relative;
     text-transform: uppercase;
@@ -2185,9 +2185,9 @@
     content: '';
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, 
-        rgba(64, 224, 208, 0.3) 0%, 
-        rgba(135, 206, 235, 0.2) 50%, 
+    background: linear-gradient(45deg,
+        rgba(64, 224, 208, 0.3) 0%,
+        rgba(135, 206, 235, 0.2) 50%,
         rgba(64, 224, 208, 0.3) 100%);
     clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
     z-index: -1;
@@ -2265,9 +2265,9 @@
     content: '';
     width: 40px;
     height: 2px;
-    background: linear-gradient(90deg, 
-        var(--night-star-gold) 0%, 
-        var(--night-star-blue) 50%, 
+    background: linear-gradient(90deg,
+        var(--night-star-gold) 0%,
+        var(--night-star-blue) 50%,
         transparent 100%);
     border-radius: 1px;
 }
@@ -2308,8 +2308,8 @@
     text-align: center;
     color: var(--night-text-dim);
     position: relative;
-    background: radial-gradient(ellipse at center, 
-        var(--night-nebula) 0%, 
+    background: radial-gradient(ellipse at center,
+        var(--night-nebula) 0%,
         transparent 70%);
 }
 
@@ -2320,8 +2320,8 @@
     left: 20%;
     right: 20%;
     bottom: 20%;
-    background: radial-gradient(circle, 
-        var(--night-aurora-blue) 0%, 
+    background: radial-gradient(circle,
+        var(--night-aurora-blue) 0%,
         transparent 60%);
     animation: spaceFloat 6s ease-in-out infinite;
     border-radius: 50%;
@@ -2330,7 +2330,7 @@
 .diary-book-empty-icon {
     font-size: 72px;
     margin-bottom: 20px;
-    opacity: 0.4; 
+    opacity: 0.4;
     color: var(--night-text-soft);
     text-shadow: 0 0 20px var(--night-aurora-gold);
     animation: starTwinkle 5s ease-in-out infinite;
@@ -2360,8 +2360,8 @@
     justify-content: space-between;
     padding: 16px 24px;
     margin-top: auto;
-    background: linear-gradient(135deg, 
-        var(--night-nebula) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-nebula) 0%,
         var(--night-space) 100%);
     border-top: 2px solid var(--night-border-soft);
     gap: 20px;
@@ -2386,8 +2386,8 @@
 }
 
 .diary-book-page-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, 
-        var(--night-nebula) 0%, 
+    background: linear-gradient(135deg,
+        var(--night-nebula) 0%,
         var(--night-cosmos) 100%);
     border-color: var(--night-border-glow);
     color: var(--night-text-glow);
@@ -2422,72 +2422,72 @@
         height: 100vh;
         height: 100dvh;
     }
-    
+
     /* 🔧 修复移动端封面闪烁问题 - 禁用网格动画 */
     .diary-book-cover::after {
         animation: none !important;
         opacity: 0.3;
     }
-    
+
     /* 🔧 简化背景动画以提升移动端性能 */
     .diary-book-cover::before {
         animation: none !important;
     }
-    
+
     .diary-book-cover-content {
         padding: 30px 20px;
     }
-    
+
     .diary-book-cover-title {
         font-size: 32px;
         margin-bottom: 18px;
         letter-spacing: 2px;
     }
-    
+
     .diary-book-cover-subtitle {
         font-size: 16px;
         margin-bottom: 28px;
     }
-    
+
     .diary-book-cover-button {
         font-size: 16px;
         padding: 14px 28px;
     }
-    
+
     .diary-book-nav-header {
         padding: 14px 18px;
     }
-    
+
     .diary-book-view-title {
         font-size: 18px;
     }
-    
+
     .diary-book-nav-spacer {
         width: 60px;
     }
-    
+
     .diary-book-pagination {
         padding: 14px 18px;
         gap: 15px;
     }
-    
+
     .diary-book-empty-state {
         height: 280px;
     }
-    
+
     .diary-book-empty-icon {
         font-size: 60px;
         margin-bottom: 16px;
     }
-    
+
     .diary-book-empty-text {
         font-size: 18px;
     }
-    
+
     .diary-book-empty-hint {
         font-size: 14px;
     }
-    
+
     /* 📱 日记卡片移动端优化 */
     .diary-book-diary-card {
         /* 🔷 保持四边形设计 */
@@ -2496,18 +2496,18 @@
         margin: 16px 4px;
         transform: none;
     }
-    
+
     .diary-book-diary-card:hover {
         transform: translateY(-2px) translateX(3px) scale(1.005);
     }
-    
+
     /* 📅 移动端日期标签优化 */
     .diary-book-diary-date {
         font-size: 0.7rem;
         padding: 6px 12px;
         letter-spacing: 1px;
     }
-    
+
     /* 📖 移动端预览文本优化 */
     .diary-book-diary-preview {
         font-size: 0.9rem;
@@ -2515,34 +2515,34 @@
         -webkit-line-clamp: 2;
         padding-left: 16px;
     }
-    
+
     .diary-book-diary-preview::before {
         font-size: 1.5rem;
         top: -6px;
     }
-    
+
     /* 📚 移动端日记标题优化 */
     .diary-book-diary-list .diary-book-view-title {
         font-size: 1.4rem;
         letter-spacing: 2px;
         padding: 6px 0;
     }
-    
+
     .diary-book-diary-list .diary-book-view-title::before {
         width: 80px;
     }
-    
+
     .diary-book-diary-list .diary-book-view-title::after {
         width: 60px;
     }
-    
+
     /* 🌌 移动端网格背景优化 */
     .diary-book-diary-grid {
         padding: 20px 16px;
     }
-    
+
     .diary-book-diary-grid::before {
-        box-shadow: 
+        box-shadow:
             150px 40px 0 -1px var(--night-star-blue),
             280px 90px 0 -1px var(--night-star-purple),
             100px 150px 0 -1px var(--night-star-gold),
@@ -2556,10 +2556,10 @@
 
 /* 🌌 日记详情页面容器 - 深空阅读环境 */
 .diary-book-detail {
-    background: linear-gradient(135deg, 
-        var(--night-void) 0%, 
-        var(--night-space) 30%, 
-        var(--night-nebula) 70%, 
+    background: linear-gradient(135deg,
+        var(--night-void) 0%,
+        var(--night-space) 30%,
+        var(--night-nebula) 70%,
         var(--night-void) 100%);
     padding: 0;
     position: relative;
@@ -2577,7 +2577,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
+    background:
         radial-gradient(circle at 20% 30%, rgba(64, 224, 208, 0.05) 0%, transparent 50%),
         radial-gradient(circle at 80% 70%, rgba(135, 206, 235, 0.04) 0%, transparent 50%),
         radial-gradient(circle at 50% 20%, rgba(70, 130, 180, 0.03) 0%, transparent 40%);
@@ -2595,7 +2595,7 @@
     height: 4px;
     background: var(--night-star-cyan);
     border-radius: 50%;
-    box-shadow: 
+    box-shadow:
         300px 100px 0 -1px var(--night-star-blue),
         150px 250px 0 -1px var(--night-star-purple),
         450px 180px 0 -1px var(--night-star-gold),
@@ -2637,7 +2637,7 @@
     position: relative;
     letter-spacing: 2px;
     text-shadow: 0 0 20px rgba(135, 206, 235, 0.6);
-    
+
     /* 🌟 底部装饰线 */
     border-bottom: 2px solid rgba(64, 224, 208, 0.3);
 }
@@ -2679,11 +2679,11 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(64, 224, 208, 0.4) 30%, 
-        rgba(135, 206, 235, 0.6) 50%, 
-        rgba(64, 224, 208, 0.4) 70%, 
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(64, 224, 208, 0.4) 30%,
+        rgba(135, 206, 235, 0.6) 50%,
+        rgba(64, 224, 208, 0.4) 70%,
         transparent 100%);
     margin: 0 20px;
 }
@@ -2711,7 +2711,7 @@
     letter-spacing: 1.5px;
     text-transform: uppercase;
     font-weight: 600;
-    
+
     /* 🌟 发光效果 */
     box-shadow: 0 0 15px rgba(64, 224, 208, 0.1);
     position: relative;
@@ -2741,11 +2741,11 @@
     top: 20%;
     bottom: 20%;
     width: 4px;
-    background: linear-gradient(180deg, 
-        transparent 0%, 
-        var(--night-star-cyan) 20%, 
-        var(--night-star-blue) 50%, 
-        var(--night-star-cyan) 80%, 
+    background: linear-gradient(180deg,
+        transparent 0%,
+        var(--night-star-cyan) 20%,
+        var(--night-star-blue) 50%,
+        var(--night-star-cyan) 80%,
         transparent 100%);
     border-radius: 2px;
 }
@@ -2772,8 +2772,8 @@
 
 /* 🗑️ 删除按钮样式 */
 .diary-book-delete-btn {
-    background: linear-gradient(135deg, 
-        rgba(220, 20, 60, 0.8) 0%, 
+    background: linear-gradient(135deg,
+        rgba(220, 20, 60, 0.8) 0%,
         rgba(178, 34, 34, 0.9) 100%);
     color: var(--night-text-bright);
     border: 2px solid rgba(220, 20, 60, 0.4);
@@ -2788,21 +2788,21 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
     position: relative;
     z-index: 20;
-    
+
     /* 🌟 按钮阴影 */
-    box-shadow: 
+    box-shadow:
         0 8px 24px rgba(220, 20, 60, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* 🗑️ 删除按钮悬停效果 */
 .diary-book-delete-btn:hover {
-    background: linear-gradient(135deg, 
-        rgba(220, 20, 60, 1) 0%, 
+    background: linear-gradient(135deg,
+        rgba(220, 20, 60, 1) 0%,
         rgba(178, 34, 34, 1) 100%);
     border-color: rgba(220, 20, 60, 0.8);
     transform: translateY(-2px);
-    box-shadow: 
+    box-shadow:
         0 12px 32px rgba(220, 20, 60, 0.4),
         0 0 20px rgba(220, 20, 60, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -2834,8 +2834,8 @@
     top: -20px;
     left: -20px;
     z-index: 1000;
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 0.9) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 0.9) 0%,
         rgba(70, 130, 180, 0.9) 100%);
     color: var(--night-text-bright);
     border: 2px solid rgba(64, 224, 208, 0.4);
@@ -2849,9 +2849,9 @@
     letter-spacing: 0.5px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
-    
+
     /* 🌟 按钮阴影 */
-    box-shadow: 
+    box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.4),
         0 0 20px rgba(64, 224, 208, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -2859,12 +2859,12 @@
 
 /* 🔙 返回按钮悬停效果 */
 .diary-book-detail-page .diary-book-back-btn-in-content:hover {
-    background: linear-gradient(135deg, 
-        rgba(64, 224, 208, 1) 0%, 
+    background: linear-gradient(135deg,
+        rgba(64, 224, 208, 1) 0%,
         rgba(70, 130, 180, 1) 100%);
     border-color: rgba(64, 224, 208, 0.8);
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 
+    box-shadow:
         0 12px 32px rgba(0, 0, 0, 0.5),
         0 0 30px rgba(64, 224, 208, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -2877,19 +2877,19 @@
         padding: 0;
         min-height: auto;
     }
-    
+
     /* 📄 移动端内容容器 */
     .diary-book-detail-content {
         padding: 20px 16px;
         overflow-y: auto;
         overflow-x: hidden;
     }
-    
+
     /* 📖 移动端页面内容 */
     .diary-book-detail-page {
         padding: 0;
     }
-    
+
     /* 📝 移动端标题 */
     .diary-book-detail-title {
         font-size: 1.8rem;
@@ -2897,34 +2897,34 @@
         padding: 0 0 16px 0;
         letter-spacing: 1px;
     }
-    
+
     .diary-book-detail-title::before,
     .diary-book-detail-title::after {
         font-size: 1.2rem;
     }
-    
+
     .diary-book-detail-title::before {
         left: -24px;
     }
-    
+
     .diary-book-detail-title::after {
         right: -24px;
     }
-    
+
     /* ✦ 移动端分隔线 */
     .diary-book-detail-divider {
         margin: 24px 0;
     }
-    
+
     .diary-book-detail-divider::before,
     .diary-book-detail-divider::after {
         margin: 0 12px;
     }
-    
+
     .diary-book-detail-ornament {
         font-size: 1.4rem;
     }
-    
+
     /* 🕒 移动端时间 */
     .diary-book-detail-time {
         font-size: 0.9rem;
@@ -2932,7 +2932,7 @@
         margin: 0 0 32px 0;
         letter-spacing: 1px;
     }
-    
+
     /* 📖 移动端内容文本 */
     .diary-book-detail-text {
         font-size: 1rem;
@@ -2940,12 +2940,12 @@
         padding: 24px 0;
         margin: 0 0 32px 0;
     }
-    
+
     .diary-book-detail-text p {
         margin-bottom: 16px;
         text-indent: 1.5em;
     }
-    
+
     /* 🗑️ 移动端删除按钮 */
     .diary-book-detail-actions {
         margin-top: 32px;
@@ -2953,21 +2953,21 @@
         padding-top: 24px;
         padding-bottom: 16px;
     }
-    
+
     .diary-book-delete-btn {
         padding: 12px 28px;
         font-size: 0.9rem;
     }
-    
+
     /* ✨ 移动端背景粒子优化 */
     .diary-book-detail::after {
-        box-shadow: 
+        box-shadow:
             200px 80px 0 -1px var(--night-star-blue),
             100px 180px 0 -1px var(--night-star-purple),
             280px 140px 0 -1px var(--night-star-gold),
             150px 250px 0 -1px var(--night-star-cyan);
     }
-    
+
     /* 🔙 移动端返回按钮 */
     .diary-book-detail-page .diary-book-back-btn-in-content {
         top: -15px;
@@ -2975,7 +2975,7 @@
         padding: 10px 16px;
         font-size: 0.8rem;
     }
-    
+
     /* 📖 移动端页面内容 */
     .diary-book-detail-page {
         padding: 30px 0 0 0;

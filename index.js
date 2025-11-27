@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * 日记本插件 (SillyTavern-Diary)
+ * 日记本插件 (sillytavernDIARY)
  * ============================================================================
  *
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
  * @version   3.3.0
- * @link      https://github.com/EtafCisky/SillyTavern-Diary
+ * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
  * 版权声明 (COPYRIGHT NOTICE)
@@ -64,7 +64,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
 const PLUGIN_AUTHOR = {
   name: 'Etaf Cisky',
-  github: 'https://github.com/EtafCisky/SillyTavern-Diary',
+  github: 'https://github.com/EtafCisky/sillytavernDIARY',
   version: '3.3.0',
   fingerprint: 'EC-STD-2025',
   copyright: 'Copyright (c) 2025 Etaf Cisky',
@@ -4770,7 +4770,7 @@ async function verifyAuthorInfo() {
     'color: #667eea; font-weight: bold;',
   );
   console.log(
-    '%c║     📖 日记本插件 (SillyTavern-Diary)                         ║',
+    '%c║     📖 日记本插件 (sillytavernDIARY)                         ║',
     'color: #667eea; font-weight: bold;',
   );
   console.log(
@@ -4783,7 +4783,7 @@ async function verifyAuthorInfo() {
   );
   console.log('%c║  版本 (Version):       v3.3.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
-  console.log('%c║  GitHub:               github.com/EtafCisky/SillyTavern-Diary║', 'color: #4299e1;');
+  console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');
   console.log(
     '%c╠══════════════════════════════════════════════════════════════╣',

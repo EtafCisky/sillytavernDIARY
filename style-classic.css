@@ -1,30 +1,30 @@
 /**
  * ============================================================================
  * 日记本插件 - 经典主题样式表
- * SillyTavern-Diary Plugin - Classic Theme Stylesheet
+ * sillytavernDIARY Plugin - Classic Theme Stylesheet
  * ============================================================================
- * 
+ *
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
  * @version   3.3.0
- * @link      https://github.com/EtafCisky/SillyTavern-Diary
- * 
+ * @link      https://github.com/EtafCisky/sillytavernDIARY
+ *
  * ============================================================================
  * 版权声明 (COPYRIGHT NOTICE)
  * ============================================================================
- * 
+ *
  * 本文件是日记本插件的一部分，受 CC BY-NC-ND 4.0 许可协议保护。
- * 
+ *
  * 使用条款：
  * ✓ 署名 - 必须保留原作者署名（Etaf Cisky）
  * ✗ 非商业性使用 - 禁止用于商业目的
  * ✗ 禁止演绎 - 禁止修改本作品
- * 
- * This file is part of the SillyTavern-Diary plugin and is protected
+ *
+ * This file is part of the sillytavernDIARY plugin and is protected
  * under CC BY-NC-ND 4.0 License. Commercial use and modifications are
  * prohibited. Author attribution must be retained.
- * 
+ *
  * ============================================================================
  */
 
@@ -637,7 +637,7 @@ to { opacity: 1; transform: scale(1) translateY(0); }
 
 /* 日记本弹窗遮罩层 - 增强背景效果 */
 .diary-book-dialog {
-background: 
+background:
   radial-gradient(circle at 25% 25%, rgba(210, 180, 140, 0.15) 0%, transparent 40%),
   radial-gradient(circle at 75% 75%, rgba(222, 184, 135, 0.12) 0%, transparent 40%),
   radial-gradient(circle at 50% 10%, rgba(205, 133, 63, 0.08) 0%, transparent 30%),
@@ -653,7 +653,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background-image: 
+background-image:
   radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
   radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
   radial-gradient(circle at 40% 60%, rgba(210, 180, 140, 0.05) 2px, transparent 2px);
@@ -664,7 +664,7 @@ pointer-events: none;
 
 /* 日记本内容容器 - 纸张纹理效果 */
 .diary-book-content {
-background: 
+background:
   linear-gradient(145deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
 color: #2d1810 !important;
 padding: 0 !important;
@@ -673,7 +673,7 @@ width: 95% !important;
 max-width: 900px !important;
 min-width: 480px !important;
 text-align: center !important;
-box-shadow: 
+box-shadow:
   0 30px 100px rgba(0, 0, 0, 0.5),
   0 15px 60px rgba(210, 180, 140, 0.3),
   0 8px 30px rgba(222, 184, 135, 0.25),
@@ -702,7 +702,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     45deg,
     transparent,
@@ -723,14 +723,14 @@ left: 25px;
 top: 0;
 bottom: 0;
 width: 3px;
-background: 
-  linear-gradient(to bottom, 
-    transparent 0%, 
-    rgba(210, 180, 140, 0.4) 15%, 
-    rgba(210, 180, 140, 0.2) 85%, 
+background:
+  linear-gradient(to bottom,
+    transparent 0%,
+    rgba(210, 180, 140, 0.4) 15%,
+    rgba(210, 180, 140, 0.2) 85%,
     transparent 100%
   );
-box-shadow: 
+box-shadow:
   2px 0 0 rgba(205, 133, 63, 0.3),
   5px 0 0 rgba(210, 180, 140, 0.15),
   1px 0 10px rgba(210, 180, 140, 0.2);
@@ -741,15 +741,15 @@ box-shadow:
 
 /* 日记本标题栏 - 皮革质感 */
 .diary-book-header {
-background: 
-  linear-gradient(135deg, 
-    #7a4d2a 0%, 
-    #6b3511 25%, 
+background:
+  linear-gradient(135deg,
+    #7a4d2a 0%,
+    #6b3511 25%,
     #7a4d2a 50%,
     #6b3511 75%,
     #562a17 100%
   ) !important;
-box-shadow: 
+box-shadow:
   0 4px 15px rgba(0, 0, 0, 0.4),
   inset 0 2px 0 rgba(255, 255, 255, 0.3),
   inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
@@ -766,11 +766,11 @@ top: 50%;
 left: 0;
 right: 0;
 height: 3px;
-background: linear-gradient(90deg, 
-  transparent 0%, 
-  rgba(205, 133, 63, 0.8) 25%, 
-  rgba(255, 215, 0, 0.6) 50%, 
-  rgba(205, 133, 63, 0.8) 75%, 
+background: linear-gradient(90deg,
+  transparent 0%,
+  rgba(205, 133, 63, 0.8) 25%,
+  rgba(255, 215, 0, 0.6) 50%,
+  rgba(205, 133, 63, 0.8) 75%,
   transparent 100%
 );
 animation: shimmerDecoration 4s ease-in-out infinite;
@@ -782,7 +782,7 @@ transform: translateY(-50%);
 color: #f9f6f1 !important;
 font-size: 22px !important;
 font-weight: 800 !important;
-text-shadow: 
+text-shadow:
   3px 3px 6px rgba(0, 0, 0, 0.6),
   0 0 20px rgba(255, 215, 0, 0.3),
   0 0 40px rgba(255, 215, 0, 0.1) !important;
@@ -793,7 +793,7 @@ margin: 0 !important;
 
 /* 关闭按钮 */
 .diary-book-close {
-background: 
+background:
   radial-gradient(circle at center, rgba(245, 241, 234, 0.2) 0%, rgba(211, 47, 47, 0.1) 70%) !important;
 border: 3px solid rgba(245, 241, 234, 0.4) !important;
 color: #f9f6f1 !important;
@@ -818,7 +818,7 @@ transition: transform 0.3s ease;
 background: rgba(211, 47, 47, 0.9) !important;
 border-color: #d32f2f !important;
 transform: scale(1.15) rotate(90deg) !important;
-box-shadow: 
+box-shadow:
   0 8px 25px rgba(211, 47, 47, 0.5),
   inset 0 2px 10px rgba(255, 255, 255, 0.2) !important;
 }
@@ -835,7 +835,7 @@ overflow-y: auto !important;
 overflow-x: hidden !important;
 max-height: 62vh !important;
 min-height: 200px !important;
-background: 
+background:
   radial-gradient(circle at 95% 5%, rgba(245, 241, 234, 0.4) 0%, transparent 50%),
   radial-gradient(circle at 5% 95%, rgba(235, 228, 214, 0.3) 0%, transparent 50%) !important;
 position: relative;
@@ -872,16 +872,16 @@ background-color: rgba(196, 168, 124, 0.8);
 .diary-book-cover {
 text-align: center;
 padding: 40px 36px 36px !important;
-background: 
-  radial-gradient(1200px 600px at 50% -200px, rgba(255, 215, 180, 0.18) 0%, transparent 60%), 
+background:
+  radial-gradient(1200px 600px at 50% -200px, rgba(255, 215, 180, 0.18) 0%, transparent 60%),
   linear-gradient(135deg, #f6ecd9 0%, #efe1c8 50%, #e6d6b8 100%) !important;
 margin: 0 !important;
 border: 2px solid #caa574 !important;
 border-radius: 18px !important;
 position: relative !important;
 transition: transform 0.25s ease, box-shadow 0.25s ease;
-box-shadow: 
-  0 10px 30px rgba(0, 0, 0, 0.22), 
+box-shadow:
+  0 10px 30px rgba(0, 0, 0, 0.22),
   inset 0 2px 0 rgba(255, 255, 255, 0.65) !important;
 min-height: auto !important;
 }
@@ -893,9 +893,9 @@ inset: 14px;
 border: 1px solid rgba(196, 168, 124, 0.5);
 border-radius: 14px;
 box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.25);
-background: 
-  repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(210, 180, 140, 0.10) 29px, rgba(210, 180, 140, 0.10) 30px), 
-  radial-gradient(600px 300px at 20% 0%, rgba(222, 184, 135, 0.15) 0%, transparent 60%), 
+background:
+  repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(210, 180, 140, 0.10) 29px, rgba(210, 180, 140, 0.10) 30px),
+  radial-gradient(600px 300px at 20% 0%, rgba(222, 184, 135, 0.15) 0%, transparent 60%),
   radial-gradient(600px 300px at 80% 100%, rgba(210, 180, 140, 0.12) 0%, transparent 60%);
 pointer-events: none;
 }
@@ -908,16 +908,16 @@ left: 28px;
 bottom: 0;
 width: 4px;
 background: linear-gradient(to bottom, rgba(205, 133, 63, 0.35), rgba(210, 180, 140, 0.55), rgba(205, 133, 63, 0.35));
-box-shadow: 
-  2px 0 0 rgba(255, 255, 255, 0.5), 
+box-shadow:
+  2px 0 0 rgba(255, 255, 255, 0.5),
   -2px 0 0 rgba(120, 80, 40, 0.15);
 pointer-events: none;
 }
 
 .diary-book-cover:hover {
 transform: translateY(-6px) scale(1.02) !important;
-box-shadow: 
-  0 20px 48px rgba(0, 0, 0, 0.35), 
+box-shadow:
+  0 20px 48px rgba(0, 0, 0, 0.35),
   inset 0 3px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -955,7 +955,7 @@ margin-bottom: 20px !important;
 
 /* 进入按钮 */
 .diary-book-cover-button {
-background: 
+background:
   linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
 color: #3e2723 !important;
 border: 2px solid #bc9a6a !important;
@@ -966,7 +966,7 @@ font-size: 14px !important;
 font-weight: 700 !important;
 transition: all 0.3s ease;
 text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2) !important;
-box-shadow: 
+box-shadow:
   0 4px 12px rgba(0, 0, 0, 0.2),
   inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 font-family: 'Georgia', 'Times New Roman', serif !important;
@@ -976,10 +976,10 @@ display: inline-block;
 }
 
 .diary-book-cover-button:hover {
-background: 
+background:
   linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
 transform: translateY(-2px) scale(1.05) !important;
-box-shadow: 
+box-shadow:
   0 8px 20px rgba(0, 0, 0, 0.3),
   inset 0 2px 0 rgba(255, 255, 255, 0.4) !important;
 color: #2e1a14 !important;
@@ -991,7 +991,7 @@ color: #2e1a14 !important;
 /* 预设对话框遮罩层 */
 .diary-preset-dialog {
 background: rgba(0, 0, 0, 0.7) !important;
-background-image: 
+background-image:
   radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
   radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.1) 0%, transparent 50%) !important;
 backdrop-filter: blur(4px) !important;
@@ -1006,7 +1006,7 @@ overscroll-behavior: contain;
 @supports not (backdrop-filter: blur(4px)) {
 .diary-preset-dialog {
   background: rgba(0, 0, 0, 0.85) !important;
-  background-image: 
+  background-image:
     radial-gradient(circle at 20% 20%, rgba(40, 30, 20, 0.3) 0%, transparent 40%),
     radial-gradient(circle at 80% 80%, rgba(30, 20, 15, 0.2) 0%, transparent 40%) !important;
 }
@@ -1014,11 +1014,11 @@ overscroll-behavior: contain;
 
 /* 预设对话框主体容器 */
 .diary-preset-content {
-background: 
+background:
   linear-gradient(145deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
 border: 4px solid #c4a87c !important;
 border-radius: 16px !important;
-box-shadow: 
+box-shadow:
   0 30px 100px rgba(0, 0, 0, 0.5),
   0 15px 60px rgba(210, 180, 140, 0.3),
   0 8px 30px rgba(222, 184, 135, 0.25),
@@ -1042,7 +1042,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     0deg,
     transparent,
@@ -1063,7 +1063,7 @@ top: 0;
 bottom: 0;
 width: 2px;
 background: rgba(210, 180, 140, 0.25);
-box-shadow: 
+box-shadow:
   1px 0 0 rgba(255, 255, 255, 0.3),
   -1px 0 0 rgba(210, 180, 140, 0.1);
 z-index: 0;
@@ -1238,12 +1238,12 @@ margin-bottom: 20px;
 .diary-preset-info-box {
 border: 2px solid rgba(196, 168, 124, 0.5) !important;
 font-family: 'Georgia', 'Times New Roman', serif !important;
-background: 
+background:
   linear-gradient(135deg, rgba(255, 250, 240, 0.8) 0%, rgba(250, 245, 235, 0.8) 100%) !important;
 padding: 18px 20px !important;
 border-radius: 10px !important;
 margin-bottom: 18px !important;
-box-shadow: 
+box-shadow:
   0 2px 8px rgba(0, 0, 0, 0.08),
   inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
@@ -1304,7 +1304,7 @@ font-style: italic;
 
 /* 预设列表项 */
 .diary-preset-item {
-background: 
+background:
   linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
 border: 2px solid #c4a87c !important;
 border-radius: 10px !important;
@@ -1312,17 +1312,17 @@ padding: 18px 20px !important;
 cursor: pointer;
 transition: all 0.3s ease;
 position: relative;
-box-shadow: 
+box-shadow:
   0 3px 10px rgba(0, 0, 0, 0.12),
   inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 
 .diary-preset-item:hover {
-background: 
+background:
   linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 100%) !important;
 border-color: #deb887 !important;
 transform: translateY(-3px) !important;
-box-shadow: 
+box-shadow:
   0 8px 20px rgba(0, 0, 0, 0.18),
   inset 0 2px 0 rgba(255, 255, 255, 0.8),
   0 0 0 2px rgba(210, 180, 140, 0.1) !important;
@@ -1391,7 +1391,7 @@ font-weight: 600 !important;
 font-family: 'Georgia', 'Times New Roman', serif !important;
 cursor: pointer;
 transition: all 0.3s ease;
-box-shadow: 
+box-shadow:
   0 4px 8px rgba(0, 0, 0, 0.15),
   inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
 }
@@ -1399,7 +1399,7 @@ box-shadow:
 .diary-preset-page-btn:hover:not(:disabled) {
 background: linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
 transform: translateY(-2px);
-box-shadow: 
+box-shadow:
   0 6px 12px rgba(0, 0, 0, 0.2),
   inset 0 1px 0 rgba(255, 255, 255, 0.5),
   0 0 15px rgba(255, 215, 0, 0.2) !important;
@@ -1453,14 +1453,14 @@ text-shadow: none !important;
 
 /* 角色列表容器 */
 .diary-book-character-list {
-background: 
+background:
   linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 50%, #e8e0d6 100%) !important;
 padding: 40px 35px !important;
 border: 3px solid #c4a87c !important;
 margin: 20px !important;
 border-radius: 16px !important;
 position: relative;
-box-shadow: 
+box-shadow:
   inset 0 3px 8px rgba(0, 0, 0, 0.15),
   inset 0 -2px 0 rgba(255, 255, 255, 0.6),
   0 10px 30px rgba(0, 0, 0, 0.2) !important;
@@ -1486,7 +1486,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     0deg,
     transparent,
@@ -1546,7 +1546,7 @@ margin-bottom: 25px;
 
 /* 角色卡片 */
 .diary-book-character-card {
-background: 
+background:
   linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 50%, #d5cbb8 100%) !important;
 border: 3px solid #c4a87c !important;
 border-radius: 16px !important;
@@ -1556,7 +1556,7 @@ transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 text-align: center;
 position: relative;
 overflow: hidden;
-box-shadow: 
+box-shadow:
   0 8px 20px rgba(0, 0, 0, 0.15),
   inset 0 2px 0 rgba(255, 255, 255, 0.6),
   inset 0 -1px 0 rgba(210, 180, 140, 0.2) !important;
@@ -1571,7 +1571,7 @@ right: 10px;
 bottom: 10px;
 border: 1px solid rgba(210, 180, 140, 0.2);
 border-radius: 12px;
-background: 
+background:
   radial-gradient(circle at 50% 50%, rgba(210, 180, 140, 0.08) 0%, transparent 80%);
 transform: scale(0.95);
 transition: all 0.4s ease;
@@ -1592,10 +1592,10 @@ filter: none !important;
 }
 
 .diary-book-character-card:hover {
-background: 
+background:
   linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 50%, #ddd2c0 100%) !important;
 transform: translateY(-8px) scale(1.05) rotateX(5deg) !important;
-box-shadow: 
+box-shadow:
   0 20px 40px rgba(0, 0, 0, 0.25),
   inset 0 3px 0 rgba(255, 255, 255, 0.8),
   0 0 0 4px rgba(210, 180, 140, 0.15),
@@ -1605,7 +1605,7 @@ border-color: #deb887 !important;
 
 .diary-book-character-card:hover::before {
 transform: scale(1);
-background: 
+background:
   radial-gradient(circle at 50% 50%, rgba(210, 180, 140, 0.12) 0%, transparent 80%);
 }
 
@@ -1642,14 +1642,14 @@ box-shadow: none !important;
 
 /* 日记目录容器 */
 .diary-book-diary-list {
-background: 
+background:
   linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
 padding: 40px 35px !important;
 border: 3px solid #c4a87c !important;
 margin: 20px !important;
 border-radius: 16px !important;
 position: relative;
-box-shadow: 
+box-shadow:
   inset 0 3px 8px rgba(0, 0, 0, 0.15),
   inset 0 -2px 0 rgba(255, 255, 255, 0.6),
   0 10px 30px rgba(0, 0, 0, 0.2) !important;
@@ -1663,7 +1663,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     0deg,
     transparent,
@@ -1794,7 +1794,7 @@ animation: sparkle 4s ease-in-out infinite;
 .diary-book-character-list .diary-book-nav-btn,
 .diary-book-diary-list .diary-book-nav-btn,
 .diary-book-detail .diary-book-nav-btn {
-background: 
+background:
   linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
 color: #f9f6f1 !important;
 border: 3px solid #bc9a6a !important;
@@ -1806,7 +1806,7 @@ font-weight: 700 !important;
 transition: all 0.4s ease;
 flex-shrink: 0;
 text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4) !important;
-box-shadow: 
+box-shadow:
   0 6px 12px rgba(0, 0, 0, 0.25),
   inset 0 2px 0 rgba(255, 255, 255, 0.3) !important;
 position: fixed !important;
@@ -1832,7 +1832,7 @@ position: absolute !important;
 top: -20px !important;
 left: -20px !important;
 z-index: 2000 !important;
-background: 
+background:
   linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
 color: #f9f6f1 !important;
 border: 2px solid rgba(196, 168, 124, 0.6) !important;
@@ -1845,17 +1845,17 @@ cursor: pointer !important;
 transition: all 0.4s ease !important;
 letter-spacing: 0.5px !important;
 text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) !important;
-box-shadow: 
+box-shadow:
   0 8px 24px rgba(0, 0, 0, 0.15),
   inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
 /* 经典主题返回按钮悬停效果 */
 .diary-book-detail-page .diary-book-back-btn-in-content:hover {
-background: 
+background:
   linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
 transform: translateY(-2px) scale(1.05) !important;
-box-shadow: 
+box-shadow:
   0 12px 32px rgba(0, 0, 0, 0.2),
   inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
 }
@@ -1874,10 +1874,10 @@ transition: left 0.5s ease;
 .diary-book-character-list .diary-book-nav-btn:hover,
 .diary-book-diary-list .diary-book-nav-btn:hover,
 .diary-book-detail .diary-book-nav-btn:hover {
-background: 
+background:
   linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
 transform: translateY(-3px) scale(1.08) !important;
-box-shadow: 
+box-shadow:
   0 10px 20px rgba(0, 0, 0, 0.35),
   inset 0 3px 0 rgba(255, 255, 255, 0.4),
   0 0 20px rgba(255, 215, 0, 0.3) !important;
@@ -1899,7 +1899,7 @@ margin-bottom: 30px;
 
 /* 日记卡片 */
 .diary-book-diary-card {
-background: 
+background:
   linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
 border: 2px solid #c4a87c !important;
 border-radius: 12px !important;
@@ -1909,7 +1909,7 @@ transition: all 0.4s ease;
 text-align: left;
 position: relative;
 overflow: hidden;
-box-shadow: 
+box-shadow:
   0 4px 12px rgba(0, 0, 0, 0.12),
   inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
@@ -1941,10 +1941,10 @@ filter: none !important;
 }
 
 .diary-book-diary-card:hover {
-background: 
+background:
   linear-gradient(135deg, #f2ebdd 0%, #e8ddd0 100%) !important;
 transform: translateY(-5px) scale(1.03) !important;
-box-shadow: 
+box-shadow:
   0 12px 30px rgba(0, 0, 0, 0.2),
   inset 0 2px 0 rgba(255, 255, 255, 0.8),
   0 0 0 3px rgba(210, 180, 140, 0.1),
@@ -2001,7 +2001,7 @@ position: relative;
 }
 
 .diary-book-page-btn {
-background: 
+background:
   linear-gradient(135deg, #d2b48c 0%, #deb887 50%, #d2b48c 100%) !important;
 color: #f9f6f1 !important;
 border: 2px solid #bc9a6a !important;
@@ -2012,16 +2012,16 @@ font-size: 13px !important;
 font-weight: 600 !important;
 transition: all 0.3s ease;
 text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4) !important;
-box-shadow: 
+box-shadow:
   0 4px 8px rgba(0, 0, 0, 0.25),
   inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .diary-book-page-btn:hover:not(:disabled) {
-background: 
+background:
   linear-gradient(135deg, #bc9a6a 0%, #d2b48c 50%, #bc9a6a 100%) !important;
 transform: translateY(-2px) scale(1.08) !important;
-box-shadow: 
+box-shadow:
   0 8px 16px rgba(0, 0, 0, 0.35),
   inset 0 2px 0 rgba(255, 255, 255, 0.3) !important;
 }
@@ -2048,7 +2048,7 @@ text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
 
 /* 详情容器 - 保持正常布局但扩展背景 */
 .diary-book-detail {
-background: 
+background:
   linear-gradient(135deg, #f9f6f1 0%, #f0ebe3 30%, #e8e0d6 70%, #e0d5c3 100%) !important;
 position: relative !important;
 overflow: visible;
@@ -2068,7 +2068,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     0deg,
     transparent,
@@ -2087,7 +2087,7 @@ top: 0;
 bottom: 0;
 width: 2px;
 background: rgba(210, 180, 140, 0.25);
-box-shadow: 
+box-shadow:
   1px 0 0 rgba(255, 255, 255, 0.3),
   -1px 0 0 rgba(210, 180, 140, 0.1);
 }
@@ -2143,13 +2143,13 @@ text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05) !important;
 font-size: 16px !important;
 line-height: 1.8 !important;
 color: #2d1810 !important;
-background: 
+background:
   linear-gradient(135deg, #ebe4d6 0%, #e0d5c3 100%) !important;
 padding: 30px !important;
 border-radius: 12px !important;
 border: 2px solid #c4a87c !important;
 white-space: pre-wrap;
-box-shadow: 
+box-shadow:
   inset 0 3px 8px rgba(0, 0, 0, 0.12),
   inset 0 -1px 0 rgba(255, 255, 255, 0.6) !important;
 font-family: 'Georgia', 'Times New Roman', serif !important;
@@ -2188,7 +2188,7 @@ position: relative;
 }
 
 .diary-book-delete-btn {
-background: 
+background:
   linear-gradient(135deg, #8b2e2e 0%, #6d1f1f 50%, #4a1111 100%) !important;
 color: #f5e6d3 !important;
 border: 3px solid #daa520 !important;
@@ -2198,10 +2198,10 @@ font-size: 14px !important;
 font-weight: 700 !important;
 cursor: pointer;
 transition: all 0.4s ease;
-text-shadow: 
+text-shadow:
   2px 2px 4px rgba(0, 0, 0, 0.6),
   0 0 10px rgba(218, 165, 32, 0.3) !important;
-box-shadow: 
+box-shadow:
   0 4px 15px rgba(139, 46, 46, 0.4),
   inset 0 2px 0 rgba(255, 255, 255, 0.15),
   inset 0 -2px 0 rgba(0, 0, 0, 0.3),
@@ -2219,7 +2219,7 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: 
+background:
   repeating-linear-gradient(
     45deg,
     transparent,
@@ -2243,24 +2243,24 @@ pointer-events: none;
 }
 
 .diary-book-delete-btn:hover {
-background: 
+background:
   linear-gradient(135deg, #a03838 0%, #8b2e2e 50%, #6d1f1f 100%) !important;
 transform: translateY(-3px) scale(1.03) !important;
-box-shadow: 
+box-shadow:
   0 8px 25px rgba(139, 46, 46, 0.5),
   inset 0 3px 0 rgba(255, 255, 255, 0.2),
   inset 0 -2px 0 rgba(0, 0, 0, 0.4),
   0 0 30px rgba(218, 165, 32, 0.4),
   0 0 15px rgba(139, 46, 46, 0.3) !important;
 border-color: #f0c040 !important;
-text-shadow: 
+text-shadow:
   2px 2px 4px rgba(0, 0, 0, 0.7),
   0 0 15px rgba(218, 165, 32, 0.5) !important;
 }
 
 .diary-book-delete-btn:active {
 transform: translateY(-1px) scale(1.01) !important;
-box-shadow: 
+box-shadow:
   0 4px 15px rgba(139, 46, 46, 0.4),
   inset 0 2px 5px rgba(0, 0, 0, 0.4),
   0 0 20px rgba(218, 165, 32, 0.3) !important;
@@ -2289,7 +2289,7 @@ to {
 /* 弹窗遮罩 */
 .diary-custom-character-dialog {
 z-index: 10000 !important;
-background: 
+background:
   radial-gradient(circle at 20% 80%, rgba(205, 133, 63, 0.15) 0%, transparent 50%),
   radial-gradient(circle at 80% 20%, rgba(210, 180, 140, 0.15) 0%, transparent 50%),
   linear-gradient(145deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.85) 100%) !important;
@@ -2301,7 +2301,7 @@ animation: diary-char-fade-in 0.3s ease !important;
 /* 为不支持backdrop-filter的浏览器提供fallback */
 @supports not (backdrop-filter: blur(4px)) {
 .diary-custom-character-dialog {
-  background: 
+  background:
     radial-gradient(circle at 20% 80%, rgba(205, 133, 63, 0.2) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(210, 180, 140, 0.2) 0%, transparent 50%),
     linear-gradient(145deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.92) 100%) !important;
@@ -2318,7 +2318,7 @@ overflow-y: auto !important;
 background: linear-gradient(135deg, #f7f4e8 0%, #f0ebe3 50%, #e8e0d6 100%) !important;
 border-radius: 16px !important;
 border: 4px solid #c4a87c !important;
-box-shadow: 
+box-shadow:
   0 15px 40px rgba(0, 0, 0, 0.3),
   0 0 60px rgba(210, 180, 140, 0.4),
   inset 0 2px 0 rgba(255, 255, 255, 0.6),
@@ -2336,7 +2336,7 @@ left: 6px;
 right: 6px;
 bottom: 6px;
 border-radius: 12px;
-background: 
+background:
   repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(210, 180, 140, 0.08) 29px, rgba(210, 180, 140, 0.08) 30px),
   linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(210, 180, 140, 0.1) 100%);
 pointer-events: none;
@@ -2352,8 +2352,8 @@ top: 4px;
 bottom: 4px;
 width: 3px;
 background: linear-gradient(to bottom, rgba(205, 133, 63, 0.35), rgba(210, 180, 140, 0.55), rgba(205, 133, 63, 0.35));
-box-shadow: 
-  2px 0 0 rgba(255, 255, 255, 0.5), 
+box-shadow:
+  2px 0 0 rgba(255, 255, 255, 0.5),
   -2px 0 0 rgba(120, 80, 40, 0.15);
 border-radius: 2px;
 z-index: 0;
@@ -2361,15 +2361,15 @@ z-index: 0;
 
 /* 弹窗标题栏 - 皮革质感背景 */
 .diary-custom-character-header {
-background: 
-  linear-gradient(135deg, 
-    #7a4d2a 0%, 
-    #6b3511 25%, 
-    #7a4d2a 50%, 
-    #6b3511 75%, 
+background:
+  linear-gradient(135deg,
+    #7a4d2a 0%,
+    #6b3511 25%,
+    #7a4d2a 50%,
+    #6b3511 75%,
     #562a17 100%
   ) !important;
-box-shadow: 
+box-shadow:
   0 4px 15px rgba(0, 0, 0, 0.4),
   inset 0 2px 0 rgba(255, 255, 255, 0.3),
   inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
@@ -2388,11 +2388,11 @@ top: 50%;
 left: 0;
 right: 0;
 height: 3px;
-background: linear-gradient(90deg, 
-  transparent 0%, 
-  rgba(205, 133, 63, 0.8) 25%, 
-  rgba(255, 215, 0, 0.6) 50%, 
-  rgba(205, 133, 63, 0.8) 75%, 
+background: linear-gradient(90deg,
+  transparent 0%,
+  rgba(205, 133, 63, 0.8) 25%,
+  rgba(255, 215, 0, 0.6) 50%,
+  rgba(205, 133, 63, 0.8) 75%,
   transparent 100%
 );
 animation: shimmerDecoration 4s ease-in-out infinite;
@@ -2401,7 +2401,7 @@ transform: translateY(-50%);
 
 .diary-custom-character-header h3 {
 color: #f9f6f1 !important;
-text-shadow: 
+text-shadow:
   3px 3px 6px rgba(0, 0, 0, 0.6),
   0 0 20px rgba(255, 215, 0, 0.3),
   0 0 40px rgba(255, 215, 0, 0.1) !important;
@@ -2416,7 +2416,7 @@ z-index: 1 !important;
 
 /* 关闭按钮 */
 .diary-character-close {
-background: 
+background:
   radial-gradient(circle at center, rgba(245, 241, 234, 0.25) 0%, rgba(211, 47, 47, 0.12) 70%) !important;
 border: 3px solid rgba(245, 241, 234, 0.45) !important;
 color: #f9f6f1 !important;
@@ -2454,7 +2454,7 @@ background: rgba(211, 47, 47, 0.92) !important;
 border-color: #d32f2f !important;
 color: #fff !important;
 transform: scale(1.15) rotate(90deg) !important;
-box-shadow: 
+box-shadow:
   0 8px 25px rgba(211, 47, 47, 0.55),
   inset 0 2px 10px rgba(255, 255, 255, 0.25) !important;
 }
@@ -2510,7 +2510,7 @@ font-weight: 400 !important;
 .diary-character-input:focus {
 outline: none !important;
 border-color: rgba(188, 154, 106, 0.6) !important;
-box-shadow: 
+box-shadow:
   0 0 0 2px rgba(188, 154, 106, 0.3),
   inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 background: rgba(255, 255, 255, 0.95) !important;
@@ -2549,7 +2549,7 @@ text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) !important;
 .diary-character-send {
 background: linear-gradient(145deg, #daa520 0%, #cd853f 50%, #b8860b 100%) !important;
 color: white !important;
-box-shadow: 
+box-shadow:
   0 4px 12px rgba(205, 133, 63, 0.35),
   inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
@@ -2557,14 +2557,14 @@ box-shadow:
 .diary-character-send:hover {
 background: linear-gradient(145deg, #e6b800 0%, #daa520 50%, #cd853f 100%) !important;
 transform: translateY(-1px) !important;
-box-shadow: 
+box-shadow:
   0 6px 16px rgba(205, 133, 63, 0.45),
   inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
 .diary-character-send:active {
 transform: translateY(0) !important;
-box-shadow: 
+box-shadow:
   0 2px 8px rgba(205, 133, 63, 0.3),
   inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
@@ -2573,7 +2573,7 @@ box-shadow:
 .diary-character-cancel {
 background: linear-gradient(145deg, #f5f2ec 0%, #e8e0d6 50%, #ddd5cb 100%) !important;
 color: #5d4e37 !important;
-box-shadow: 
+box-shadow:
   0 4px 12px rgba(0, 0, 0, 0.12),
   inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
 }
@@ -2581,14 +2581,14 @@ box-shadow:
 .diary-character-cancel:hover {
 background: linear-gradient(145deg, #f0ebe3 0%, #e0d5c3 50%, #d2c7bb 100%) !important;
 transform: translateY(-1px) !important;
-box-shadow: 
+box-shadow:
   0 6px 16px rgba(0, 0, 0, 0.18),
   inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
 }
 
 .diary-character-cancel:active {
 transform: translateY(0) !important;
-box-shadow: 
+box-shadow:
   0 2px 8px rgba(0, 0, 0, 0.1),
   inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
 }
@@ -2599,7 +2599,7 @@ box-shadow:
 @media (max-width: 768px) {
 /* 主弹窗背景增强 */
 .diary-book-dialog {
-  background: 
+  background:
     radial-gradient(circle at 25% 25%, rgba(210, 180, 140, 0.08) 0%, transparent 30%),
     radial-gradient(circle at 75% 75%, rgba(222, 184, 135, 0.06) 0%, transparent 30%),
     radial-gradient(circle at 50% 10%, rgba(205, 133, 63, 0.04) 0%, transparent 20%),
@@ -2613,7 +2613,7 @@ box-shadow:
 @supports not (backdrop-filter: blur(15px)) {
   .diary-book-dialog {
     background: rgba(0, 0, 0, 0.95) !important;
-    background-image: 
+    background-image:
       radial-gradient(circle at 30% 30%, rgba(40, 30, 20, 0.4) 0%, transparent 50%),
       radial-gradient(circle at 70% 70%, rgba(30, 20, 15, 0.3) 0%, transparent 50%),
       linear-gradient(135deg, rgba(15, 10, 5, 0.2) 0%, rgba(25, 15, 10, 0.1) 100%) !important;
@@ -2625,7 +2625,7 @@ box-shadow:
   min-width: 340px !important;
   max-width: 450px !important;
   transform: perspective(800px) rotateX(1deg) !important;
-  box-shadow: 
+  box-shadow:
     0 30px 120px rgba(0, 0, 0, 0.6),
     0 15px 80px rgba(210, 180, 140, 0.4),
     0 8px 40px rgba(222, 184, 135, 0.35),
@@ -2636,7 +2636,7 @@ box-shadow:
 
 .diary-book-content:hover {
   transform: perspective(800px) rotateX(0deg) !important;
-  box-shadow: 
+  box-shadow:
     0 35px 140px rgba(0, 0, 0, 0.7),
     0 20px 100px rgba(210, 180, 140, 0.5),
     0 10px 50px rgba(222, 184, 135, 0.4),
@@ -2750,7 +2750,7 @@ box-shadow:
 
 .diary-book-character-card:hover {
   transform: translateY(-4px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.2),
     inset 0 2px 0 rgba(255, 255, 255, 0.7),
     0 0 0 2px rgba(210, 180, 140, 0.1) !important;
@@ -3059,7 +3059,7 @@ background: linear-gradient(to bottom,
 
 
 /* ========== 🎉 原版主题CSS适配完成 ========== */
-/* 
+/*
 本主题完整还原了2.3版本的视觉效果
 包含11个功能模块和完整的响应式设计
 

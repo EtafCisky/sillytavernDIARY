@@ -1,4 +1,4 @@
-# 日记本插件 (SillyTavern-Diary)
+# 日记本插件 (sillytavernDIARY)
 
 **版本**: 3.3.0  
 **作者**: Etaf Cisky  
@@ -29,7 +29,7 @@
 
 ### 🔗 官方仓库
 
-- **GitHub**: [https://github.com/EtafCisky/SillyTavern-Diary](https://github.com/EtafCisky/SillyTavern-Diary)
+- **GitHub**: [https://github.com/EtafCisky/sillytavernDIARY](https://github.com/EtafCisky/sillytavernDIARY)
 - **作者**: Etaf Cisky
 - **Copyright**: © 2025 Etaf Cisky. All rights reserved.
 
@@ -62,7 +62,7 @@
 3. 在弹出的输入框中粘贴插件仓库地址：
 
    ```
-   https://github.com/EtafCisky/SillyTavern-Diary
+   https://github.com/EtafCisky/sillytavernDIARY
    ```
 
 4. 点击确认，等待自动下载和安装
@@ -71,8 +71,8 @@
 
 ### 方法二：手动安装
 
-1. 从 GitHub 下载插件：[https://github.com/EtafCisky/SillyTavern-Diary](https://github.com/EtafCisky/SillyTavern-Diary)
-2. 将整个 `SillyTavern-Diary` 文件夹复制到以下目录：
+1. 从 GitHub 下载插件：[https://github.com/EtafCisky/sillytavernDIARY](https://github.com/EtafCisky/sillytavernDIARY)
+2. 将整个 `sillytavernDIARY` 文件夹复制到以下目录：
 
    ```
    SillyTavern/public/scripts/extensions/third-party/
@@ -85,7 +85,7 @@
 
 ```bash
 cd [SillyTavern安装目录]/public/scripts/extensions/third-party/
-git clone https://github.com/EtafCisky/SillyTavern-Diary.git SillyTavern-Diary
+git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 ```
 
 然后重启 SillyTavern 或重新加载扩展。
@@ -390,7 +390,7 @@ git clone https://github.com/EtafCisky/SillyTavern-Diary.git SillyTavern-Diary
 在插件目录创建新的 CSS 文件：
 
 ```
-SillyTavern-Diary/style-mytheme.css
+sillytavernDIARY/style-mytheme.css
 ```
 
 #### 2. 注册主题
