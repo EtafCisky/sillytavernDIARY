@@ -117,7 +117,7 @@ const defaultSettings = {
   autoDiary: {
     // 自动写日记配置
     interval: 0, // 触发间隔（默认0表示未启用）
-    lastTriggerFloors: {}, // 记录各角色上次触发的楼层数
+    // 注意：触发楼层记录现在存储在每个聊天的chatMetadata中，不再使用全局设置
   },
 };
 
@@ -146,7 +146,6 @@ function getAutoDiaryConfig() {
     // 如果不存在，返回默认配置
     return {
       interval: 0,
-      lastTriggerFloors: {},
     };
   }
   return settings.autoDiary;
@@ -158,7 +157,6 @@ function saveAutoDiaryInterval(interval) {
   if (!settings.autoDiary) {
     settings.autoDiary = {
       interval: 0,
-      lastTriggerFloors: {},
     };
   }
 
@@ -168,9 +166,20 @@ function saveAutoDiaryInterval(interval) {
 
   // 如果启用了自动写日记（interval > 0），将当前楼层设为起始点
   if (newInterval > 0) {
+    const context = getContext();
+    const { chatMetadata, saveMetadata } = context;
     const characterName = getCurrentCharacterName();
     const currentFloor = chat.length;
-    settings.autoDiary.lastTriggerFloors[characterName] = currentFloor;
+    
+    // 在当前聊天的元数据中存储触发楼层
+    if (!chatMetadata.sillytavernDIARY) {
+      chatMetadata.sillytavernDIARY = {};
+    }
+    chatMetadata.sillytavernDIARY.lastTriggerFloor = currentFloor;
+    chatMetadata.sillytavernDIARY.characterName = characterName;
+    chatMetadata.sillytavernDIARY.lastTriggerTime = 0; // 初始化为0，不触发冷却
+    saveMetadata();
+    
     console.log(`[自动写日记] 已保存触发间隔: ${newInterval}，起始楼层: ${currentFloor}（${characterName}）`);
   } else {
     console.log(`[自动写日记] 已禁用自动写日记功能`);
@@ -181,15 +190,18 @@ function saveAutoDiaryInterval(interval) {
 
 // 更新角色的触发楼层记录
 function updateLastTriggerFloor(characterName, floor) {
-  const settings = getCurrentSettings();
-  if (!settings.autoDiary) {
-    settings.autoDiary = {
-      interval: 0,
-      lastTriggerFloors: {},
-    };
+  const context = getContext();
+  const { chatMetadata, saveMetadata } = context;
+  
+  // 在当前聊天的元数据中存储触发楼层和触发时间
+  if (!chatMetadata.sillytavernDIARY) {
+    chatMetadata.sillytavernDIARY = {};
   }
-  settings.autoDiary.lastTriggerFloors[characterName] = floor;
-  saveSettings();
+  chatMetadata.sillytavernDIARY.lastTriggerFloor = floor;
+  chatMetadata.sillytavernDIARY.characterName = characterName;
+  chatMetadata.sillytavernDIARY.lastTriggerTime = Date.now(); // 记录触发时间戳，用于冷却检查
+  saveMetadata();
+  
   console.log(`[自动写日记] 已更新"${characterName}"的触发楼层: ${floor}`);
 }
 
@@ -205,9 +217,11 @@ function updateAutoDiaryStatus() {
   }
 
   // 获取当前角色名和楼层
+  const context = getContext();
+  const { chatMetadata } = context;
   const characterName = getCurrentCharacterName();
   const currentFloor = chat.length;
-  const lastFloor = config.lastTriggerFloors[characterName] || 0;
+  const lastFloor = chatMetadata?.sillytavernDIARY?.lastTriggerFloor || 0;
   const remaining = interval - (currentFloor - lastFloor);
 
   // 根据剩余楼层数显示不同状态
@@ -241,9 +255,24 @@ async function checkAndTriggerAutoDiary() {
     return;
   }
 
+  // 从当前聊天的元数据中获取上次触发楼层
+  const context = getContext();
+  const { chatMetadata } = context;
   const characterName = getCurrentCharacterName();
   const currentFloor = chat.length;
-  const lastTriggerFloor = config.lastTriggerFloors[characterName] || 0;
+  const lastTriggerFloor = chatMetadata?.sillytavernDIARY?.lastTriggerFloor || 0;
+
+  // 检查冷却时间（10分钟 = 600000毫秒）
+  const COOLDOWN_TIME = 10 * 60 * 1000; // 10分钟
+  const lastTriggerTime = chatMetadata?.sillytavernDIARY?.lastTriggerTime || 0;
+  const currentTime = Date.now();
+  const timeSinceLastTrigger = currentTime - lastTriggerTime;
+
+  if (lastTriggerTime > 0 && timeSinceLastTrigger < COOLDOWN_TIME) {
+    const remainingCooldown = Math.ceil((COOLDOWN_TIME - timeSinceLastTrigger) / 1000 / 60); // 转换为分钟
+    console.log(`[自动写日记] 冷却中，还需等待 ${remainingCooldown} 分钟`);
+    return;
+  }
 
   console.log(`[自动写日记] 检查触发条件 - 当前楼层:${currentFloor}, 上次触发:${lastTriggerFloor}, 间隔:${interval}`);
 
