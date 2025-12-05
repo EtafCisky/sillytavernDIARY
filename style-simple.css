@@ -7,7 +7,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   3.3.0
+ * @version   4.0.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
@@ -25,6 +25,234 @@
  */
 
 /* 注意：悬浮窗按钮相关样式已统一移动到 index.js 文件中进行管理 */
+
+/* ========== 保存成功弹窗样式 - 简洁主题 ========== */
+
+/* 保存成功弹窗遮罩层 */
+.diary-save-success-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 保存成功弹窗内容容器 - 简洁现代风格 */
+.diary-save-success-content {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.15),
+        0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    min-width: 420px;
+    max-width: 480px;
+    animation: slideInSimple 0.3s ease-out;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 保存成功弹窗标题栏 - 极简设计 */
+.diary-save-success-header {
+    background: #f8fafc;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.diary-save-success-title {
+    color: #1a202c;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.diary-save-success-close {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.diary-save-success-close:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* 保存成功弹窗主体 - 干净清爽 */
+.diary-save-success-body {
+    padding: 28px 24px 24px;
+    background: #ffffff;
+    color: #334155;
+}
+
+/* 保存成功信息区域 */
+.diary-save-success-info {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.diary-save-success-icon {
+    font-size: 44px;
+    margin-right: 18px;
+    animation: bounceSimple 0.5s ease-out;
+    color: #10b981;
+}
+
+.diary-save-success-message {
+    flex: 1;
+}
+
+.diary-save-success-main-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.diary-save-success-sub-text {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.diary-save-success-sub-text span {
+    font-weight: 500;
+    color: #334155;
+}
+
+/* 保存成功操作按钮 - 现代扁平化设计 */
+.diary-save-success-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.diary-save-success-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    outline: none;
+}
+
+.diary-save-success-primary {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.diary-save-success-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.diary-save-success-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.diary-save-success-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.diary-save-success-secondary:hover {
+    background: #e2e8f0;
+    color: #334155;
+    transform: translateY(-1px);
+}
+
+.diary-save-success-secondary:active {
+    transform: translateY(0);
+    background: #cbd5e1;
+}
+
+/* 动画效果 - 简洁主题专用 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInSimple {
+    from {
+        transform: scale(0.95) translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bounceSimple {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.05);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .diary-save-success-content {
+        min-width: 320px;
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+    }
+    
+    .diary-save-success-header {
+        padding: 18px 20px;
+    }
+    
+    .diary-save-success-body {
+        padding: 24px 20px 20px;
+    }
+    
+    .diary-save-success-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .diary-save-success-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
 
 /* ===== 自定义角色弹窗样式 ===== */
 

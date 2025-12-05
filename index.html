@@ -7,7 +7,7 @@
   @author    Etaf Cisky
   @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
   @license   CC BY-NC-ND 4.0
-  @version   3.3.0
+  @version   4.0.0
   @link      https://github.com/EtafCisky/sillytavernDIARY
 
   ============================================================================
@@ -62,7 +62,7 @@
                 <div class="diary-config-label">
                   <span class="diary-config-title">触发间隔（楼层数）</span>
                   <span class="diary-config-desc"
-                    >每N条消息自动写日记。留空或填0则禁用。请输入偶数，避免在用户发送消息后执行命令。</span
+                    >每N条消息后台自动生成日记。留空或填0则禁用。请输入偶数，避免在用户发送消息后执行。失败内容自动保存到回收站。</span
                   >
                 </div>
                 <div class="diary-config-value">
@@ -230,14 +230,16 @@
                   <h5>📖 功能按钮</h5>
                   <ul>
                     <li><strong>📖 日记本</strong>：浏览和管理现有日记</li>
-                    <li><strong>✏️ 写日记</strong>：开始完整的日记写作流程</li>
-                    <li><strong>📝 记录</strong>：手动解析最新AI回复中的日记内容</li>
+                    <li><strong>✏️ 写日记</strong>：后台生成格式化日记内容，不影响聊天记录</li>
+                    <li><strong>🗑️ 回收站</strong>：管理失败的AI生成内容，支持编辑和重新保存</li>
                   </ul>
                 </div>
 
                 <div class="diary-help-section">
                   <h5>使用技巧</h5>
                   <ul>
+                    <li>使用后台生成模式，写日记时不会在聊天记录中留下痕迹</li>
+                    <li>失败的AI生成内容会自动保存到回收站，可编辑后重新保存</li>
                     <li>建议配置专用的日记生成预设以获得更好的效果</li>
                     <li>日记会自动按角色分类存储在世界书中</li>
                     <li>可以为任意角色写日记，不限于当前角色卡</li>
@@ -257,7 +259,7 @@
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">版本：</span>
-                  <span class="diary-author-value">v3.3.0</span>
+                  <span class="diary-author-value">v4.0.0</span>
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">原作者：</span>
@@ -307,8 +309,8 @@
     <div class="diary-float-sub-btn diary-float-write-btn" id="diary-float-write-btn" title="写日记">
       <span>✏️</span>
     </div>
-    <div class="diary-float-sub-btn diary-float-record-btn" id="diary-float-record-btn" title="记录">
-      <span>📝</span>
+    <div class="diary-float-sub-btn diary-float-recycle-btn" id="diary-float-recycle-btn" title="回收站">
+      <span>🗑️</span>
     </div>
   </div>
 </div>
@@ -327,6 +329,41 @@
     <div class="diary-custom-character-footer">
       <button id="diary-character-send-btn" class="diary-character-btn diary-character-send">发送</button>
       <button id="diary-character-cancel-btn" class="diary-character-btn diary-character-cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🆕 步骤5：保存成功弹窗 -->
+<div id="diary-save-success-dialog" class="diary-save-success-dialog" style="display: none">
+  <div class="diary-save-success-content">
+    <!-- 弹窗标题栏 -->
+    <div class="diary-save-success-header">
+      <h3 class="diary-save-success-title">🎉 日记写作成功</h3>
+      <button id="diary-save-success-close-btn" class="diary-save-success-close">&times;</button>
+    </div>
+
+    <!-- 弹窗主体 -->
+    <div class="diary-save-success-body">
+      <!-- 成功信息 -->
+      <div class="diary-save-success-info">
+        <div class="diary-save-success-message">
+          <div class="diary-save-success-main-text">日记已成功保存到日记本！</div>
+          <div class="diary-save-success-sub-text" id="diary-save-success-details">
+            标题：<span id="diary-save-success-title-text">加载中...</span><br>
+            角色：<span id="diary-save-success-character-text">加载中...</span><br>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="diary-save-success-actions">
+        <button id="diary-save-success-view-btn" class="diary-save-success-button diary-save-success-primary">
+          查看日记
+        </button>
+        <button id="diary-save-success-close-action-btn" class="diary-save-success-button diary-save-success-secondary">
+          关闭
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -518,6 +555,39 @@
       <div id="diary-readme-content-container" class="diary-readme-content-text">
         <!-- README内容将在这里动态加载 -->
         <div class="diary-readme-loading">正在加载文档...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 回收站管理对话框 -->
+<div id="diary-recycle-bin-dialog" class="diary-dialog" style="display: none">
+  <div class="diary-dialog-content">
+    <div class="diary-dialog-header">
+      <h3>🗑️ 回收站管理</h3>
+      <button class="diary-close-btn">&times;</button>
+    </div>
+    <div class="diary-dialog-body">
+      <div class="recycle-bin-controls">
+        <button id="clear-recycle-bin">🗑️ 清空回收站</button>
+      </div>
+
+      <div id="recycle-bin-list" class="recycle-bin-list">
+        <!-- 回收站条目将在这里显示 -->
+      </div>
+
+      <div id="recycle-bin-detail" class="recycle-bin-detail" style="display: none">
+        <div class="recycle-bin-detail-header">
+          <h4 id="recycle-bin-item-title">回收站条目详情</h4>
+          <button id="recycle-bin-back-btn">返回列表</button>
+        </div>
+        <div class="recycle-bin-detail-body">
+          <textarea id="recycle-bin-content" placeholder="AI输出内容..."></textarea>
+          <div class="recycle-bin-detail-actions">
+            <button id="recycle-bin-save-btn">💾 保存为日记</button>
+            <button id="recycle-bin-delete-btn">🗑️ 删除</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
