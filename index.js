@@ -6,7 +6,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   3.3.0
+ * @version   4.0.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
@@ -65,7 +65,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const PLUGIN_AUTHOR = {
   name: 'Etaf Cisky',
   github: 'https://github.com/EtafCisky/sillytavernDIARY',
-  version: '3.3.0',
+  version: '4.0.0',
   fingerprint: 'EC-STD-2025',
   copyright: 'Copyright (c) 2025 Etaf Cisky',
 };
@@ -123,6 +123,8 @@ const defaultSettings = {
 
 // 固定的世界书名称
 const DIARY_WORLDBOOK_NAME = '日记本';
+// 🆕 步骤6：回收站世界书名称
+const RECYCLE_BIN_WORLDBOOK_NAME = '回收站';
 
 // 日记内容正则表达式
 const DIARY_REGEX = /［日记标题：([^］]+)］[\s\S]*?［日记时间：([^］]+)］[\s\S]*?［日记内容：([\s\S]*?)］/g;
@@ -325,17 +327,24 @@ async function triggerAutoDiary(characterName, currentFloor) {
       console.error('[自动写日记] 预设切换失败，继续使用当前预设:', error);
     }
 
-    // 第三步：发送日记命令（直接使用当前角色名，不替换{{char}}）
+    // 第三步：使用 /gen 后台生成日记内容
     const diaryPrompt =
       '以{{char}}的口吻写一则日记，日记格式为：\n［日记标题：{{标题}}］\n［日记时间：{{时间}}］\n［日记内容：{{内容}}］';
 
-    await sendMessageAsUser(diaryPrompt, '');
-    console.log('[自动写日记] 日记命令已发送');
+    console.log('[自动写日记] 开始后台生成日记内容...');
 
-    // 第四步：触发AI回复
+    let genResult = null;
+    let generatedContent = '';
+
     try {
-      await Generate('normal');
-      console.log('[自动写日记] AI回复已生成');
+      // 使用 /gen 命令进行后台生成，不在聊天记录中留下痕迹
+      genResult = await executeSlashCommandsWithOptions(`/gen ${diaryPrompt}`, {
+        handleExecutionErrors: true,
+        handleParserErrors: true,
+        abortController: null,
+      });
+
+      console.log('[自动写日记] 后台生成完成');
 
       // 延时恢复预设
       if (shouldRestorePreset) {
@@ -344,46 +353,84 @@ async function triggerAutoDiary(characterName, currentFloor) {
         }, 10000);
       }
     } catch (error) {
-      console.error('[自动写日记] AI回复生成失败:', error);
+      console.error('[自动写日记] 后台生成失败:', error);
       if (shouldRestorePreset) await restoreOriginalPreset(originalPreset);
-      toastr.error('AI回复生成失败', '自动写日记错误');
+      toastr.error('后台生成日记失败', '自动写日记错误');
       return;
     }
 
     // 第五步：解析日记内容
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const latestMessage = getLatestMessage();
-    if (!latestMessage) {
-      toastr.error('无法获取最新消息', '自动写日记错误');
+    // /gen 命令的结果直接从返回值获取，不需要从聊天记录获取
+
+    if (genResult && typeof genResult === 'string') {
+      generatedContent = genResult;
+    } else if (genResult && genResult.pipe) {
+      // 如果是 pipe 结果，获取其内容
+      generatedContent = genResult.pipe || '';
+    } else {
+      console.error('[自动写日记] /gen 命令返回格式异常:', genResult);
+      toastr.error('后台生成结果格式异常', '自动写日记错误');
       return;
     }
 
-    const diaryData = parseDiaryContent(latestMessage.mes);
+    if (!generatedContent) {
+      toastr.error('后台生成内容为空', '自动写日记错误');
+      return;
+    }
+
+    console.log('[自动写日记] 获取到生成内容，长度:', generatedContent.length);
+    const diaryData = parseDiaryContent(generatedContent);
     if (!diaryData) {
-      toastr.error('未能解析出有效的日记内容', '自动写日记错误');
+      // 解析失败，保存到回收站
+      console.log('[自动写日记] 日记内容解析失败，保存到回收站');
+      try {
+        await saveToRecycleBin(generatedContent, characterName, '自动写日记 - 正则匹配失败');
+        toastr.error('日记内容解析失败，已保存到回收站', '自动写日记错误');
+      } catch (recycleBinError) {
+        console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
+        toastr.error('日记内容解析失败，且保存到回收站失败', '自动写日记错误');
+      }
       return;
     }
 
     console.log('[自动写日记] 日记内容解析完成:', diaryData.title);
 
     // 第六步：保存到世界书
-    const saveSuccess = await saveDiaryToWorldbook(diaryData, characterName);
-    if (!saveSuccess) {
-      toastr.error('保存日记到世界书失败', '自动写日记错误');
+    const saveResult = await saveDiaryToWorldbook(diaryData, characterName);
+    if (!saveResult.success) {
+      // 保存失败，将AI生成的内容保存到回收站
+      console.log('[自动写日记] 日记保存到世界书失败，保存到回收站');
+      try {
+        await saveToRecycleBin(generatedContent, characterName, '自动写日记 - 世界书保存失败');
+        toastr.error('保存日记失败，已保存到回收站', '自动写日记错误');
+      } catch (recycleBinError) {
+        console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
+        toastr.error('日记保存失败，且保存到回收站失败', '自动写日记错误');
+      }
       return;
     }
 
     // 第七步：更新触发楼层记录
     updateLastTriggerFloor(characterName, currentFloor);
 
-    // 第八步：自动删除消息
-    await autoDeleteMessages();
 
     toastr.success(`自动写日记完成："${diaryData.title}"`, '日记本', { timeOut: 5000 });
     console.log('[自动写日记] 全部流程完成');
   } catch (error) {
     console.error('[自动写日记] 发生错误:', error);
-    toastr.error(`自动写日记出错: ${error.message}`, '自动写日记错误');
+
+    // 如果有生成的内容但出现其他错误，也保存到回收站
+    if (typeof generatedContent === 'string' && generatedContent.length > 0) {
+      try {
+        await saveToRecycleBin(generatedContent, characterName, `自动写日记 - 系统错误: ${error.message}`);
+        toastr.error(`自动写日记出错，内容已保存到回收站`, '自动写日记错误');
+      } catch (recycleBinError) {
+        console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
+        toastr.error(`自动写日记出错: ${error.message}`, '自动写日记错误');
+      }
+    } else {
+      toastr.error(`自动写日记出错: ${error.message}`, '自动写日记错误');
+    }
   }
 }
 
@@ -520,14 +567,15 @@ const SUB_BUTTONS_CSS = `
         0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.diary-float-record-btn span {
-    color: #10b981;
+.diary-float-recycle-btn span {
+    color: #f59e0b;
 }
 
-.diary-float-record-btn:hover span {
-    color: #059669;
+.diary-float-recycle-btn:hover span {
+    color: #d97706;
     text-shadow:
-        0 0 8px rgba(16, 185, 129, 0.6),
+        0 0 8px rgba(245, 158, 11, 0.6),
+        0 0 20px rgba(245, 158, 11, 0.4),
         0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -544,7 +592,7 @@ const SUB_BUTTONS_CSS = `
     animation-delay: 0.15s;
 }
 
-.diary-float-record-btn {
+.diary-float-recycle-btn {
     top: -25px;
     left: 30px;
     animation-delay: 0.2s;
@@ -641,10 +689,6 @@ const SUB_BUTTONS_CSS = `
         left: -48px;
     }
 
-    .diary-float-record-btn {
-        top: -30px;
-        left: 35px;
-    }
 }
 
 /* 拖拽时的样式 */
@@ -661,6 +705,315 @@ const SUB_BUTTONS_CSS = `
     animation: none;
     opacity: 0.8;
 }
+
+/* 注意：保存成功弹窗CSS样式已迁移到各个主题CSS文件中 */
+
+/* ===== 🆕 步骤8：回收站管理样式 ===== */
+
+/* 回收站弹窗主容器 */
+.diary-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.diary-dialog-content {
+    background: #1a1a1a;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    min-width: 600px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid #444;
+}
+
+.diary-dialog-header {
+    background: #2a2a2a;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.diary-dialog-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.diary-close-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.diary-close-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.diary-dialog-body {
+    padding: 20px;
+    background: #1a1a1a;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* 回收站控制按钮 */
+.recycle-bin-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.recycle-bin-controls button {
+    padding: 5px 12px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.recycle-bin-controls button:hover {
+    background: #444;
+}
+
+/* 回收站列表 */
+.recycle-bin-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+/* 移动端适配 - 回收站弹窗 */
+@media (max-width: 768px) {
+    .diary-dialog {
+        height: 100vh;
+        height: 100dvh;
+    }
+    
+    .diary-dialog-content {
+        min-width: 320px;
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+        max-height: calc(100vh - 40px);
+    }
+    
+    .diary-dialog-body {
+        max-height: calc(100vh - 200px);
+        padding: 15px;
+    }
+    
+    .recycle-bin-item-preview {
+        max-width: 200px;
+    }
+}
+
+/* 角色分组样式 */
+.recycle-character-group {
+    margin-bottom: 15px;
+}
+
+.recycle-character-header {
+    background: #333;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    border-left: 3px solid #f59e0b;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.recycle-character-header:hover {
+    background: #3a3a3a;
+}
+
+.recycle-character-toggle {
+    color: #f59e0b;
+    margin-right: 8px;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+.recycle-character-name {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.recycle-character-count {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.recycle-character-items {
+    margin-left: 10px;
+}
+
+.recycle-bin-item {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    background: #2a2a2a;
+}
+
+.recycle-bin-item:hover {
+    background: #3a3a3a;
+}
+
+.recycle-bin-item:last-child {
+    border-bottom: none;
+}
+
+.recycle-bin-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.recycle-bin-item-name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.recycle-bin-item-preview {
+    color: #aaa;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+}
+
+/* 回收站详情 */
+.recycle-bin-detail {
+    margin-top: 15px;
+}
+
+.recycle-bin-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.recycle-bin-detail-header h4 {
+    margin: 0;
+    color: #fff;
+}
+
+.recycle-bin-detail-header button {
+    padding: 5px 10px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.recycle-bin-detail-header button:hover {
+    background: #444;
+}
+
+.recycle-bin-detail-body textarea {
+    width: 100%;
+    height: 200px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.recycle-bin-detail-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.recycle-bin-detail-actions button {
+    padding: 8px 15px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.recycle-bin-detail-actions button:hover {
+    background: #444;
+}
+
+/* 回收站为空时的显示 */
+.recycle-bin-empty {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.recycle-bin-empty-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+/* ===== 步骤8样式结束 ===== */
+
+/* 修复滚动条样式 - 避免focus-visible与webkit-scrollbar冲突 */
+.recycle-bin-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.recycle-bin-list::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+.recycle-bin-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.recycle-bin-list::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
 `;
 
 // 主按钮美化主题系统
@@ -2333,146 +2686,343 @@ function hideCustomCharacterDialog() {
   $('#diary-custom-character-dialog').hide();
 }
 
-// 继续写日记流程（从弹窗发送按钮调用）
+// ===== 🆕 新功能：后台生成日记（步骤1） =====
+
+/**
+ * 后台生成日记内容（使用 /gen 斜杠命令）
+ * 📌 步骤1：创建后台生成函数
+ * @param {string} prompt - 日记提示词
+ * @param {string} characterName - 角色名（可选）
+ * @returns {Promise<string|null>} AI回复文本，失败返回null
+ */
+async function generateDiaryInBackground(prompt, characterName) {
+  console.log('═══════════════════════════════════════════');
+  console.log('🚀 [步骤1-后台生成] 开始后台生成日记');
+  console.log('═══════════════════════════════════════════');
+  console.log('📝 提示词:', prompt);
+  console.log('👤 角色名:', characterName || '(未指定)');
+
+  try {
+    // 获取 SillyTavern 上下文
+    console.log('🔍 [步骤1-后台生成] 尝试获取 SillyTavern 上下文...');
+    const context = SillyTavern?.getContext ? SillyTavern.getContext() : null;
+
+    if (!context) {
+      console.error('❌ [步骤1-后台生成] 无法获取 SillyTavern 上下文');
+      return null;
+    }
+
+    console.log('✅ [步骤1-后台生成] SillyTavern 上下文获取成功');
+
+    // 检查是否有 executeSlashCommandsWithOptions 函数
+    const executeSlashCommandsWithOptions = context.executeSlashCommandsWithOptions;
+
+    if (!executeSlashCommandsWithOptions || typeof executeSlashCommandsWithOptions !== 'function') {
+      console.error('❌ [步骤1-后台生成] executeSlashCommandsWithOptions 函数不存在');
+      console.log('💡 尝试使用备用方法...');
+
+      // 尝试直接调用 executeSlashCommands
+      if (typeof executeSlashCommands === 'function') {
+        console.log('✅ [步骤1-后台生成] 找到 executeSlashCommands 函数，使用备用方法');
+        const slashCommand = `/gen ${prompt}`;
+        console.log('📤 [步骤1-后台生成] 执行斜杠命令:', slashCommand);
+
+        const rawResult = await executeSlashCommands(slashCommand);
+
+        console.log('🔍 [步骤1-后台生成] 原始返回值类型:', typeof rawResult);
+        console.log('🔍 [步骤1-后台生成] 原始返回值:', rawResult);
+
+        // 处理返回值
+        let result = null;
+        if (typeof rawResult === 'string') {
+          result = rawResult;
+        } else if (rawResult && typeof rawResult === 'object') {
+          result = rawResult.pipe || rawResult.text || rawResult.content || JSON.stringify(rawResult);
+          console.log('🔄 [步骤1-后台生成] 从对象提取内容，字段:', Object.keys(rawResult));
+        } else {
+          result = String(rawResult || '');
+        }
+
+        console.log('✅ [步骤1-后台生成] AI回复成功');
+        console.log('📏 [步骤1-后台生成] 回复长度:', result?.length || 0, '字符');
+        console.log('📄 [步骤1-后台生成] 回复内容预览:', result?.substring(0, 200) || '(空)');
+        console.log('═══════════════════════════════════════════');
+
+        return result || null;
+      } else {
+        console.error('❌ [步骤1-后台生成] executeSlashCommands 函数也不存在');
+        return null;
+      }
+    }
+
+    // 构建斜杠命令字符串
+    // /gen 命令会自动包含聊天历史和角色卡信息
+    const slashCommand = `/gen ${prompt}`;
+    console.log('📤 [步骤1-后台生成] 执行斜杠命令:', slashCommand);
+
+    // 执行斜杠命令并获取结果
+    const rawResult = await executeSlashCommandsWithOptions(slashCommand, {
+      handleParserErrors: true,
+      handleExecutionErrors: true,
+      source: 'diary-plugin-step1',
+    });
+
+    console.log('🔍 [步骤1-后台生成] 原始返回值类型:', typeof rawResult);
+    console.log('🔍 [步骤1-后台生成] 原始返回值:', rawResult);
+
+    // 处理返回值：可能是字符串、对象或其他类型
+    let result = null;
+    if (typeof rawResult === 'string') {
+      result = rawResult;
+    } else if (rawResult && typeof rawResult === 'object') {
+      // 如果是对象，尝试提取文本内容
+      result = rawResult.pipe || rawResult.text || rawResult.content || JSON.stringify(rawResult);
+      console.log('🔄 [步骤1-后台生成] 从对象提取内容，字段:', Object.keys(rawResult));
+    } else {
+      result = String(rawResult || '');
+    }
+
+    console.log('✅ [步骤1-后台生成] AI回复成功');
+    console.log('📏 [步骤1-后台生成] 回复长度:', result?.length || 0, '字符');
+    console.log('📄 [步骤1-后台生成] 回复内容预览:', result?.substring(0, 200) || '(空)');
+    console.log('═══════════════════════════════════════════');
+
+    return result || null;
+
+  } catch (error) {
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [步骤1-后台生成] 生成失败');
+    console.error('═══════════════════════════════════════════');
+    console.error('错误类型:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('═══════════════════════════════════════════');
+
+    return null;
+  }
+}
+
+// ===== 🆕 新功能结束 =====
+
+// ===== 🆕 步骤3：重写 continueWriteDiary() 函数 =====
+
+/**
+ * 继续写日记流程（新版本 - 后台生成）
+ * 📌 步骤3：使用后台生成替代原来的聊天生成
+ */
 async function continueWriteDiary() {
-  console.log('✏️ 继续写日记流程...');
+  console.log('═══════════════════════════════════════════');
+  console.log('✏️ [步骤3-新写日记] 开始新的写日记流程');
+  console.log('═══════════════════════════════════════════');
 
   // 获取用户输入的自定义角色名
   const customCharacterName = $('#diary-character-input').val().trim();
-  console.log('👤 用户输入的角色名:', customCharacterName || '(空，使用默认角色名)');
+  console.log('👤 [步骤3-新写日记] 用户输入的角色名:', customCharacterName || '(空，使用默认角色名)');
 
   // 隐藏弹窗
   hideCustomCharacterDialog();
+
+  // 确定最终使用的角色名
+  const finalCharacterName = customCharacterName || getCurrentCharacterName();
+  console.log('👤 [步骤3-新写日记] 最终使用的角色名:', finalCharacterName);
 
   // 预设切换：保存当前预设并切换到日记专用预设
   let originalPreset = null;
   let shouldRestorePreset = false;
 
   try {
+    console.log('🔄 [步骤3-新写日记] 开始切换预设...');
     const result = await switchToDiaryPreset();
     originalPreset = result.originalPreset;
     shouldRestorePreset = result.switched;
+    console.log('✅ [步骤3-新写日记] 预设切换完成，是否需要恢复:', shouldRestorePreset);
   } catch (error) {
-    console.error('⚠️ 预设切换失败，继续使用当前预设:', error);
+    console.error('⚠️ [步骤3-新写日记] 预设切换失败，继续使用当前预设:', error);
   }
 
   try {
-    // 第二步：发送日记命令给AI
-    console.log('📝 发送日记命令给AI...');
-    toastr.info('正在发送日记命令...', '写日记');
-
-    // 确定最终使用的角色名
-    const finalCharacterName = customCharacterName || getCurrentCharacterName();
-    console.log('👤 最终使用的角色名:', finalCharacterName);
-
-    // 构建日记提示词，根据用户输入决定是否替换{{char}}
-    let diaryPrompt =
-      '以{{char}}的口吻写一则日记，日记格式为：\n［日记标题：{{标题}}］\n［日记时间：{{时间}}］\n［日记内容：{{内容}}］';
+    // 构建日记提示词
+    console.log('📝 [步骤3-新写日记] 构建日记提示词...');
+    let diaryPrompt = '以{{char}}的口吻写一则日记，日记格式为：\n［日记标题：{{标题}}］\n［日记时间：{{时间}}］\n［日记内容：{{内容}}］';
 
     if (customCharacterName) {
       // 用户输入了自定义角色名，替换{{char}}
       diaryPrompt = diaryPrompt.replace(/\{\{char\}\}/g, customCharacterName);
-      console.log('✅ 已将{{char}}替换为:', customCharacterName);
-      toastr.info(`使用角色名：${customCharacterName}`, '写日记');
+      console.log('✅ [步骤3-新写日记] 已将{{char}}替换为:', customCharacterName);
+      toastr.info(`使用角色名：${customCharacterName}`, '新写日记流程');
     } else {
       // 用户未输入，保持原始{{char}}模板
-      console.log('✅ 保持原始{{char}}模板');
-      toastr.info(`使用角色名：${finalCharacterName}`, '写日记');
+      console.log('✅ [步骤3-新写日记] 保持原始{{char}}模板');
+      toastr.info(`使用角色名：${finalCharacterName}`, '新写日记流程');
     }
 
-    // 发送用户消息
-    await sendMessageAsUser(diaryPrompt, '');
-    console.log('✅ 日记命令已发送');
+    console.log('📤 [步骤3-新写日记] 提示词:', diaryPrompt);
 
-    // 第三步：触发AI回复
-    console.log('🤖 触发AI回复...');
-    toastr.info('等待AI回复日记...', '写日记');
+    // 🆕 使用后台生成（不污染聊天楼层）
+    console.log('🚀 [步骤3-新写日记] 调用后台生成功能...');
+    toastr.info('正在后台生成日记...', '新写日记流程', { timeOut: 3000 });
 
-    try {
-      await Generate('normal');
-      console.log('✅ AI回复生成完成');
+    const aiResponse = await generateDiaryInBackground(diaryPrompt, finalCharacterName);
 
-      // 预设恢复：等待10秒后恢复原预设
-      if (shouldRestorePreset) {
-        console.log('⏰ 10秒后将恢复原预设...');
-        setTimeout(async () => {
-          await restoreOriginalPreset(originalPreset);
-        }, 10000); // 10秒延时
-      }
+    if (!aiResponse) {
+      console.error('❌ [步骤3-新写日记] 后台生成失败');
+      toastr.error('AI生成失败，请重试', '新写日记流程');
 
-      // 第四步：解析日记内容
-      console.log('🔍 开始解析最新消息中的日记内容...');
-      toastr.info('正在解析日记内容...', '写日记');
-
-      // 等待一小段时间确保消息已更新到chat数组
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const latestMessage = getLatestMessage();
-      if (!latestMessage) {
-        toastr.error('无法获取最新消息', '写日记错误');
-        // 如果出错，立即恢复预设
-        if (shouldRestorePreset) {
-          await restoreOriginalPreset(originalPreset);
-        }
-        return;
-      }
-
-      const diaryData = parseDiaryContent(latestMessage.mes);
-      if (!diaryData) {
-        toastr.error('未能解析出有效的日记内容', '写日记错误');
-        // 如果出错，立即恢复预设
-        if (shouldRestorePreset) {
-          await restoreOriginalPreset(originalPreset);
-        }
-        return;
-      }
-
-      console.log('✅ 日记内容解析完成:', diaryData);
-      toastr.success(`成功解析日记："${diaryData.title}"`, '写日记');
-
-      // 第五步：保存到世界书
-      console.log('💾 开始保存日记到世界书...');
-      toastr.info('正在保存日记到世界书...', '写日记');
-
-      const saveSuccess = await saveDiaryToWorldbook(diaryData, finalCharacterName);
-      if (!saveSuccess) {
-        toastr.error('保存日记到世界书失败', '写日记错误');
-        // 如果出错，立即恢复预设
-        if (shouldRestorePreset) {
-          await restoreOriginalPreset(originalPreset);
-        }
-        return;
-      }
-
-      // 成功保存后自动删除最新两个楼层
-      console.log('🗑️ 日记保存成功，开始自动删除楼层...');
-      const deleteSuccess = await autoDeleteMessages();
-
-      if (deleteSuccess) {
-        console.log('🎉 写日记流程全部完成（包括自动删除楼层）！');
-        toastr.success(`日记"${diaryData.title}"写作完成！已自动清理聊天记录`, '写日记', { timeOut: 5000 });
-      } else {
-        console.log('🎉 写日记流程完成（楼层删除失败或跳过）！');
-        toastr.success(`日记"${diaryData.title}"写作完成！`, '写日记', { timeOut: 5000 });
-      }
-    } catch (error) {
-      console.error('❌ AI回复生成失败:', error);
-      toastr.error('AI回复生成失败，请重试', '写日记错误');
-      // 如果出错，立即恢复预设
+      // 恢复预设
       if (shouldRestorePreset) {
         await restoreOriginalPreset(originalPreset);
       }
       return;
     }
+
+    console.log('✅ [步骤3-新写日记] 后台生成成功');
+    console.log('📏 [步骤3-新写日记] 回复长度:', aiResponse.length, '字符');
+
+    // 解析日记内容
+    console.log('🔍 [步骤3-新写日记] 开始解析日记内容...');
+    toastr.info('正在解析日记内容...', '新写日记流程');
+
+    const diaryData = parseDiaryContent(aiResponse);
+
+    if (!diaryData) {
+      console.error('❌ [步骤3-新写日记] 未能解析出有效的日记内容');
+      console.log('📄 [步骤3-新写日记] AI回复内容:', aiResponse.substring(0, 500));
+
+      // 🆕 步骤7：解析失败时保存到回收站
+      console.log('🗑️ [步骤7-失败处理] 日记解析失败，保存到回收站...');
+
+      try {
+        const recycleBinResult = await saveToRecycleBin(
+          aiResponse,
+          finalCharacterName,
+          '解析失败'
+        );
+
+        if (recycleBinResult.success) {
+          console.log('✅ [步骤7-失败处理] AI输出已保存到回收站，条目ID:', recycleBinResult.entryId);
+          toastr.error(`未能解析出有效的日记内容，AI输出已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+        } else {
+          console.error('❌ [步骤7-失败处理] 保存到回收站也失败了:', recycleBinResult.error);
+          toastr.error('未能解析出有效的日记内容，且保存到回收站失败', '新写日记流程');
+        }
+
+      } catch (recycleBinError) {
+        console.error('❌ [步骤7-失败处理] 回收站保存过程中发生错误:', recycleBinError);
+        toastr.error('未能解析出有效的日记内容', '新写日记流程');
+      }
+
+      // 恢复预设
+      if (shouldRestorePreset) {
+        await restoreOriginalPreset(originalPreset);
+      }
+      return;
+    }
+
+    console.log('✅ [步骤3-新写日记] 日记内容解析完成');
+    console.log('📌 [步骤3-新写日记] 日记标题:', diaryData.title);
+    console.log('📌 [步骤3-新写日记] 日记时间:', diaryData.time);
+    console.log('📌 [步骤3-新写日记] 日记内容长度:', diaryData.content.length, '字符');
+    toastr.success(`成功解析日记："${diaryData.title}"`, '新写日记流程');
+
+    // 🚧 步骤5-15将在后续步骤中实现：
+    // TODO 步骤5-7: 保存成功弹窗
+    // TODO 步骤8-9: 回收站功能
+    // TODO 步骤10-15: 其他功能
+
+    // ✅ 步骤4：使用新的保存函数（返回详细结果）
+    console.log('💾 [步骤3-新写日记] 开始保存日记到世界书...');
+    toastr.info('正在保存日记到世界书...', '新写日记流程');
+
+    const saveResult = await saveDiaryToWorldbook(diaryData, finalCharacterName);
+
+    // 恢复预设
+    if (shouldRestorePreset) {
+      console.log('🔄 [步骤3-新写日记] 恢复原预设...');
+      setTimeout(async () => {
+        await restoreOriginalPreset(originalPreset);
+      }, 1000);
+    }
+
+    if (saveResult.success) {
+      console.log('🎉 [步骤3-新写日记] 写日记流程完成！');
+      console.log('🆔 [步骤3-新写日记] 日记条目ID:', saveResult.entryId);
+      console.log('═══════════════════════════════════════════');
+
+      // 🆕 步骤5：显示保存成功弹窗（替代 toastr 提示）
+      console.log('🎉 [步骤5-集成] 调用保存成功弹窗...');
+      showSaveSuccessDialog(saveResult);
+
+    } else {
+      console.error('❌ [步骤3-新写日记] 保存失败');
+      console.log('❌ [步骤3-新写日记] 错误信息:', saveResult.error);
+      console.log('═══════════════════════════════════════════');
+
+      // 🆕 步骤7：保存失败时也保存到回收站
+      console.log('🗑️ [步骤7-失败处理] 日记保存失败，保存到回收站...');
+
+      try {
+        const recycleBinResult = await saveToRecycleBin(
+          aiResponse,
+          finalCharacterName,
+          '保存失败'
+        );
+
+        if (recycleBinResult.success) {
+          console.log('✅ [步骤7-失败处理] 日记内容已保存到回收站，条目ID:', recycleBinResult.entryId);
+          toastr.error(`保存日记失败: ${saveResult.error}。内容已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+        } else {
+          console.error('❌ [步骤7-失败处理] 保存到回收站也失败了:', recycleBinResult.error);
+          toastr.error(`保存日记失败: ${saveResult.error}，且保存到回收站也失败`, '新写日记流程');
+        }
+
+      } catch (recycleBinError) {
+        console.error('❌ [步骤7-失败处理] 回收站保存过程中发生错误:', recycleBinError);
+        toastr.error(`保存日记失败: ${saveResult.error}`, '新写日记流程');
+      }
+    }
+
   } catch (error) {
-    console.error('❌ 写日记功能错误:', error);
-    toastr.error(`写日记功能出错: ${error.message}`, '写日记错误');
-    // 如果出错，立即恢复预设
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [步骤3-新写日记] 写日记功能错误');
+    console.error('═══════════════════════════════════════════');
+    console.error('错误类型:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('═══════════════════════════════════════════');
+
+    // 🆕 步骤7：系统错误时也尝试保存调试信息到回收站
+    try {
+      console.log('🗑️ [步骤7-失败处理] 系统错误，尝试保存到回收站...');
+
+      const errorContent = typeof aiResponse !== 'undefined' ? aiResponse : `系统错误：${error.message}`;
+
+      const recycleBinResult = await saveToRecycleBin(
+        errorContent,
+        finalCharacterName || '系统错误',
+        '系统错误'
+      );
+
+      if (recycleBinResult.success) {
+        console.log('✅ [步骤7-失败处理] 错误信息已保存到回收站，条目ID:', recycleBinResult.entryId);
+        toastr.error(`写日记功能出错: ${error.message}。错误信息已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+      } else {
+        console.error('❌ [步骤7-失败处理] 保存错误信息到回收站也失败了:', recycleBinResult.error);
+        toastr.error(`写日记功能出错: ${error.message}`, '新写日记流程');
+      }
+
+    } catch (recycleBinError) {
+      console.error('❌ [步骤7-失败处理] 回收站保存错误信息时发生异常:', recycleBinError);
+      toastr.error(`写日记功能出错: ${error.message}`, '新写日记流程');
+    }
+
+    // 恢复预设
     if (shouldRestorePreset) {
       await restoreOriginalPreset(originalPreset);
     }
   }
 }
+
+// ===== 步骤3结束 =====
 
 // 开始写日记（修改为先显示弹窗）
 async function startWriteDiary() {
@@ -2509,82 +3059,6 @@ async function startWriteDiary() {
   }
 }
 
-// 记录日记内容
-async function recordDiary() {
-  console.log('📝 记录日记内容...');
-  closeFloatMenu();
-
-  try {
-    // 第一步：检查和创建日记本世界书
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-
-    if (!world_names.includes(worldbookName)) {
-      console.log(`📚 日记本世界书"${worldbookName}"不存在，正在创建...`);
-      toastr.info(`正在创建世界书"${worldbookName}"...`, '记录');
-
-      const success = await createNewWorldInfo(worldbookName, { interactive: false });
-
-      if (success === false) {
-        console.error('❌ 创建日记本世界书失败');
-        toastr.error('创建日记本世界书失败', '记录错误');
-        return;
-      }
-
-      console.log('✅ 日记本世界书创建成功');
-      toastr.success(`世界书"${worldbookName}"创建成功`, '记录');
-    } else {
-      console.log(`📚 日记本世界书"${worldbookName}"已存在，跳过创建步骤`);
-    }
-
-    // 第二步：获取最新消息
-    console.log('📨 获取最新消息...');
-    toastr.info('正在获取最新消息...', '记录');
-
-    const latestMessage = getLatestMessage();
-    if (!latestMessage) {
-      toastr.error('无法获取最新消息', '记录错误');
-      return;
-    }
-
-    // 第三步：解析日记内容
-    console.log('🔍 解析消息中的日记内容...');
-    toastr.info('正在解析日记内容...', '记录');
-
-    const diaryData = parseDiaryContent(latestMessage.mes);
-    if (!diaryData) {
-      toastr.error('未能在最新消息中找到有效的日记内容', '记录错误');
-      return;
-    }
-
-    console.log('✅ 日记内容解析成功:', diaryData);
-    toastr.success(`成功解析日记："${diaryData.title}"`, '记录');
-
-    // 第四步：保存到世界书
-    console.log('💾 保存日记到世界书...');
-    toastr.info('正在保存日记到世界书...', '记录');
-
-    const saveSuccess = await saveDiaryToWorldbook(diaryData);
-    if (!saveSuccess) {
-      toastr.error('保存日记到世界书失败', '记录错误');
-      return;
-    }
-
-    // 成功保存后自动删除最新两个楼层
-    console.log('🗑️ 日记保存成功，开始自动删除楼层...');
-    const deleteSuccess = await autoDeleteMessages();
-
-    if (deleteSuccess) {
-      console.log('🎉 记录日记流程完成（包括自动删除楼层）！');
-      toastr.success(`日记"${diaryData.title}"记录完成！已自动清理聊天记录`, '记录', { timeOut: 5000 });
-    } else {
-      console.log('🎉 记录日记流程完成（楼层删除失败或跳过）！');
-      toastr.success(`日记"${diaryData.title}"记录完成！`, '记录', { timeOut: 5000 });
-    }
-  } catch (error) {
-    console.error('❌ 记录日记功能错误:', error);
-    toastr.error(`记录日记出错: ${error.message}`, '记录错误');
-  }
-}
 
 // 预设配置
 async function configurePresets() {
@@ -2705,88 +3179,53 @@ function getCurrentCharacterName() {
   }
 }
 
-// 自动删除最新两个楼层
-async function autoDeleteMessages() {
-  try {
-    // 自动删除功能始终启用
 
-    console.log('🗑️ 开始自动删除最新两个楼层...');
+// ===== 🆕 步骤4：修改 saveDiaryToWorldbook() 返回值格式 =====
 
-    // 记录删除前的楼层数量
-    const messageCountBefore = chat ? chat.length : 0;
-    console.log(`📊 删除前楼层数量: ${messageCountBefore}`);
-
-    if (messageCountBefore < 2) {
-      console.log('⚠️ 楼层数量不足2个，跳过删除');
-      return false;
-    }
-
-    // 执行删除命令
-    console.log('🔧 执行删除命令: /del 2');
-    await executeSlashCommandsWithOptions('/del 2', {
-      handleExecutionErrors: true,
-      handleParserErrors: true,
-      abortController: null,
-    });
-
-    // 等待命令执行完成
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // 检查删除后的楼层数量
-    const messageCountAfter = chat ? chat.length : 0;
-    console.log(`📊 删除后楼层数量: ${messageCountAfter}`);
-
-    const deletedCount = messageCountBefore - messageCountAfter;
-
-    if (deletedCount >= 2) {
-      console.log(`✅ 成功删除 ${deletedCount} 个楼层`);
-      toastr.success(`已自动删除 ${deletedCount} 个聊天楼层`, '自动删除');
-      return true;
-    } else if (deletedCount > 0) {
-      console.log(`⚠️ 只删除了 ${deletedCount} 个楼层，少于预期的2个`);
-      toastr.warning(`只删除了 ${deletedCount} 个楼层`, '自动删除');
-      return false;
-    } else {
-      console.log('❌ 删除失败，楼层数量未变化');
-      toastr.error('自动删除楼层失败', '自动删除错误');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ 自动删除楼层失败:', error);
-    toastr.error(`自动删除楼层失败: ${error.message}`, '自动删除错误');
-    return false;
-  }
-}
-
-// 保存日记到世界书
+/**
+ * 保存日记到世界书（新版本 - 返回详细结果）
+ * 📌 步骤4：返回 { success: boolean, entryId?: string, error?: string }
+ * @param {Object} diaryData - 日记数据 { title, time, content }
+ * @param {string} characterName - 角色名（可选）
+ * @returns {Promise<{success: boolean, entryId?: string, error?: string}>}
+ */
 async function saveDiaryToWorldbook(diaryData, characterName = null) {
-  try {
-    console.log('💾 开始保存日记到世界书...');
+  console.log('═══════════════════════════════════════════');
+  console.log('💾 [步骤4-保存] 开始保存日记到世界书');
+  console.log('═══════════════════════════════════════════');
 
+  try {
     const worldbookName = DIARY_WORLDBOOK_NAME;
 
     // 如果没有传入角色名，则使用默认的角色卡名称
     const finalCharacterName = characterName || getCurrentCharacterName();
-    console.log('👤 保存日记使用的角色名:', finalCharacterName);
+    console.log('👤 [步骤4-保存] 保存日记使用的角色名:', finalCharacterName);
+    console.log('📝 [步骤4-保存] 日记标题:', diaryData.title);
+    console.log('📝 [步骤4-保存] 日记时间:', diaryData.time);
+    console.log('📝 [步骤4-保存] 日记内容长度:', diaryData.content.length, '字符');
 
     // 加载世界书数据
-    console.log(`📚 加载世界书数据: ${worldbookName}`);
+    console.log(`📚 [步骤4-保存] 加载世界书数据: ${worldbookName}`);
     const worldData = await loadWorldInfo(worldbookName);
 
     if (!worldData || !worldData.entries) {
-      console.error('❌ 无法加载世界书数据');
-      toastr.error('无法加载世界书数据', '保存日记错误');
-      return false;
+      const errorMsg = '无法加载世界书数据';
+      console.error('❌ [步骤4-保存]', errorMsg);
+      console.log('═══════════════════════════════════════════');
+      toastr.error(errorMsg, '保存日记错误');
+      return { success: false, error: errorMsg };
     }
 
     // 创建新的世界书条目
-    console.log('📝 创建新的日记条目...');
+    console.log('📝 [步骤4-保存] 创建新的日记条目...');
     const newEntry = createWorldInfoEntry(worldbookName, worldData);
 
     if (!newEntry) {
-      console.error('❌ 无法创建世界书条目');
-      toastr.error('无法创建世界书条目', '保存日记错误');
-      return false;
+      const errorMsg = '无法创建世界书条目';
+      console.error('❌ [步骤4-保存]', errorMsg);
+      console.log('═══════════════════════════════════════════');
+      toastr.error(errorMsg, '保存日记错误');
+      return { success: false, error: errorMsg };
     }
 
     // 设置条目内容
@@ -2798,27 +3237,834 @@ async function saveDiaryToWorldbook(diaryData, characterName = null) {
     newEntry.content = diaryData.content; // 条目内容：日记内容
     newEntry.enabled = true; // 启用条目
 
-    console.log('📋 日记条目信息:', {
-      UID: newEntry.uid,
-      条目名称: entryName,
-      关键词: finalCharacterName,
-      内容长度: diaryData.content.length,
-    });
+    const entryId = newEntry.uid; // 获取条目ID
+
+    console.log('📋 [步骤4-保存] 日记条目信息:');
+    console.log('   - UID:', entryId);
+    console.log('   - 条目名称:', entryName);
+    console.log('   - 关键词:', finalCharacterName);
+    console.log('   - 内容长度:', diaryData.content.length);
 
     // 保存世界书
-    console.log('💾 保存世界书数据...');
+    console.log('💾 [步骤4-保存] 保存世界书数据...');
     await saveWorldInfo(worldbookName, worldData);
 
-    console.log('✅ 日记保存成功');
+    console.log('✅ [步骤4-保存] 日记保存成功');
+    console.log('🆔 [步骤4-保存] 返回条目ID:', entryId);
+    console.log('═══════════════════════════════════════════');
+
     toastr.success(`日记"${diaryData.title}"已保存到世界书`, '保存日记');
 
-    return true;
+    return {
+      success: true,
+      entryId: entryId,
+      title: diaryData.title,
+      characterName: finalCharacterName
+    };
+
   } catch (error) {
-    console.error('❌ 保存日记到世界书失败:', error);
-    toastr.error(`保存日记失败: ${error.message}`, '保存日记错误');
-    return false;
+    const errorMsg = `保存日记失败: ${error.message}`;
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [步骤4-保存] 保存日记到世界书失败');
+    console.error('═══════════════════════════════════════════');
+    console.error('错误类型:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('═══════════════════════════════════════════');
+
+    toastr.error(errorMsg, '保存日记错误');
+
+    return {
+      success: false,
+      error: errorMsg,
+      errorDetails: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      }
+    };
   }
 }
+
+// ===== 步骤4结束 =====
+
+// ===== 🆕 步骤6：回收站功能 =====
+
+/**
+ * 保存失败的AI输出到回收站世界书
+ * 📌 步骤6：当日记保存失败时，将AI的原始输出保存到回收站供后续处理
+ * @param {string} aiOutput - AI的原始输出内容
+ * @param {string} characterName - 角色名
+ * @param {string} failureReason - 失败原因
+ * @param {Object} context - 可选的上下文信息
+ * @returns {Promise<{success: boolean, entryId?: string, error?: string}>}
+ */
+async function saveToRecycleBin(aiOutput, characterName, failureReason, context = {}) {
+  console.log('═══════════════════════════════════════════');
+  console.log('🗑️ [步骤6-回收站] 保存失败内容到回收站');
+  console.log('═══════════════════════════════════════════');
+  console.log('👤 [步骤6-回收站] 角色名:', characterName);
+  console.log('❌ [步骤6-回收站] 失败原因:', failureReason);
+  console.log('📝 [步骤6-回收站] AI输出长度:', aiOutput.length, '字符');
+
+  try {
+    const worldbookName = RECYCLE_BIN_WORLDBOOK_NAME;
+
+    // 检查和创建回收站世界书
+    if (!world_names.includes(worldbookName)) {
+      console.log(`📚 [步骤6-回收站] 回收站世界书"${worldbookName}"不存在，正在创建...`);
+      try {
+        await createNewWorldInfo(worldbookName, true);
+        console.log(`✅ [步骤6-回收站] 回收站世界书"${worldbookName}"创建成功`);
+      } catch (createError) {
+        const errorMsg = `创建回收站世界书失败: ${createError.message}`;
+        console.error('❌ [步骤6-回收站]', errorMsg);
+        console.log('═══════════════════════════════════════════');
+        return { success: false, error: errorMsg };
+      }
+    }
+
+    // 加载回收站世界书数据
+    console.log(`📚 [步骤6-回收站] 加载回收站世界书数据: ${worldbookName}`);
+    const worldData = await loadWorldInfo(worldbookName);
+
+    if (!worldData || !worldData.entries) {
+      const errorMsg = '无法加载回收站世界书数据';
+      console.error('❌ [步骤6-回收站]', errorMsg);
+      console.log('═══════════════════════════════════════════');
+      return { success: false, error: errorMsg };
+    }
+
+    // 创建新的回收站条目
+    console.log('📝 [步骤6-回收站] 创建新的回收站条目...');
+    const newEntry = createWorldInfoEntry(worldbookName, worldData);
+
+    if (!newEntry) {
+      const errorMsg = '无法创建回收站条目';
+      console.error('❌ [步骤6-回收站]', errorMsg);
+      console.log('═══════════════════════════════════════════');
+      return { success: false, error: errorMsg };
+    }
+
+    // 构建回收站条目内容（简化版本）
+    const recycleBinContent = aiOutput;
+
+    // 设置条目属性
+    const entryName = `${characterName}-回收站`;
+
+    newEntry.comment = entryName; // 条目名称
+    newEntry.key = [characterName]; // 关键词：角色名，便于分类
+    newEntry.content = recycleBinContent; // 条目内容：只保存AI原始输出
+    newEntry.enabled = true; // 启用条目
+
+    const entryId = newEntry.uid; // 获取条目ID
+
+    console.log('📋 [步骤6-回收站] 回收站条目信息:');
+    console.log('   - UID:', entryId);
+    console.log('   - 条目名称:', entryName);
+    console.log('   - 关键词:', characterName);
+    console.log('   - 内容长度:', recycleBinContent.length);
+
+    // 保存回收站世界书
+    console.log('💾 [步骤6-回收站] 保存回收站世界书数据...');
+    await saveWorldInfo(worldbookName, worldData);
+
+    console.log('✅ [步骤6-回收站] 内容已保存到回收站');
+    console.log('🆔 [步骤6-回收站] 回收站条目ID:', entryId);
+    console.log('═══════════════════════════════════════════');
+
+    // 不显示toastr，因为这通常伴随着错误提示
+
+    return {
+      success: true,
+      entryId: entryId,
+      characterName: characterName
+    };
+
+  } catch (error) {
+    const errorMsg = `保存到回收站失败: ${error.message}`;
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [步骤6-回收站] 保存到回收站失败');
+    console.error('═══════════════════════════════════════════');
+    console.error('错误类型:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('═══════════════════════════════════════════');
+
+    return {
+      success: false,
+      error: errorMsg,
+      errorDetails: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      }
+    };
+  }
+}
+
+
+// ===== 🆕 步骤8：回收站UI管理功能 =====
+
+// 全局变量：当前选中的回收站条目
+let currentRecycleBinItem = null;
+
+/**
+ * 显示回收站管理对话框
+ * 📌 步骤8：打开回收站管理界面
+ */
+function showRecycleBinDialog() {
+  console.log('🗑️ [步骤8-回收站UI] 显示回收站管理对话框');
+
+  // 显示对话框
+  $('#diary-recycle-bin-dialog').show();
+
+  // 加载回收站内容
+  refreshRecycleBin();
+}
+
+/**
+ * 隐藏回收站管理对话框
+ * 📌 步骤8：关闭回收站管理界面
+ */
+function hideRecycleBinDialog() {
+  console.log('🔒 [步骤8-回收站UI] 隐藏回收站管理对话框');
+  $('#diary-recycle-bin-dialog').hide();
+  hideRecycleBinDetail();
+}
+
+/**
+ * 刷新回收站列表
+ * 📌 步骤8：从世界书加载回收站条目
+ */
+async function refreshRecycleBin() {
+  console.log('🔄 [步骤8-回收站UI] 刷新回收站列表...');
+
+  try {
+    // 获取回收站世界书
+    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+
+    // 将 entries 对象转换为数组
+    let entriesArray = [];
+    if (worldData && worldData.entries) {
+      if (Array.isArray(worldData.entries)) {
+        entriesArray = worldData.entries;
+      } else if (typeof worldData.entries === 'object') {
+        // 将对象转换为数组
+        entriesArray = Object.values(worldData.entries);
+      }
+    }
+
+    if (entriesArray.length === 0) {
+      console.log('📭 [步骤8-回收站UI] 回收站为空');
+      showEmptyRecycleBin();
+      return;
+    }
+
+    console.log('📋 [步骤8-回收站UI] 找到', entriesArray.length, '个回收站条目');
+
+    // 渲染回收站列表
+    renderRecycleBinList(entriesArray);
+
+  } catch (error) {
+    console.error('❌ [步骤8-回收站UI] 刷新回收站失败:', error);
+    $('#recycle-bin-list').html('<div class="recycle-bin-empty">加载失败</div>');
+  }
+}
+
+/**
+ * 显示空回收站
+ * 📌 步骤8：当回收站没有内容时显示
+ */
+function showEmptyRecycleBin() {
+  $('#recycle-bin-list').html(`
+    <div class="recycle-bin-empty">
+      <div class="recycle-bin-empty-icon">🗑️</div>
+      <div>回收站为空</div>
+      <div style="font-size: 12px; margin-top: 5px;">失败的AI输出会自动保存到这里</div>
+    </div>
+  `);
+}
+
+/**
+ * 渲染回收站列表
+ * 📌 步骤8：按角色分类渲染回收站条目
+ */
+function renderRecycleBinList(entries) {
+  console.log('🎨 [步骤8-回收站UI] 渲染', entries?.length || 0, '个条目');
+
+  // 确保 entries 是数组
+  if (!entries || !Array.isArray(entries)) {
+    console.warn('⚠️ [步骤8-回收站UI] entries 不是有效的数组:', entries);
+    showEmptyRecycleBin();
+    return;
+  }
+
+  // 按角色分组
+  const groupedByCharacter = {};
+  entries.forEach(entry => {
+    // 从 key 数组中获取角色名（第一个元素通常是角色名）
+    const characterName = entry.key && entry.key[0] ? entry.key[0] : '未知角色';
+
+    if (!groupedByCharacter[characterName]) {
+      groupedByCharacter[characterName] = [];
+    }
+
+    groupedByCharacter[characterName].push(entry);
+  });
+
+  let html = '';
+
+  // 渲染每个角色的条目
+  Object.keys(groupedByCharacter).forEach(characterName => {
+    const characterEntries = groupedByCharacter[characterName];
+
+    // 角色标题（可点击展开/收起）
+    html += `
+      <div class="recycle-character-group">
+        <div class="recycle-character-header" data-character="${characterName}">
+          <span class="recycle-character-toggle">▶</span>
+          <span class="recycle-character-name">📂 ${characterName}</span>
+          <span class="recycle-character-count">(${characterEntries.length}个条目)</span>
+        </div>
+        <div class="recycle-character-items" style="display: none;">
+    `;
+
+    // 渲染该角色下的条目（不显示标题，只显示预览）
+    characterEntries.forEach(entry => {
+      // 生成预览文本（前80个字符）
+      const preview = entry.content.replace(/\n/g, ' ').substring(0, 80) +
+                     (entry.content.length > 80 ? '...' : '');
+
+      html += `
+        <div class="recycle-bin-item" data-entry-id="${entry.uid}">
+          <div class="recycle-bin-item-preview">${preview}</div>
+          <div class="recycle-bin-item-actions">
+            <small style="color: #666;">${entry.content.length} 字符</small>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  $('#recycle-bin-list').html(html);
+
+  // 重新绑定点击事件
+  $('.recycle-bin-item').off('click').on('click', function() {
+    const entryId = $(this).data('entry-id');
+    showRecycleBinItemDetail(entryId);
+  });
+
+  // 绑定角色标题展开/收起事件
+  $('.recycle-character-header').off('click').on('click', function() {
+    const $header = $(this);
+    const $items = $header.next('.recycle-character-items');
+    const $toggle = $header.find('.recycle-character-toggle');
+
+    if ($items.is(':visible')) {
+      // 收起
+      $items.slideUp(200);
+      $toggle.text('▶');
+    } else {
+      // 展开
+      $items.slideDown(200);
+      $toggle.text('▼');
+    }
+  });
+}
+
+/**
+ * 显示回收站条目详情
+ * 📌 步骤8：查看和编辑特定回收站条目
+ */
+async function showRecycleBinItemDetail(entryId) {
+  console.log('🔍 [步骤8-回收站UI] 显示条目详情:', entryId);
+
+  try {
+    // 获取回收站世界书
+    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+
+    if (!worldData || !worldData.entries) {
+      console.error('❌ [步骤8-回收站UI] 无法获取回收站数据');
+      return;
+    }
+
+    // 将 entries 转换为数组并查找指定条目
+    let entriesArray = [];
+    if (Array.isArray(worldData.entries)) {
+      entriesArray = worldData.entries;
+    } else if (typeof worldData.entries === 'object') {
+      entriesArray = Object.values(worldData.entries);
+    }
+
+    const entry = entriesArray.find(e => e.uid === parseInt(entryId));
+
+    if (!entry) {
+      console.error('❌ [步骤8-回收站UI] 未找到指定条目:', entryId);
+      return;
+    }
+
+    // 存储当前条目
+    currentRecycleBinItem = entry;
+
+    // 显示详情界面
+    $('#recycle-bin-item-title').text(entry.comment || '未命名条目');
+    $('#recycle-bin-content').val(entry.content);
+
+    $('#recycle-bin-list').hide();
+    $('#recycle-bin-detail').show();
+
+    console.log('✅ [步骤8-回收站UI] 条目详情显示完成');
+
+  } catch (error) {
+    console.error('❌ [步骤8-回收站UI] 显示条目详情失败:', error);
+    toastr.error('显示条目详情失败', '回收站');
+  }
+}
+
+/**
+ * 隐藏回收站条目详情
+ * 📌 步骤8：返回回收站列表
+ */
+function hideRecycleBinDetail() {
+  $('#recycle-bin-detail').hide();
+  $('#recycle-bin-list').show();
+  currentRecycleBinItem = null;
+}
+
+/**
+ * 将回收站条目保存为日记
+ * 📌 步骤8：尝试重新解析和保存AI输出
+ */
+async function saveRecycleBinItemAsDiary() {
+  console.log('💾 [步骤8-回收站UI] 尝试保存为日记...');
+
+  if (!currentRecycleBinItem) {
+    console.error('❌ [步骤8-回收站UI] 没有选中的条目');
+    return;
+  }
+
+  try {
+    // 获取编辑后的内容
+    const editedContent = $('#recycle-bin-content').val().trim();
+
+    if (!editedContent) {
+      toastr.error('内容不能为空', '回收站');
+      return;
+    }
+
+    // 尝试解析日记内容
+    const diaryData = parseDiaryContent(editedContent);
+
+    if (!diaryData) {
+      toastr.error('内容格式不符合日记格式，无法保存', '回收站');
+      return;
+    }
+
+    console.log('✅ [步骤8-回收站UI] 内容解析成功，准备保存...');
+
+    // 从回收站条目的关键词中获取角色名
+    const characterName = currentRecycleBinItem.key[0] || getCurrentCharacterName() || '未知角色';
+
+    // 保存到日记世界书
+    const saveResult = await saveDiaryToWorldbook(diaryData, characterName);
+
+    if (saveResult.success) {
+      console.log('🎉 [步骤8-回收站UI] 日记保存成功！');
+      toastr.success(`日记保存成功！条目ID: ${saveResult.entryId}`, '回收站');
+
+      // 删除回收站中的该条目
+      await deleteRecycleBinItem(false); // 不显示确认
+
+      // 关闭回收站详情
+      hideRecycleBinDetail();
+
+      // 刷新回收站列表
+      refreshRecycleBin();
+
+    } else {
+      console.error('❌ [步骤8-回收站UI] 日记保存失败:', saveResult.error);
+      toastr.error(`日记保存失败: ${saveResult.error}`, '回收站');
+    }
+
+  } catch (error) {
+    console.error('❌ [步骤8-回收站UI] 保存为日记过程中发生错误:', error);
+    toastr.error('保存为日记失败', '回收站');
+  }
+}
+
+/**
+ * 删除回收站条目
+ * 📌 步骤8：从回收站中删除指定条目
+ */
+async function deleteRecycleBinItem(showConfirm = true) {
+  console.log('🗑️ [步骤8-回收站UI] 删除回收站条目...');
+
+  if (!currentRecycleBinItem) {
+    console.error('❌ [步骤8-回收站UI] 没有选中的条目');
+    return;
+  }
+
+  if (showConfirm && !confirm('确定要删除这个回收站条目吗？')) {
+    return;
+  }
+
+  try {
+    // 获取回收站世界书
+    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+
+    if (!worldData || !worldData.entries) {
+      console.error('❌ [步骤8-回收站UI] 无法获取回收站数据');
+      return;
+    }
+
+    // 处理对象格式的 entries，删除指定条目
+    if (Array.isArray(worldData.entries)) {
+      worldData.entries = worldData.entries.filter(e => e.uid !== currentRecycleBinItem.uid);
+    } else if (typeof worldData.entries === 'object') {
+      // 如果是对象格式，重新构建
+      const newEntries = {};
+      let index = 0;
+      for (const key in worldData.entries) {
+        const entry = worldData.entries[key];
+        if (entry.uid !== currentRecycleBinItem.uid) {
+          newEntries[index] = entry;
+          index++;
+        }
+      }
+      worldData.entries = newEntries;
+    }
+
+    // 保存回收站世界书
+    await saveWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME, worldData);
+
+    console.log('✅ [步骤8-回收站UI] 条目删除成功');
+    toastr.success('条目已删除', '回收站');
+
+    // 返回列表
+    hideRecycleBinDetail();
+    refreshRecycleBin();
+
+  } catch (error) {
+    console.error('❌ [步骤8-回收站UI] 删除条目失败:', error);
+    toastr.error('删除条目失败', '回收站');
+  }
+}
+
+/**
+ * 清空回收站
+ * 📌 步骤8：删除所有回收站条目
+ */
+async function clearRecycleBin() {
+  console.log('🗑️ [步骤8-回收站UI] 清空回收站...');
+
+  if (!confirm('确定要清空整个回收站吗？这个操作无法撤销！')) {
+    return;
+  }
+
+  try {
+    // 获取回收站世界书
+    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+
+    if (!worldData) {
+      console.log('📭 [步骤8-回收站UI] 回收站世界书不存在，无需清空');
+      toastr.info('回收站已经是空的', '回收站');
+      return;
+    }
+
+    // 清空条目（兼容对象和数组格式）
+    if (Array.isArray(worldData.entries)) {
+      worldData.entries = [];
+    } else {
+      worldData.entries = {};
+    }
+
+    // 保存回收站世界书
+    await saveWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME, worldData);
+
+    console.log('✅ [步骤8-回收站UI] 回收站已清空');
+    toastr.success('回收站已清空', '回收站');
+
+    // 刷新显示
+    hideRecycleBinDetail();
+    refreshRecycleBin();
+
+  } catch (error) {
+    console.error('❌ [步骤8-回收站UI] 清空回收站失败:', error);
+    toastr.error('清空回收站失败', '回收站');
+  }
+}
+
+/**
+ * 初始化回收站对话框
+ * 📌 步骤8：设置回收站对话框的初始状态
+ */
+function createRecycleBinDialog() {
+  console.log('🎉 初始化回收站对话框...');
+
+  // 将对话框移动到body（关键！）
+  $('#diary-recycle-bin-dialog').appendTo('body');
+
+  // 绑定关闭按钮事件
+  $('#diary-recycle-bin-dialog .diary-close-btn').off('click').on('click', function() {
+    hideRecycleBinDialog();
+  });
+
+  // 点击遮罩层关闭
+  $('#diary-recycle-bin-dialog').off('click').on('click', function(e) {
+    if (e.target === this) {
+      hideRecycleBinDialog();
+    }
+  });
+
+  // ESC键关闭
+  $(document).off('keydown.recycleBin').on('keydown.recycleBin', function(e) {
+    if (e.keyCode === 27 && $('#diary-recycle-bin-dialog').is(':visible')) {
+      hideRecycleBinDialog();
+    }
+  });
+
+  // 清空回收站按钮
+  $('#clear-recycle-bin').off('click').on('click', function() {
+    clearRecycleBin();
+  });
+
+  // 条目详情页按钮
+  $('#recycle-bin-back-btn').off('click').on('click', function() {
+    hideRecycleBinDetail();
+  });
+
+  $('#recycle-bin-save-btn').off('click').on('click', function() {
+    saveRecycleBinItemAsDiary();
+  });
+
+  $('#recycle-bin-delete-btn').off('click').on('click', function() {
+    deleteRecycleBinItem();
+  });
+
+  console.log('✅ 回收站对话框已初始化');
+}
+
+// ===== 步骤8结束 =====
+
+// ===== 步骤6结束 =====
+
+// ===== 🆕 步骤5：保存成功弹窗功能 =====
+
+/**
+ * 显示保存成功弹窗
+ * 📌 步骤5：展示成功信息，提供查看日记和关闭选项
+ * @param {Object} saveResult - 保存结果对象 { success, entryId, title, characterName }
+ */
+function showSaveSuccessDialog(saveResult) {
+  console.log('═══════════════════════════════════════════');
+  console.log('🎉 [步骤5-成功弹窗] 显示保存成功弹窗');
+  console.log('═══════════════════════════════════════════');
+  console.log('📊 [步骤5-成功弹窗] 保存结果:', saveResult);
+
+  if (!saveResult || !saveResult.success) {
+    console.error('❌ [步骤5-成功弹窗] 无效的保存结果，无法显示成功弹窗');
+    return;
+  }
+
+  // 更新弹窗内容
+  console.log('📝 [步骤5-成功弹窗] 更新弹窗文本内容...');
+  $('#diary-save-success-title-text').text(saveResult.title || '未知标题');
+  $('#diary-save-success-character-text').text(saveResult.characterName || '未知角色');
+
+  console.log('🔍 [步骤5-成功弹窗] 显示弹窗元素...');
+
+  // 🔧 调试：检查弹窗元素是否存在
+  const $dialog = $('#diary-save-success-dialog');
+  console.log('🔧 [步骤5-调试] 弹窗元素数量:', $dialog.length);
+  console.log('🔧 [步骤5-调试] 弹窗元素:', $dialog[0]);
+
+  if ($dialog.length === 0) {
+    console.error('❌ [步骤5-调试] 弹窗元素不存在！');
+    return;
+  }
+
+  // 🔧 调试：检查当前样式
+  console.log('🔧 [步骤5-调试] 当前display样式:', $dialog.css('display'));
+  console.log('🔧 [步骤5-调试] 当前z-index样式:', $dialog.css('z-index'));
+
+  // 显示弹窗（效仿其他弹窗的简单方式）
+  console.log('🔄 [步骤5-成功弹窗] 使用简单的show()方法...');
+
+  try {
+    // 使用jQuery的show()方法，和其他弹窗保持一致
+    $dialog.show();
+
+    // 验证显示状态
+    setTimeout(() => {
+      const isVisible = $dialog.is(':visible');
+      const currentDisplay = $dialog.css('display');
+
+      console.log('🔍 [步骤5-修复] 弹窗状态检查:');
+      console.log('  - is(:visible):', isVisible);
+      console.log('  - display样式:', currentDisplay);
+
+      if (isVisible) {
+        console.log('✅ [步骤5-修复] 弹窗显示成功！');
+      } else {
+        console.error('❌ [步骤5-修复] 弹窗显示失败');
+
+        // 最后的强制显示尝试
+        console.warn('🚨 [步骤5-修复] 执行强制显示...');
+        $dialog[0].style.setProperty('display', 'flex', 'important');
+        $dialog[0].style.setProperty('opacity', '1', 'important');
+        $dialog[0].style.setProperty('visibility', 'visible', 'important');
+      }
+    }, 100);
+
+  } catch (error) {
+    console.error('❌ [步骤5-修复] 显示弹窗时发生错误:', error);
+  }
+
+  // 存储当前的条目ID供查看按钮使用
+  $('#diary-save-success-dialog').data('entryId', saveResult.entryId);
+  $('#diary-save-success-dialog').data('characterName', saveResult.characterName);
+
+  console.log('✅ [步骤5-成功弹窗] 弹窗显示完成');
+  console.log('🆔 [步骤5-成功弹窗] 条目ID:', saveResult.entryId);
+  console.log('═══════════════════════════════════════════');
+}
+
+/**
+ * 隐藏保存成功弹窗
+ * 📌 步骤5：关闭弹窗
+ */
+function hideSaveSuccessDialog() {
+  console.log('🔒 [步骤5-成功弹窗] 隐藏保存成功弹窗');
+
+  // 使用jQuery的hide()方法，和其他弹窗保持一致
+  $('#diary-save-success-dialog').hide();
+}
+
+/**
+ * 查看刚保存的日记
+ * 📌 步骤5：打开日记本，定位到刚保存的日记
+ * @param {string} entryId - 日记条目ID
+ * @param {string} characterName - 角色名
+ */
+function viewSavedDiary(entryId, characterName) {
+  console.log('═══════════════════════════════════════════');
+  console.log('📖 [步骤5-成功弹窗] 查看刚保存的日记');
+  console.log('═══════════════════════════════════════════');
+  console.log('🆔 [步骤5-成功弹窗] 目标条目ID:', entryId);
+  console.log('👤 [步骤5-成功弹窗] 目标角色名:', characterName);
+
+  try {
+    // 先隐藏成功弹窗
+    hideSaveSuccessDialog();
+
+    // 延迟一点时间再打开日记详情，确保弹窗关闭动画完成
+    setTimeout(async () => {
+      console.log('📚 [步骤5-成功弹窗] 打开日记本...');
+
+      // 先打开日记本弹窗
+      showDiaryBookDialog();
+
+      // 短暂延迟确保日记本已经初始化
+      setTimeout(async () => {
+        console.log('📖 [步骤5-成功弹窗] 直接显示日记详情...');
+
+        try {
+          // 直接调用显示日记详情的函数
+          await showDiaryBookDetail(entryId);
+
+          console.log('✅ [步骤5-成功弹窗] 成功显示日记详情页面');
+          console.log('🎉 [步骤5-成功弹窗] 查看日记流程完成');
+          console.log('═══════════════════════════════════════════');
+
+        } catch (detailError) {
+          console.error('❌ [步骤5-成功弹窗] 显示日记详情失败:', detailError);
+          toastr.error('无法显示日记详情，请手动查看', '查看日记');
+        }
+      }, 300);
+    }, 300);
+
+  } catch (error) {
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [步骤5-成功弹窗] 查看日记失败');
+    console.error('═══════════════════════════════════════════');
+    console.error('错误类型:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('═══════════════════════════════════════════');
+
+    toastr.error('打开日记本失败，请手动查看', '查看日记');
+  }
+}
+
+/**
+ * 初始化保存成功弹窗
+ * 📌 步骤5：将弹窗移动到body，确保正确显示
+ */
+function createSaveSuccessDialog() {
+  console.log('🎉 初始化保存成功弹窗...');
+
+  // 将弹窗从设置面板移动到body（关键！）
+  $('#diary-save-success-dialog').appendTo('body');
+
+  console.log('✅ 保存成功弹窗已初始化');
+}
+
+/**
+ * 绑定保存成功弹窗的事件
+ * 📌 步骤5：绑定关闭和查看按钮
+ */
+function bindSaveSuccessDialogEvents() {
+  console.log('🔗 [步骤5-成功弹窗] 绑定保存成功弹窗事件...');
+
+  // 关闭按钮（右上角X）
+  $('#diary-save-success-close-btn').off('click').on('click', function(e) {
+    e.preventDefault();
+    console.log('✖️ [步骤5-成功弹窗] 用户点击关闭按钮（X）');
+    hideSaveSuccessDialog();
+  });
+
+  // 关闭按钮（底部关闭按钮）
+  $('#diary-save-success-close-action-btn').off('click').on('click', function(e) {
+    e.preventDefault();
+    console.log('🔒 [步骤5-成功弹窗] 用户点击关闭按钮');
+    hideSaveSuccessDialog();
+  });
+
+  // 查看日记按钮
+  $('#diary-save-success-view-btn').off('click').on('click', function(e) {
+    e.preventDefault();
+    console.log('📖 [步骤5-成功弹窗] 用户点击查看日记按钮');
+
+    const entryId = $('#diary-save-success-dialog').data('entryId');
+    const characterName = $('#diary-save-success-dialog').data('characterName');
+
+    if (entryId && characterName) {
+      viewSavedDiary(entryId, characterName);
+    } else {
+      console.error('❌ [步骤5-成功弹窗] 缺少必要数据，无法查看日记');
+      toastr.error('缺少日记信息，无法查看', '查看日记');
+      hideSaveSuccessDialog();
+    }
+  });
+
+  // 点击遮罩层关闭弹窗
+  $('#diary-save-success-dialog').off('click').on('click', function(e) {
+    if (e.target === this) {
+      console.log('🖱️ [步骤5-成功弹窗] 用户点击遮罩层关闭弹窗');
+      hideSaveSuccessDialog();
+    }
+  });
+
+  console.log('✅ [步骤5-成功弹窗] 事件绑定完成');
+}
+
+// ===== 步骤5结束 =====
 
 // ===== 悬浮窗功能 =====
 
@@ -2898,10 +4144,11 @@ function bindFloatWindowEvents() {
     closeFloatMenu();
   });
 
-  $('#diary-float-record-btn').on('click', function (e) {
+  // 🆕 步骤8：回收站按钮点击事件
+  $('#diary-float-recycle-btn').on('click', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    recordDiary();
+    showRecycleBinDialog();
     closeFloatMenu();
   });
 
@@ -4940,7 +6187,7 @@ async function verifyAuthorInfo() {
     '%c║  作者 (Author):        Etaf Cisky                            ║',
     'color: #48bb78; font-weight: bold;',
   );
-  console.log('%c║  版本 (Version):       v3.3.0                                ║', 'color: #48bb78;');
+  console.log('%c║  版本 (Version):       v4.0.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
   console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');
@@ -5029,28 +6276,21 @@ jQuery(async () => {
     // 加载HTML界面
     const settingsHtml = await $.get(`${extensionFolderPath}/index.html`);
 
-    // 将设置界面添加到扩展设置面板
     $('#extensions_settings2').append(settingsHtml);
 
-    // 动态注入作者名（用于版权验证）
+    // 动态注入作者名
     $('#diary-plugin-author').text(PLUGIN_AUTHOR.name);
-    console.log('✅ 作者信息已动态注入到界面');
 
-    // 执行版权验证（必须在HTML加载和作者名注入之后）
     verification = await verifyAuthorInfo();
 
     if (!verification.verified) {
-      console.error('❌ 版权验证失败，插件将不会启动');
 
-      // 显示错误提示
       const errorTitle = `${decodeBase64(MSG_TITLE_ZH)} | ${decodeBase64(MSG_TITLE_EN)}`;
       const errorMessage = `
         <div style="line-height: 1.6;">
-          <p style="margin: 8px 0;"><strong>🇨🇳 中文：</strong></p>
           <p style="margin: 8px 0;">${decodeBase64(MSG_DESC_ZH)}</p>
           <p style="margin: 8px 0; color: #fbbf24;">${decodeBase64(MSG_WARNING_ZH)}</p>
           <hr style="margin: 12px 0; border-color: rgba(255,255,255,0.2);">
-          <p style="margin: 8px 0;"><strong>🇬🇧 English:</strong></p>
           <p style="margin: 8px 0;">${decodeBase64(MSG_DESC_EN)}</p>
           <p style="margin: 8px 0; color: #fbbf24;">${decodeBase64(MSG_WARNING_EN)}</p>
         </div>
@@ -5086,7 +6326,6 @@ jQuery(async () => {
       return; // 阻止插件继续初始化
     }
 
-    console.log('✅ 版权验证通过');
 
     // 绑定事件处理器
 
@@ -5119,6 +6358,12 @@ jQuery(async () => {
     // 创建README文档弹窗
     createReadmeDialog();
 
+    // 🆕 步骤5：创建保存成功弹窗
+    createSaveSuccessDialog();
+
+    // 🆕 步骤8：创建回收站管理对话框
+    createRecycleBinDialog();
+
     // 加载预设数据并更新显示
     await loadPresetData();
 
@@ -5130,6 +6375,9 @@ jQuery(async () => {
 
     // 绑定README文档弹窗事件
     bindReadmeDialogEvents();
+
+    // 🆕 步骤5：绑定保存成功弹窗事件
+    bindSaveSuccessDialogEvents();
 
     // 根据设置显示或隐藏悬浮窗
     const settings = getCurrentSettings();
