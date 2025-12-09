@@ -1101,6 +1101,12 @@
     text-shadow: none;
   }
 
+  .diary-book-detail-text p {
+    text-indent: 2em;
+    font-family: inherit;
+    text-shadow: none;
+  }
+
   .diary-book-detail-ornament::before,
   .diary-book-detail-ornament::after {
     width: 50px;
