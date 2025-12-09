@@ -3104,6 +3104,7 @@
   text-indent: 2em;
   font-family: inherit;
   line-height: inherit;
+  text-align: left;
 }
 
 /* 🗑️ 删除按钮区域 */
@@ -3286,6 +3287,7 @@
     text-indent: 1.5em;
     font-family: inherit;
     line-height: inherit;
+    text-align: left;
   }
 
   /* 🗑️ 移动端删除按钮 */

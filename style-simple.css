@@ -1027,6 +1027,7 @@
   text-indent: 2em;
   font-family: inherit;
   text-shadow: none;
+  text-align: left;
 }
 
 .diary-book-detail-text p:last-child {
@@ -1105,6 +1106,7 @@
     text-indent: 2em;
     font-family: inherit;
     text-shadow: none;
+    text-align: left;
   }
 
   .diary-book-detail-ornament::before,
