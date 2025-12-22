@@ -1,6 +1,6 @@
 # 日记本插件 (sillytavernDIARY)
 
-**版本**: 4.0.0  
+**版本**: 4.2.0  
 **作者**: Etaf Cisky  
 **适配**: SillyTavern 1.12.0+  
 **状态**: 稳定版本  
