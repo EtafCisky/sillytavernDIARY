@@ -1077,6 +1077,13 @@
 @media (max-width: 768px) {
   .diary-book-detail-content {
     padding: 15px;
+    text-align: justify;
+  }
+
+  /* 移动端段落缩进 */
+  .diary-book-detail-content p {
+    text-indent: 2em;
+    margin: 0.5em 0;
   }
 
   .diary-book-detail-page {

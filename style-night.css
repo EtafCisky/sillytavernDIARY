@@ -3224,6 +3224,13 @@
     padding: 20px 16px;
     overflow-y: auto;
     overflow-x: hidden;
+    text-align: justify;
+  }
+
+  /* 移动端段落缩进 */
+  .diary-book-detail-content p {
+    text-indent: 2em;
+    margin: 0.5em 0;
   }
 
   /* 📖 移动端页面内容 */
