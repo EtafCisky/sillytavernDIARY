@@ -46,7 +46,7 @@
  */
 
 // 导入SillyTavern核心功能
-import { Generate, chat, is_send_press, name2, saveSettingsDebounced, sendMessageAsUser } from '../../../../script.js';
+import { chat, is_send_press, name2, saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings, getContext } from '../../../extensions.js';
 import { getPresetManager } from '../../../preset-manager.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
@@ -127,7 +127,7 @@ const DIARY_WORLDBOOK_NAME = '日记本';
 const RECYCLE_BIN_WORLDBOOK_NAME = '回收站';
 
 // 日记内容正则表达式
-const DIARY_REGEX = /<日记>[\s\S]*?标题：(.*?)\s*时间：(.*?)\s*内容：([\s\S]*?)<\/日记>/g;
+const DIARY_REGEX = /<日记>\s*标题：([^\n]+)\s*时间：([^\n]+)\s*内容：([\s\S]*?)\s*<\/日记>/g;
 
 // 获取当前设置
 function getCurrentSettings() {
@@ -329,7 +329,7 @@ async function triggerAutoDiary(characterName, currentFloor) {
 
     // 第三步：使用 /gen 后台生成日记内容
     const diaryPrompt =
-      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}\n</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？\n</日记>';
+      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？</日记>';
 
     console.log('[自动写日记] 开始后台生成日记内容...');
 
@@ -412,7 +412,6 @@ async function triggerAutoDiary(characterName, currentFloor) {
 
     // 第七步：更新触发楼层记录
     updateLastTriggerFloor(characterName, currentFloor);
-
 
     toastr.success(`自动写日记完成："${diaryData.title}"`, '日记本', { timeOut: 5000 });
     console.log('[自动写日记] 全部流程完成');
@@ -2784,7 +2783,6 @@ async function generateDiaryInBackground(prompt, characterName) {
     console.log('═══════════════════════════════════════════');
 
     return result || null;
-
   } catch (error) {
     console.error('错误类型:', error.name);
     console.error('错误信息:', error.message);
@@ -2795,7 +2793,6 @@ async function generateDiaryInBackground(prompt, characterName) {
   }
 }
 
-
 // ===== 重写 continueWriteDiary() 函数 =====
 
 /**
@@ -2803,7 +2800,6 @@ async function generateDiaryInBackground(prompt, characterName) {
  * 使用后台生成替代原来的聊天生成
  */
 async function continueWriteDiary() {
-
   // 获取用户输入的自定义角色名
   const customCharacterName = $('#diary-character-input').val().trim();
   console.log('用户输入的角色名:', customCharacterName || '(空，使用默认角色名)');
@@ -2832,7 +2828,8 @@ async function continueWriteDiary() {
   try {
     // 构建日记提示词
     console.log('构建日记提示词...');
-    let diaryPrompt = '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}\n</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？\n</日记>';
+    let diaryPrompt =
+      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}>\n</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？\n</日记>';
 
     if (customCharacterName) {
       // 用户输入了自定义角色名，替换{{char}}
@@ -2881,20 +2878,18 @@ async function continueWriteDiary() {
       console.log('日记解析失败，保存到回收站...');
 
       try {
-        const recycleBinResult = await saveToRecycleBin(
-          aiResponse,
-          finalCharacterName,
-          '解析失败'
-        );
+        const recycleBinResult = await saveToRecycleBin(aiResponse, finalCharacterName, '解析失败');
 
         if (recycleBinResult.success) {
           console.log('AI输出已保存到回收站，条目ID:', recycleBinResult.entryId);
-          toastr.error(`未能解析出有效的日记内容，AI输出已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+          toastr.error(
+            `未能解析出有效的日记内容，AI输出已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+            '新写日记流程',
+          );
         } else {
           console.error('保存到回收站也失败了:', recycleBinResult.error);
           toastr.error('未能解析出有效的日记内容，且保存到回收站失败', '新写日记流程');
         }
-
       } catch (recycleBinError) {
         console.error('回收站保存过程中发生错误:', recycleBinError);
         toastr.error('未能解析出有效的日记内容', '新写日记流程');
@@ -2912,7 +2907,6 @@ async function continueWriteDiary() {
     console.log('日记时间:', diaryData.time);
     console.log('日记内容长度:', diaryData.content.length, '字符');
     toastr.success(`成功解析日记："${diaryData.title}"`, '新写日记流程');
-
 
     // 使用新的保存函数（返回详细结果）
     console.log('开始保存日记到世界书...');
@@ -2932,40 +2926,34 @@ async function continueWriteDiary() {
       console.log('写日记流程完成！');
       console.log('日记条目ID:', saveResult.entryId);
 
-
       // 显示保存成功弹窗（替代 toastr 提示）
       console.log('调用保存成功弹窗...');
       showSaveSuccessDialog(saveResult);
-
     } else {
       console.error('保存失败');
       console.log('错误信息:', saveResult.error);
-
 
       // 保存失败时也保存到回收站
       console.log('日记保存失败，保存到回收站...');
 
       try {
-        const recycleBinResult = await saveToRecycleBin(
-          aiResponse,
-          finalCharacterName,
-          '保存失败'
-        );
+        const recycleBinResult = await saveToRecycleBin(aiResponse, finalCharacterName, '保存失败');
 
         if (recycleBinResult.success) {
           console.log('日记内容已保存到回收站，条目ID:', recycleBinResult.entryId);
-          toastr.error(`保存日记失败: ${saveResult.error}。内容已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+          toastr.error(
+            `保存日记失败: ${saveResult.error}。内容已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+            '新写日记流程',
+          );
         } else {
           console.error('保存到回收站也失败了:', recycleBinResult.error);
           toastr.error(`保存日记失败: ${saveResult.error}，且保存到回收站也失败`, '新写日记流程');
         }
-
       } catch (recycleBinError) {
         console.error('回收站保存过程中发生错误:', recycleBinError);
         toastr.error(`保存日记失败: ${saveResult.error}`, '新写日记流程');
       }
     }
-
   } catch (error) {
     console.error('写日记功能错误');
     console.error('错误类型:', error.name);
@@ -2978,20 +2966,18 @@ async function continueWriteDiary() {
 
       const errorContent = typeof aiResponse !== 'undefined' ? aiResponse : `系统错误：${error.message}`;
 
-      const recycleBinResult = await saveToRecycleBin(
-        errorContent,
-        finalCharacterName || '系统错误',
-        '系统错误'
-      );
+      const recycleBinResult = await saveToRecycleBin(errorContent, finalCharacterName || '系统错误', '系统错误');
 
       if (recycleBinResult.success) {
         console.log('错误信息已保存到回收站，条目ID:', recycleBinResult.entryId);
-        toastr.error(`写日记功能出错: ${error.message}。错误信息已保存到回收站（ID: ${recycleBinResult.entryId}）`, '新写日记流程');
+        toastr.error(
+          `写日记功能出错: ${error.message}。错误信息已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+          '新写日记流程',
+        );
       } else {
         console.error('保存错误信息到回收站也失败了:', recycleBinResult.error);
         toastr.error(`写日记功能出错: ${error.message}`, '新写日记流程');
       }
-
     } catch (recycleBinError) {
       console.error('回收站保存错误信息时发生异常:', recycleBinError);
       toastr.error(`写日记功能出错: ${error.message}`, '新写日记流程');
@@ -3003,7 +2989,6 @@ async function continueWriteDiary() {
     }
   }
 }
-
 
 // 开始写日记（修改为先显示弹窗）
 async function startWriteDiary() {
@@ -3039,7 +3024,6 @@ async function startWriteDiary() {
     toastr.error(`写日记功能出错: ${error.message}`, '写日记错误');
   }
 }
-
 
 // 预设配置
 async function configurePresets() {
@@ -3160,7 +3144,6 @@ function getCurrentCharacterName() {
   }
 }
 
-
 // ===== 修改 saveDiaryToWorldbook() 返回值格式 =====
 
 /**
@@ -3171,7 +3154,6 @@ function getCurrentCharacterName() {
  * @returns {Promise<{success: boolean, entryId?: string, error?: string}>}
  */
 async function saveDiaryToWorldbook(diaryData, characterName = null) {
-
   try {
     const worldbookName = DIARY_WORLDBOOK_NAME;
 
@@ -3234,9 +3216,8 @@ async function saveDiaryToWorldbook(diaryData, characterName = null) {
       success: true,
       entryId: entryId,
       title: diaryData.title,
-      characterName: finalCharacterName
+      characterName: finalCharacterName,
     };
-
   } catch (error) {
     const errorMsg = `保存日记失败: ${error.message}`;
     console.error('错误类型:', error.name);
@@ -3251,12 +3232,11 @@ async function saveDiaryToWorldbook(diaryData, characterName = null) {
       errorDetails: {
         name: error.name,
         message: error.message,
-        stack: error.stack
-      }
+        stack: error.stack,
+      },
     };
   }
 }
-
 
 // ===== 回收站功能 =====
 
@@ -3341,9 +3321,8 @@ async function saveToRecycleBin(aiOutput, characterName, failureReason, context 
     return {
       success: true,
       entryId: entryId,
-      characterName: characterName
+      characterName: characterName,
     };
-
   } catch (error) {
     const errorMsg = `保存到回收站失败: ${error.message}`;
     console.error('错误类型:', error.name);
@@ -3356,12 +3335,11 @@ async function saveToRecycleBin(aiOutput, characterName, failureReason, context 
       errorDetails: {
         name: error.name,
         message: error.message,
-        stack: error.stack
-      }
+        stack: error.stack,
+      },
     };
   }
 }
-
 
 // ===== 回收站UI管理功能 =====
 
@@ -3424,7 +3402,6 @@ async function refreshRecycleBin() {
 
     // 渲染回收站列表
     renderRecycleBinList(entriesArray);
-
   } catch (error) {
     console.error('刷新回收站失败:', error);
     $('#recycle-bin-list').html('<div class="recycle-bin-empty">加载失败</div>');
@@ -3492,8 +3469,7 @@ function renderRecycleBinList(entries) {
     // 渲染该角色下的条目（不显示标题，只显示预览）
     characterEntries.forEach(entry => {
       // 生成预览文本（前80个字符）
-      const preview = entry.content.replace(/\n/g, ' ').substring(0, 80) +
-                     (entry.content.length > 80 ? '...' : '');
+      const preview = entry.content.replace(/\n/g, ' ').substring(0, 80) + (entry.content.length > 80 ? '...' : '');
 
       html += `
         <div class="recycle-bin-item" data-entry-id="${entry.uid}">
@@ -3514,27 +3490,31 @@ function renderRecycleBinList(entries) {
   $('#recycle-bin-list').html(html);
 
   // 重新绑定点击事件
-  $('.recycle-bin-item').off('click').on('click', function() {
-    const entryId = $(this).data('entry-id');
-    showRecycleBinItemDetail(entryId);
-  });
+  $('.recycle-bin-item')
+    .off('click')
+    .on('click', function () {
+      const entryId = $(this).data('entry-id');
+      showRecycleBinItemDetail(entryId);
+    });
 
   // 绑定角色标题展开/收起事件
-  $('.recycle-character-header').off('click').on('click', function() {
-    const $header = $(this);
-    const $items = $header.next('.recycle-character-items');
-    const $toggle = $header.find('.recycle-character-toggle');
+  $('.recycle-character-header')
+    .off('click')
+    .on('click', function () {
+      const $header = $(this);
+      const $items = $header.next('.recycle-character-items');
+      const $toggle = $header.find('.recycle-character-toggle');
 
-    if ($items.is(':visible')) {
-      // 收起
-      $items.slideUp(200);
-      $toggle.text('▶');
-    } else {
-      // 展开
-      $items.slideDown(200);
-      $toggle.text('▼');
-    }
-  });
+      if ($items.is(':visible')) {
+        // 收起
+        $items.slideUp(200);
+        $toggle.text('▶');
+      } else {
+        // 展开
+        $items.slideDown(200);
+        $toggle.text('▼');
+      }
+    });
 }
 
 /**
@@ -3579,7 +3559,6 @@ async function showRecycleBinItemDetail(entryId) {
     $('#recycle-bin-detail').show();
 
     console.log('条目详情显示完成');
-
   } catch (error) {
     console.error('显示条目详情失败:', error);
     toastr.error('显示条目详情失败', '回收站');
@@ -3648,12 +3627,10 @@ async function saveRecycleBinItemAsDiary() {
 
       // 刷新回收站列表
       refreshRecycleBin();
-
     } else {
       console.error('日记保存失败:', saveResult.error);
       toastr.error(`日记保存失败: ${saveResult.error}`, '回收站');
     }
-
   } catch (error) {
     console.error('保存为日记过程中发生错误:', error);
     toastr.error('保存为日记失败', '回收站');
@@ -3711,7 +3688,6 @@ async function deleteRecycleBinItem(showConfirm = true) {
     // 返回列表
     hideRecycleBinDetail();
     refreshRecycleBin();
-
   } catch (error) {
     console.error('删除条目失败:', error);
     toastr.error('删除条目失败', '回收站');
@@ -3755,7 +3731,6 @@ async function clearRecycleBin() {
     // 刷新显示
     hideRecycleBinDetail();
     refreshRecycleBin();
-
   } catch (error) {
     console.error('清空回收站失败:', error);
     toastr.error('清空回收站失败', '回收站');
@@ -3773,45 +3748,58 @@ function createRecycleBinDialog() {
   $('#diary-recycle-bin-dialog').appendTo('body');
 
   // 绑定关闭按钮事件
-  $('#diary-recycle-bin-dialog .diary-close-btn').off('click').on('click', function() {
-    hideRecycleBinDialog();
-  });
+  $('#diary-recycle-bin-dialog .diary-close-btn')
+    .off('click')
+    .on('click', function () {
+      hideRecycleBinDialog();
+    });
 
   // 点击遮罩层关闭
-  $('#diary-recycle-bin-dialog').off('click').on('click', function(e) {
-    if (e.target === this) {
-      hideRecycleBinDialog();
-    }
-  });
+  $('#diary-recycle-bin-dialog')
+    .off('click')
+    .on('click', function (e) {
+      if (e.target === this) {
+        hideRecycleBinDialog();
+      }
+    });
 
   // ESC键关闭
-  $(document).off('keydown.recycleBin').on('keydown.recycleBin', function(e) {
-    if (e.keyCode === 27 && $('#diary-recycle-bin-dialog').is(':visible')) {
-      hideRecycleBinDialog();
-    }
-  });
+  $(document)
+    .off('keydown.recycleBin')
+    .on('keydown.recycleBin', function (e) {
+      if (e.keyCode === 27 && $('#diary-recycle-bin-dialog').is(':visible')) {
+        hideRecycleBinDialog();
+      }
+    });
 
   // 清空回收站按钮
-  $('#clear-recycle-bin').off('click').on('click', function() {
-    clearRecycleBin();
-  });
+  $('#clear-recycle-bin')
+    .off('click')
+    .on('click', function () {
+      clearRecycleBin();
+    });
 
   // 条目详情页按钮
-  $('#recycle-bin-back-btn').off('click').on('click', function() {
-    hideRecycleBinDetail();
-  });
+  $('#recycle-bin-back-btn')
+    .off('click')
+    .on('click', function () {
+      hideRecycleBinDetail();
+    });
 
-  $('#recycle-bin-save-btn').off('click').on('click', function() {
-    saveRecycleBinItemAsDiary();
-  });
+  $('#recycle-bin-save-btn')
+    .off('click')
+    .on('click', function () {
+      saveRecycleBinItemAsDiary();
+    });
 
-  $('#recycle-bin-delete-btn').off('click').on('click', function() {
-    deleteRecycleBinItem();
-  });
+  $('#recycle-bin-delete-btn')
+    .off('click')
+    .on('click', function () {
+      deleteRecycleBinItem();
+    });
 
   console.log('✅ 回收站对话框已初始化');
 }
-
 
 // ===== 保存成功弹窗功能 =====
 
@@ -3878,7 +3866,6 @@ function showSaveSuccessDialog(saveResult) {
         $dialog[0].style.setProperty('visibility', 'visible', 'important');
       }
     }, 100);
-
   } catch (error) {
     console.error('显示弹窗时发生错误:', error);
   }
@@ -3934,14 +3921,12 @@ function viewSavedDiary(entryId, characterName) {
 
           console.log('成功显示日记详情页面');
           console.log('查看日记流程完成');
-
         } catch (detailError) {
           console.error('显示日记详情失败:', detailError);
           toastr.error('无法显示日记详情，请手动查看', '查看日记');
         }
       }, 300);
     }, 300);
-
   } catch (error) {
     console.error('错误类型:', error.name);
     console.error('错误信息:', error.message);
@@ -3972,47 +3957,54 @@ function bindSaveSuccessDialogEvents() {
   console.log('绑定保存成功弹窗事件...');
 
   // 关闭按钮（右上角X）
-  $('#diary-save-success-close-btn').off('click').on('click', function(e) {
-    e.preventDefault();
-    console.log('用户点击关闭按钮（X）');
-    hideSaveSuccessDialog();
-  });
+  $('#diary-save-success-close-btn')
+    .off('click')
+    .on('click', function (e) {
+      e.preventDefault();
+      console.log('用户点击关闭按钮（X）');
+      hideSaveSuccessDialog();
+    });
 
   // 关闭按钮（底部关闭按钮）
-  $('#diary-save-success-close-action-btn').off('click').on('click', function(e) {
-    e.preventDefault();
-    console.log('用户点击关闭按钮');
-    hideSaveSuccessDialog();
-  });
+  $('#diary-save-success-close-action-btn')
+    .off('click')
+    .on('click', function (e) {
+      e.preventDefault();
+      console.log('用户点击关闭按钮');
+      hideSaveSuccessDialog();
+    });
 
   // 查看日记按钮
-  $('#diary-save-success-view-btn').off('click').on('click', function(e) {
-    e.preventDefault();
-    console.log('用户点击查看日记按钮');
+  $('#diary-save-success-view-btn')
+    .off('click')
+    .on('click', function (e) {
+      e.preventDefault();
+      console.log('用户点击查看日记按钮');
 
-    const entryId = $('#diary-save-success-dialog').data('entryId');
-    const characterName = $('#diary-save-success-dialog').data('characterName');
+      const entryId = $('#diary-save-success-dialog').data('entryId');
+      const characterName = $('#diary-save-success-dialog').data('characterName');
 
-    if (entryId && characterName) {
-      viewSavedDiary(entryId, characterName);
-    } else {
-      console.error('缺少必要数据，无法查看日记');
-      toastr.error('缺少日记信息，无法查看', '查看日记');
-      hideSaveSuccessDialog();
-    }
-  });
+      if (entryId && characterName) {
+        viewSavedDiary(entryId, characterName);
+      } else {
+        console.error('缺少必要数据，无法查看日记');
+        toastr.error('缺少日记信息，无法查看', '查看日记');
+        hideSaveSuccessDialog();
+      }
+    });
 
   // 点击遮罩层关闭弹窗
-  $('#diary-save-success-dialog').off('click').on('click', function(e) {
-    if (e.target === this) {
-      console.log('用户点击遮罩层关闭弹窗');
-      hideSaveSuccessDialog();
-    }
-  });
+  $('#diary-save-success-dialog')
+    .off('click')
+    .on('click', function (e) {
+      if (e.target === this) {
+        console.log('用户点击遮罩层关闭弹窗');
+        hideSaveSuccessDialog();
+      }
+    });
 
   console.log('事件绑定完成');
 }
-
 
 // ===== 悬浮窗功能 =====
 
@@ -5957,7 +5949,7 @@ function sha256Hash(message) {
       const bin = [];
       const mask = (1 << 8) - 1;
       for (let i = 0; i < str.length * 8; i += 8) {
-        bin[i >> 5] |= (str.charCodeAt(i / 8) & mask) << (24 - i % 32);
+        bin[i >> 5] |= (str.charCodeAt(i / 8) & mask) << (24 - (i % 32));
       }
       return bin;
     }
@@ -5966,16 +5958,17 @@ function sha256Hash(message) {
       const hex_tab = '0123456789abcdef';
       let str = '';
       for (let i = 0; i < binarray.length * 4; i++) {
-        str += hex_tab.charAt((binarray[i >> 2] >> ((3 - i % 4) * 8 + 4)) & 0xF) +
-               hex_tab.charAt((binarray[i >> 2] >> ((3 - i % 4) * 8  )) & 0xF);
+        str +=
+          hex_tab.charAt((binarray[i >> 2] >> ((3 - (i % 4)) * 8 + 4)) & 0xf) +
+          hex_tab.charAt((binarray[i >> 2] >> ((3 - (i % 4)) * 8)) & 0xf);
       }
       return str;
     }
 
     function safe_add(x, y) {
-      const lsw = (x & 0xFFFF) + (y & 0xFFFF);
+      const lsw = (x & 0xffff) + (y & 0xffff);
       const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-      return (msw << 16) | (lsw & 0xFFFF);
+      return (msw << 16) | (lsw & 0xffff);
     }
 
     function S(X, n) {
@@ -5983,52 +5976,52 @@ function sha256Hash(message) {
     }
 
     function R(X, n) {
-      return (X >>> n);
+      return X >>> n;
     }
 
     function Ch(x, y, z) {
-      return ((x & y) ^ ((~x) & z));
+      return (x & y) ^ (~x & z);
     }
 
     function Maj(x, y, z) {
-      return ((x & y) ^ (x & z) ^ (y & z));
+      return (x & y) ^ (x & z) ^ (y & z);
     }
 
     function Sigma0256(x) {
-      return (S(x, 2) ^ S(x, 13) ^ S(x, 22));
+      return S(x, 2) ^ S(x, 13) ^ S(x, 22);
     }
 
     function Sigma1256(x) {
-      return (S(x, 6) ^ S(x, 11) ^ S(x, 25));
+      return S(x, 6) ^ S(x, 11) ^ S(x, 25);
     }
 
     function Gamma0256(x) {
-      return (S(x, 7) ^ S(x, 18) ^ R(x, 3));
+      return S(x, 7) ^ S(x, 18) ^ R(x, 3);
     }
 
     function Gamma1256(x) {
-      return (S(x, 17) ^ S(x, 19) ^ R(x, 10));
+      return S(x, 17) ^ S(x, 19) ^ R(x, 10);
     }
 
     function core_sha256(m, l) {
       const K = [
-        0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
-        0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
-        0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
-        0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
-        0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
-        0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
-        0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
-        0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
+        0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+        0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8,
+        0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819,
+        0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+        0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
+        0xc67178f2,
       ];
 
-      const HASH = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19];
+      const HASH = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
       const W = new Array(64);
       let a, b, c, d, e, f, g, h;
       let T1, T2;
 
-      m[l >> 5] |= 0x80 << (24 - l % 32);
-      m[((l + 64 >> 9) << 4) + 15] = l;
+      m[l >> 5] |= 0x80 << (24 - (l % 32));
+      m[(((l + 64) >> 9) << 4) + 15] = l;
 
       for (let i = 0; i < m.length; i += 16) {
         a = HASH[0];
@@ -6178,18 +6171,12 @@ async function verifyAuthorInfo() {
       message: 'OK',
     };
   } catch (error) {
-    console.error(
-      '%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      'color: #f56565; font-weight: bold;',
-    );
+    console.error('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #f56565; font-weight: bold;');
     console.error(
       '%c❌ CC BY-NC-ND 4.0 License Violation | CC BY-NC-ND 4.0许可证违反检测',
       'color: #f56565; font-size: 16px; font-weight: bold;',
     );
-    console.error(
-      '%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      'color: #f56565; font-weight: bold;',
-    );
+    console.error('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #f56565; font-weight: bold;');
     console.error('%c🇨🇳 ' + decodeBase64(MSG_DESC_ZH), 'color: #fc8181;');
     console.error('%c🇬🇧 ' + decodeBase64(MSG_DESC_EN), 'color: #fc8181;');
     console.error('%c⚠️  ' + decodeBase64(MSG_WARNING_ZH), 'color: #fbbf24; font-weight: bold;');
@@ -6197,10 +6184,7 @@ async function verifyAuthorInfo() {
     console.error('%c🔗 ' + decodeBase64(MSG_OFFICIAL_ZH), 'color: #48bb78;');
     console.error('%c🔗 ' + decodeBase64(MSG_OFFICIAL_EN), 'color: #48bb78;');
     console.error('%c   ' + decodeBase64(MSG_DISCORD_URL), 'color: #60a5fa; font-size: 14px;');
-    console.error(
-      '%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      'color: #f56565; font-weight: bold;',
-    );
+    console.error('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #f56565; font-weight: bold;');
 
     return {
       verified: false,
@@ -6232,7 +6216,6 @@ jQuery(async () => {
     verification = await verifyAuthorInfo();
 
     if (!verification.verified) {
-
       const errorTitle = `${decodeBase64(MSG_TITLE_ZH)} | ${decodeBase64(MSG_TITLE_EN)}`;
       const errorMessage = `
         <div style="line-height: 1.6;">
@@ -6273,7 +6256,6 @@ jQuery(async () => {
 
       return; // 阻止插件继续初始化
     }
-
 
     // 绑定事件处理器
 
