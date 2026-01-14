@@ -7,7 +7,7 @@
   @author    Etaf Cisky
   @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
   @license   CC BY-NC-ND 4.0
-  @version   4.2.0
+  @version   5.0.0
   @link      https://github.com/EtafCisky/sillytavernDIARY
 
   ============================================================================
@@ -38,6 +38,9 @@
           <button class="diary-tab-btn active" data-tab="config">
             <span class="diary-tab-text">配置管理</span>
           </button>
+          <button class="diary-tab-btn" data-tab="features">
+            <span class="diary-tab-text">功能设定</span>
+          </button>
           <button class="diary-tab-btn" data-tab="theme">
             <span class="diary-tab-text">主题美化</span>
           </button>
@@ -52,7 +55,70 @@
           <div class="diary-tab-pane active" id="diary-tab-config">
             <div class="diary-tab-header">
               <h3>配置管理</h3>
-              <p>管理插件的基础配置和功能设置</p>
+              <p>管理插件的基础配置</p>
+            </div>
+
+            <!-- 数据导入导出 -->
+            <div class="diary-config-group">
+              <h4>数据备份</h4>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">导出数据</span>
+                  <span class="diary-config-desc">将所有日记和回收站数据导出为JSON文件，便于备份和迁移</span>
+                </div>
+                <div class="diary-config-value">
+                  <button id="diary_export_data" class="diary-btn diary-btn-primary">
+                    <span>📤 导出数据</span>
+                  </button>
+                </div>
+              </div>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">导入数据</span>
+                  <span class="diary-config-desc">从JSON文件导入日记和回收站数据（会与现有数据合并）</span>
+                </div>
+                <div class="diary-config-value">
+                  <input type="file" id="diary_import_file" accept=".json" style="display: none" />
+                  <button id="diary_import_data" class="diary-btn diary-btn-secondary">
+                    <span>📥 导入数据</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 悬浮窗控制 -->
+            <div class="diary-config-group">
+              <h4>悬浮窗控制</h4>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">悬浮窗显示</span>
+                  <span class="diary-config-desc">控制聊天页面悬浮窗的显示状态</span>
+                </div>
+                <div class="diary-config-value">
+                  <button id="diary_toggle_float_window" class="diary-btn diary-btn-secondary">
+                    <span>显示/隐藏</span>
+                  </button>
+                </div>
+              </div>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">窗口位置</span>
+                  <span class="diary-config-desc">重置悬浮窗到屏幕默认位置</span>
+                </div>
+                <div class="diary-config-value">
+                  <button id="diary_reset_float_position" class="diary-btn diary-btn-secondary">
+                    <span>重置位置</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 功能设定栏 -->
+          <div class="diary-tab-pane" id="diary-tab-features">
+            <div class="diary-tab-header">
+              <h3>功能设定</h3>
+              <p>配置插件的高级功能和自动化选项</p>
             </div>
 
             <!-- 自动写日记配置 -->
@@ -101,33 +167,6 @@
               </div>
               <div class="diary-config-item diary-preset-status">
                 <span id="diary_selected_preset" class="diary-preset-info">未选择预设</span>
-              </div>
-            </div>
-
-            <!-- 悬浮窗控制 -->
-            <div class="diary-config-group">
-              <h4>悬浮窗控制</h4>
-              <div class="diary-config-item">
-                <div class="diary-config-label">
-                  <span class="diary-config-title">悬浮窗显示</span>
-                  <span class="diary-config-desc">控制聊天页面悬浮窗的显示状态</span>
-                </div>
-                <div class="diary-config-value">
-                  <button id="diary_toggle_float_window" class="diary-btn diary-btn-secondary">
-                    <span>显示/隐藏</span>
-                  </button>
-                </div>
-              </div>
-              <div class="diary-config-item">
-                <div class="diary-config-label">
-                  <span class="diary-config-title">窗口位置</span>
-                  <span class="diary-config-desc">重置悬浮窗到屏幕默认位置</span>
-                </div>
-                <div class="diary-config-value">
-                  <button id="diary_reset_float_position" class="diary-btn diary-btn-secondary">
-                    <span>重置位置</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -259,7 +298,7 @@
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">版本：</span>
-                  <span class="diary-author-value">v4.0.0</span>
+                  <span class="diary-author-value">v5.0.0</span>
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">原作者：</span>
@@ -349,8 +388,8 @@
         <div class="diary-save-success-message">
           <div class="diary-save-success-main-text">日记已成功保存到日记本！</div>
           <div class="diary-save-success-sub-text" id="diary-save-success-details">
-            标题：<span id="diary-save-success-title-text">加载中...</span><br>
-            角色：<span id="diary-save-success-character-text">加载中...</span><br>
+            标题：<span id="diary-save-success-title-text">加载中...</span><br />
+            角色：<span id="diary-save-success-character-text">加载中...</span><br />
           </div>
         </div>
       </div>
@@ -589,6 +628,22 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 更新通知弹窗 -->
+<div id="diary-update-notification" class="diary-update-notification" style="display: none">
+  <div class="diary-update-content">
+    <div class="diary-update-header">
+      <span id="diary-update-version-title">v5.0.0 更新</span>
+      <button id="diary-update-close-btn" class="diary-update-close">&times;</button>
+    </div>
+    <div class="diary-update-body">
+      <div id="diary-update-message" class="diary-update-message"></div>
+    </div>
+    <div class="diary-update-footer">
+      <button id="diary-update-confirm-btn" class="diary-update-btn">知道了</button>
     </div>
   </div>
 </div>
