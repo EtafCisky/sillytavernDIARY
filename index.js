@@ -6,7 +6,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   4.2.0
+ * @version   5.0.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
@@ -65,7 +65,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const PLUGIN_AUTHOR = {
   name: 'Etaf Cisky',
   github: 'https://github.com/EtafCisky/sillytavernDIARY',
-  version: '4.2.0',
+  version: '5.0.0',
   fingerprint: 'EC-STD-2025',
   copyright: 'Copyright (c) 2025 Etaf Cisky',
 };
@@ -129,14 +129,857 @@ const RECYCLE_BIN_WORLDBOOK_NAME = '回收站';
 // 日记内容正则表达式
 const DIARY_REGEX = /<日记>\s*标题：([^\n]+)\s*时间：([^\n]+)\s*内容：([\s\S]*?)\s*<\/日记>/g;
 
+// ===== 本地存储 API 封装（使用 extension_settings）=====
+
+/**
+ * 数据存储 API
+ * 使用 SillyTavern 的 extension_settings 来存储日记和回收站数据
+ * 所有数据存储在 extension_settings[extensionName] 中
+ */
+const DataStorageAPI = {
+  /**
+   * 读取日记数据
+   * @returns {Object} 日记数据对象
+   */
+  loadDiaries() {
+    try {
+      const settings = extension_settings[extensionName] || {};
+      const diaries = settings.diaries || {};
+      console.log('[数据存储] 成功加载日记数据');
+      return diaries;
+    } catch (error) {
+      console.error('[数据存储] 加载日记数据失败:', error);
+      return {};
+    }
+  },
+
+  /**
+   * 保存日记数据
+   * @param {Object} data - 日记数据对象
+   * @returns {boolean} 是否成功
+   */
+  saveDiaries(data) {
+    try {
+      if (!extension_settings[extensionName]) {
+        extension_settings[extensionName] = {};
+      }
+      extension_settings[extensionName].diaries = data;
+      saveSettings();
+      console.log('[数据存储] 成功保存日记数据');
+      return true;
+    } catch (error) {
+      console.error('[数据存储] 保存日记数据失败:', error);
+      return false;
+    }
+  },
+
+  /**
+   * 读取回收站数据
+   * @returns {Object} 回收站数据对象
+   */
+  loadRecycleBin() {
+    try {
+      const settings = extension_settings[extensionName] || {};
+      const recycleBin = settings.recycleBin || {};
+      console.log('[数据存储] 成功加载回收站数据');
+      return recycleBin;
+    } catch (error) {
+      console.error('[数据存储] 加载回收站数据失败:', error);
+      return {};
+    }
+  },
+
+  /**
+   * 保存回收站数据
+   * @param {Object} data - 回收站数据对象
+   * @returns {boolean} 是否成功
+   */
+  saveRecycleBin(data) {
+    try {
+      if (!extension_settings[extensionName]) {
+        extension_settings[extensionName] = {};
+      }
+      extension_settings[extensionName].recycleBin = data;
+      saveSettings();
+      console.log('[数据存储] 成功保存回收站数据');
+      return true;
+    } catch (error) {
+      console.error('[数据存储] 保存回收站数据失败:', error);
+      return false;
+    }
+  },
+};
+
+/**
+ * 清理文件名,移除非法字符
+ * @param {string} name - 原始文件名
+ * @returns {string} 清理后的文件名
+ */
+function sanitizeFilename(name) {
+  if (!name) return 'unnamed';
+  // 移除非法字符: / \ : * ? " < > |
+  // 同时移除前后空格
+  return name.replace(/[/\\:*?"<>|]/g, '_').trim() || 'unnamed';
+}
+
+// ===== 日记存储模块 (使用单一 JSON 文件) =====
+
+/**
+ * 日记数据结构：
+ * {
+ *   "角色A": [
+ *     { id: 1, title: "标题", time: "时间", content: "内容", createTime: "ISO时间" },
+ *     { id: 2, title: "标题", time: "时间", content: "内容", createTime: "ISO时间" }
+ *   ],
+ *   "角色B": [...]
+ * }
+ */
+
+/**
+ * 读取所有日记数据
+ * @returns {Promise<Object>} 日记数据对象
+ */
+async function loadAllDiaries() {
+  try {
+    const data = DataStorageAPI.loadDiaries();
+    console.log('[日记存储] 成功加载日记数据');
+    return data;
+  } catch (error) {
+    console.error('[日记存储] 加载日记数据失败:', error);
+    return {};
+  }
+}
+
+/**
+ * 保存所有日记数据
+ * @param {Object} data - 日记数据对象
+ * @returns {Promise<boolean>} 是否成功
+ */
+async function saveAllDiaries(data) {
+  try {
+    const success = DataStorageAPI.saveDiaries(data);
+    console.log('[日记存储] 成功保存日记数据');
+    return success;
+  } catch (error) {
+    console.error('[日记存储] 保存日记数据失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取角色的下一个日记 ID
+ * @param {string} characterName - 角色名
+ * @returns {Promise<number>} 下一个日记 ID
+ */
+async function getNextDiaryId(characterName) {
+  try {
+    const allDiaries = await loadAllDiaries();
+    const characterDiaries = allDiaries[characterName] || [];
+
+    if (characterDiaries.length === 0) {
+      return 1;
+    }
+
+    // 找到最大 ID
+    const maxId = Math.max(...characterDiaries.map(d => d.id));
+    return maxId + 1;
+  } catch (error) {
+    console.error('[日记存储] 获取下一个日记 ID 失败:', error);
+    return 1;
+  }
+}
+
+/**
+ * 保存日记到文件
+ * @param {Object} diaryData - 日记数据 { title, time, content }
+ * @param {string} characterName - 角色名
+ * @returns {Promise<{success: boolean, diaryId?: number, error?: string}>}
+ */
+async function saveDiaryToFile(diaryData, characterName) {
+  try {
+    console.log('[日记存储] 开始保存日记...');
+    console.log('[日记存储] 角色名:', characterName);
+    console.log('[日记存储] 日记标题:', diaryData.title);
+
+    // 加载所有日记
+    const allDiaries = await loadAllDiaries();
+
+    // 获取下一个日记 ID
+    const diaryId = await getNextDiaryId(characterName);
+    console.log('[日记存储] 日记 ID:', diaryId);
+
+    // 构建日记对象
+    const diary = {
+      id: diaryId,
+      title: diaryData.title,
+      time: diaryData.time,
+      content: diaryData.content,
+      author: characterName,
+      createTime: new Date().toISOString(),
+    };
+
+    // 添加到角色的日记列表
+    if (!allDiaries[characterName]) {
+      allDiaries[characterName] = [];
+    }
+    allDiaries[characterName].push(diary);
+
+    // 保存到文件
+    const success = await saveAllDiaries(allDiaries);
+    if (!success) {
+      throw new Error('保存文件失败');
+    }
+
+    console.log('[日记存储] 日记保存成功, ID:', diaryId);
+    return { success: true, diaryId: diaryId };
+  } catch (error) {
+    console.error('[日记存储] 保存日记失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 从文件加载单篇日记
+ * @param {string} characterName - 角色名
+ * @param {number} diaryId - 日记 ID
+ * @returns {Promise<Object|null>} 日记对象或 null
+ */
+async function loadDiaryFromFile(characterName, diaryId) {
+  try {
+    const allDiaries = await loadAllDiaries();
+    const characterDiaries = allDiaries[characterName] || [];
+
+    const diary = characterDiaries.find(d => d.id === diaryId);
+    if (diary) {
+      console.log('[日记存储] 日记加载成功:', diary.title);
+      return diary;
+    } else {
+      console.log('[日记存储] 未找到日记:', characterName, diaryId);
+      return null;
+    }
+  } catch (error) {
+    console.error('[日记存储] 加载日记失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 获取角色的所有日记
+ * @param {string} characterName - 角色名
+ * @returns {Promise<Array>} 日记列表
+ */
+async function getCharacterDiaries(characterName) {
+  try {
+    const allDiaries = await loadAllDiaries();
+    const characterDiaries = allDiaries[characterName] || [];
+
+    // 按 ID 降序排序（最新的日记在前面）
+    characterDiaries.sort((a, b) => b.id - a.id);
+
+    console.log(`[日记存储] 加载了 ${characterDiaries.length} 篇日记 (${characterName})`);
+    return characterDiaries;
+  } catch (error) {
+    console.error('[日记存储] 获取角色日记失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取所有角色列表
+ * @returns {Promise<Array>} 角色名列表
+ */
+async function getAllCharacters() {
+  try {
+    const allDiaries = await loadAllDiaries();
+    const characters = Object.keys(allDiaries);
+
+    console.log(`[日记存储] 找到 ${characters.length} 个角色:`, characters);
+    return characters;
+  } catch (error) {
+    console.error('[日记存储] 获取角色列表失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 删除日记
+ * @param {string} characterName - 角色名
+ * @param {number} diaryId - 日记 ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function deleteDiaryFromFile(characterName, diaryId) {
+  try {
+    console.log('[日记存储] 删除日记:', characterName, diaryId);
+
+    const allDiaries = await loadAllDiaries();
+    const characterDiaries = allDiaries[characterName] || [];
+
+    // 过滤掉要删除的日记
+    const filteredDiaries = characterDiaries.filter(d => d.id !== diaryId);
+
+    if (filteredDiaries.length === characterDiaries.length) {
+      console.log('[日记存储] 未找到要删除的日记');
+      return { success: false, error: '日记不存在' };
+    }
+
+    // 更新数据
+    if (filteredDiaries.length === 0) {
+      delete allDiaries[characterName];
+    } else {
+      allDiaries[characterName] = filteredDiaries;
+    }
+
+    // 保存到文件
+    const success = await saveAllDiaries(allDiaries);
+    if (!success) {
+      throw new Error('保存文件失败');
+    }
+
+    console.log('[日记存储] 日记删除成功');
+    return { success: true };
+  } catch (error) {
+    console.error('[日记存储] 删除日记失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ===== 回收站模块 (使用单一 JSON 文件) =====
+
+/**
+ * 回收站数据结构：
+ * {
+ *   "角色A": [
+ *     { id: 1, content: "AI输出内容", failureReason: "原因", saveTime: "时间" },
+ *     { id: 2, content: "AI输出内容", failureReason: "原因", saveTime: "时间" }
+ *   ],
+ *   "角色B": [...]
+ * }
+ */
+
+/**
+ * 读取所有回收站数据
+ * @returns {Promise<Object>} 回收站数据对象
+ */
+async function loadAllRecycleBin() {
+  try {
+    const data = DataStorageAPI.loadRecycleBin();
+    console.log('[回收站] 成功加载回收站数据');
+    return data;
+  } catch (error) {
+    console.error('[回收站] 加载回收站数据失败:', error);
+    return {};
+  }
+}
+
+/**
+ * 保存所有回收站数据
+ * @param {Object} data - 回收站数据对象
+ * @returns {Promise<boolean>} 是否成功
+ */
+async function saveAllRecycleBin(data) {
+  try {
+    const success = DataStorageAPI.saveRecycleBin(data);
+    console.log('[回收站] 成功保存回收站数据');
+    return success;
+  } catch (error) {
+    console.error('[回收站] 保存回收站数据失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取角色的下一个回收站序号
+ * @param {string} characterName - 角色名
+ * @returns {Promise<number>} 下一个序号
+ */
+async function getNextRecycleBinNumber(characterName) {
+  try {
+    const allRecycleBin = await loadAllRecycleBin();
+    const characterRecycleBin = allRecycleBin[characterName] || [];
+
+    if (characterRecycleBin.length === 0) {
+      return 1;
+    }
+
+    // 找到最大 ID
+    const maxId = Math.max(...characterRecycleBin.map(r => r.id));
+    return maxId + 1;
+  } catch (error) {
+    console.error('[回收站] 获取下一个序号失败:', error);
+    return 1;
+  }
+}
+
+/**
+ * 保存内容到回收站
+ * @param {string} content - 内容
+ * @param {string} characterName - 角色名
+ * @param {string} failureReason - 失败原因
+ * @returns {Promise<{success: boolean, id?: number, error?: string}>}
+ */
+async function saveToRecycleBinFile(content, characterName, failureReason = '未知原因') {
+  try {
+    console.log('[回收站] 保存到回收站...');
+    console.log('[回收站] 角色名:', characterName);
+    console.log('[回收站] 失败原因:', failureReason);
+
+    // 加载所有回收站数据
+    const allRecycleBin = await loadAllRecycleBin();
+
+    // 获取下一个序号
+    const id = await getNextRecycleBinNumber(characterName);
+    console.log('[回收站] 序号:', id);
+
+    // 构建回收站对象
+    const recycleBinItem = {
+      id: id,
+      content: content,
+      failureReason: failureReason,
+      saveTime: new Date().toLocaleString('zh-CN'),
+    };
+
+    // 添加到角色的回收站列表
+    if (!allRecycleBin[characterName]) {
+      allRecycleBin[characterName] = [];
+    }
+    allRecycleBin[characterName].push(recycleBinItem);
+
+    // 保存到文件
+    const success = await saveAllRecycleBin(allRecycleBin);
+    if (!success) {
+      throw new Error('保存文件失败');
+    }
+
+    console.log('[回收站] 保存成功, ID:', id);
+    return { success: true, id: id };
+  } catch (error) {
+    console.error('[回收站] 保存失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 从回收站加载单个条目
+ * @param {string} characterName - 角色名
+ * @param {number} id - 回收站 ID
+ * @returns {Promise<Object|null>} 回收站对象或 null
+ */
+async function loadRecycleBinItem(characterName, id) {
+  try {
+    const allRecycleBin = await loadAllRecycleBin();
+    const characterRecycleBin = allRecycleBin[characterName] || [];
+
+    const item = characterRecycleBin.find(r => r.id === id);
+    if (item) {
+      console.log('[回收站] 条目加载成功:', id);
+      return {
+        ...item,
+        characterName: characterName,
+      };
+    } else {
+      console.log('[回收站] 未找到条目:', characterName, id);
+      return null;
+    }
+  } catch (error) {
+    console.error('[回收站] 加载条目失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 获取所有回收站文件（按角色分组）
+ * @returns {Promise<Object>} 按角色分组的回收站对象
+ */
+async function getAllRecycleBinFiles() {
+  try {
+    const allRecycleBin = await loadAllRecycleBin();
+
+    // 转换格式以兼容旧代码
+    const groupedFiles = {};
+    for (const characterName in allRecycleBin) {
+      groupedFiles[characterName] = allRecycleBin[characterName].map(item => ({
+        filename: `${characterName}_${item.id}`,
+        characterName: characterName,
+        number: item.id,
+        content: item.content,
+        metadata: {
+          角色名: characterName,
+          序号: item.id,
+          失败原因: item.failureReason,
+          保存时间: item.saveTime,
+        },
+      }));
+
+      // 按序号排序
+      groupedFiles[characterName].sort((a, b) => a.number - b.number);
+    }
+
+    const totalCount = Object.values(groupedFiles).reduce((sum, arr) => sum + arr.length, 0);
+    console.log(`[回收站] 加载了 ${totalCount} 个条目`);
+    return groupedFiles;
+  } catch (error) {
+    console.error('[回收站] 获取文件列表失败:', error);
+    return {};
+  }
+}
+
+/**
+ * 删除回收站条目
+ * @param {string} characterName - 角色名
+ * @param {number} id - 回收站 ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function deleteRecycleBinItem(characterName, id) {
+  try {
+    console.log('[回收站] 删除条目:', characterName, id);
+
+    const allRecycleBin = await loadAllRecycleBin();
+    const characterRecycleBin = allRecycleBin[characterName] || [];
+
+    // 过滤掉要删除的条目
+    const filteredRecycleBin = characterRecycleBin.filter(r => r.id !== id);
+
+    if (filteredRecycleBin.length === characterRecycleBin.length) {
+      console.log('[回收站] 未找到要删除的条目');
+      return { success: false, error: '条目不存在' };
+    }
+
+    // 更新数据
+    if (filteredRecycleBin.length === 0) {
+      delete allRecycleBin[characterName];
+    } else {
+      allRecycleBin[characterName] = filteredRecycleBin;
+    }
+
+    // 保存到文件
+    const success = await saveAllRecycleBin(allRecycleBin);
+    if (!success) {
+      throw new Error('保存文件失败');
+    }
+
+    console.log('[回收站] 条目删除成功');
+    return { success: true };
+  } catch (error) {
+    console.error('[回收站] 删除条目失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 删除回收站文件（兼容旧接口）
+ * @param {string} filename - 文件名（格式：角色名_ID）
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function deleteRecycleBinFile(filename) {
+  try {
+    // 从文件名解析角色名和 ID
+    const match = filename.match(/^(.+)_(\d+)$/);
+    if (!match) {
+      throw new Error('无效的文件名格式');
+    }
+
+    const characterName = match[1];
+    const id = parseInt(match[2]);
+
+    return await deleteRecycleBinItem(characterName, id);
+  } catch (error) {
+    console.error('[回收站] 删除文件失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 清空回收站
+ * @returns {Promise<{success: boolean, deletedCount?: number, error?: string}>}
+ */
+async function clearRecycleBinFiles() {
+  try {
+    console.log('[回收站] 清空回收站...');
+
+    const allRecycleBin = await loadAllRecycleBin();
+    const totalCount = Object.values(allRecycleBin).reduce((sum, arr) => sum + arr.length, 0);
+
+    // 清空所有数据
+    const success = await saveAllRecycleBin({});
+    if (!success) {
+      throw new Error('保存文件失败');
+    }
+
+    console.log(`[回收站] 清空完成, 删除了 ${totalCount} 个条目`);
+    return { success: true, deletedCount: totalCount };
+  } catch (error) {
+    console.error('[回收站] 清空失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 将回收站条目保存为日记
+ * 流程：先保存编辑内容 → 解析 → 保存日记 → 确认文件存在 → 删除回收站条目
+ * @param {string} filename - 文件名（格式：角色名_ID）
+ * @param {string} editedContent - 编辑后的内容
+ * @returns {Promise<{success: boolean, diaryId?: number, error?: string}>}
+ */
+async function saveRecycleBinAsDiary(filename, editedContent) {
+  try {
+    console.log('[回收站] 将回收站条目保存为日记...');
+    console.log('[回收站] 文件名:', filename);
+
+    // 从文件名解析角色名和 ID
+    const match = filename.match(/^(.+)_(\d+)$/);
+    if (!match) {
+      throw new Error('无效的文件名格式');
+    }
+
+    const characterName = match[1];
+    const id = parseInt(match[2]);
+
+    // 1. 先保存编辑内容，覆盖原条目
+    const allRecycleBin = await loadAllRecycleBin();
+    const characterRecycleBin = allRecycleBin[characterName] || [];
+    const itemIndex = characterRecycleBin.findIndex(r => r.id === id);
+
+    if (itemIndex === -1) {
+      throw new Error('无法找到回收站条目');
+    }
+
+    // 更新内容
+    characterRecycleBin[itemIndex].content = editedContent;
+    allRecycleBin[characterName] = characterRecycleBin;
+
+    const saveSuccess = await saveAllRecycleBin(allRecycleBin);
+    if (!saveSuccess) {
+      throw new Error('保存编辑内容失败');
+    }
+    console.log('[回收站] 编辑内容已保存');
+
+    // 2. 解析日记格式
+    const diaryData = parseDiaryContent(editedContent);
+    if (!diaryData) {
+      throw new Error('无法解析日记格式');
+    }
+
+    console.log('[回收站] 日记解析成功:', diaryData.title);
+
+    // 3. 保存为正式日记
+    const saveResult = await saveDiaryToFile(diaryData, characterName);
+    if (!saveResult.success) {
+      throw new Error(saveResult.error || '保存日记失败');
+    }
+
+    console.log('[回收站] 日记保存成功, ID:', saveResult.diaryId);
+
+    // 4. 确认日记已保存（通过重新加载验证）
+    const savedDiary = await loadDiaryFromFile(characterName, saveResult.diaryId);
+    if (!savedDiary) {
+      throw new Error('日记文件创建失败');
+    }
+
+    console.log('[回收站] 日记文件已确认存在，删除回收站条目');
+
+    // 5. 删除回收站条目
+    const deleteResult = await deleteRecycleBinItem(characterName, id);
+    if (!deleteResult.success) {
+      console.warn('[回收站] 删除回收站条目失败，但日记已保存:', deleteResult.error);
+    }
+
+    console.log('[回收站] 保存为日记流程完成');
+    return { success: true, diaryId: saveResult.diaryId };
+  } catch (error) {
+    console.error('[回收站] 保存为日记失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // 获取当前设置
 function getCurrentSettings() {
   return extension_settings[extensionName] || {};
 }
-
 // 保存设置
 function saveSettings() {
   saveSettingsDebounced();
+}
+
+// ===== 数据导入导出功能 =====
+
+/**
+ * 导出日记和回收站数据
+ * 将数据导出为JSON文件供用户下载
+ */
+async function exportDiaryData() {
+  try {
+    console.log('[导出数据] 开始导出...');
+
+    // 获取所有数据
+    const diaries = await loadAllDiaries();
+    const recycleBin = await loadAllRecycleBin();
+
+    // 构建导出数据
+    const exportData = {
+      version: '5.0.0',
+      exportTime: new Date().toISOString(),
+      exportTimeReadable: new Date().toLocaleString('zh-CN'),
+      data: {
+        diaries: diaries,
+        recycleBin: recycleBin,
+      },
+      statistics: {
+        totalDiaries: Object.values(diaries).reduce((sum, arr) => sum + arr.length, 0),
+        totalRecycleBin: Object.values(recycleBin).reduce((sum, arr) => sum + arr.length, 0),
+        characters: Object.keys(diaries).length,
+      },
+    };
+
+    // 转换为JSON字符串
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+
+    // 创建下载链接
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `diary-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    console.log('[导出数据] 导出成功');
+    toastr.success(
+      `导出完成！\n\n` +
+        `日记: ${exportData.statistics.totalDiaries} 篇\n` +
+        `回收站: ${exportData.statistics.totalRecycleBin} 条\n` +
+        `角色: ${exportData.statistics.characters} 个`,
+      '数据导出',
+      { timeOut: 5000 },
+    );
+  } catch (error) {
+    console.error('[导出数据] 导出失败:', error);
+    toastr.error(`导出失败: ${error.message}`, '数据导出');
+  }
+}
+
+/**
+ * 导入日记和回收站数据
+ * 从JSON文件导入数据并与现有数据合并
+ */
+async function importDiaryData(event) {
+  try {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    console.log('[导入数据] 开始导入:', file.name);
+
+    // 读取文件
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        // 解析JSON
+        const importData = JSON.parse(e.target.result);
+
+        // 验证数据格式
+        if (!importData.version || !importData.data) {
+          throw new Error('无效的数据格式');
+        }
+
+        // 显示确认对话框
+        const confirmMessage =
+          `确认导入数据？\n\n` +
+          `导出版本: ${importData.version}\n` +
+          `导出时间: ${importData.exportTimeReadable || '未知'}\n` +
+          `日记: ${importData.statistics?.totalDiaries || 0} 篇\n` +
+          `回收站: ${importData.statistics?.totalRecycleBin || 0} 条\n` +
+          `角色: ${importData.statistics?.characters || 0} 个\n\n` +
+          `导入的数据会与现有数据合并（不会覆盖）`;
+
+        if (!confirm(confirmMessage)) {
+          toastr.info('已取消导入', '数据导入');
+          return;
+        }
+
+        // 获取现有数据
+        const existingDiaries = await loadAllDiaries();
+        const existingRecycleBin = await loadAllRecycleBin();
+
+        // 合并日记数据
+        const mergedDiaries = { ...existingDiaries };
+        for (const characterName in importData.data.diaries) {
+          if (!mergedDiaries[characterName]) {
+            mergedDiaries[characterName] = [];
+          }
+
+          // 获取当前最大ID
+          const maxId =
+            mergedDiaries[characterName].length > 0 ? Math.max(...mergedDiaries[characterName].map(d => d.id)) : 0;
+
+          // 重新分配ID并添加
+          const importedDiaries = importData.data.diaries[characterName].map((diary, index) => ({
+            ...diary,
+            id: maxId + index + 1,
+            createTime: diary.createTime || new Date().toISOString(),
+          }));
+
+          mergedDiaries[characterName].push(...importedDiaries);
+        }
+
+        // 合并回收站数据
+        const mergedRecycleBin = { ...existingRecycleBin };
+        for (const characterName in importData.data.recycleBin) {
+          if (!mergedRecycleBin[characterName]) {
+            mergedRecycleBin[characterName] = [];
+          }
+
+          // 获取当前最大ID
+          const maxId =
+            mergedRecycleBin[characterName].length > 0
+              ? Math.max(...mergedRecycleBin[characterName].map(r => r.id))
+              : 0;
+
+          // 重新分配ID并添加
+          const importedRecycleBin = importData.data.recycleBin[characterName].map((item, index) => ({
+            ...item,
+            id: maxId + index + 1,
+            saveTime: item.saveTime || new Date().toLocaleString('zh-CN'),
+          }));
+
+          mergedRecycleBin[characterName].push(...importedRecycleBin);
+        }
+
+        // 保存合并后的数据
+        await saveAllDiaries(mergedDiaries);
+        await saveAllRecycleBin(mergedRecycleBin);
+
+        // 统计结果
+        const totalDiaries = Object.values(mergedDiaries).reduce((sum, arr) => sum + arr.length, 0);
+        const totalRecycleBin = Object.values(mergedRecycleBin).reduce((sum, arr) => sum + arr.length, 0);
+
+        console.log('[导入数据] 导入成功');
+        toastr.success(
+          `导入完成！\n\n` + `当前日记总数: ${totalDiaries} 篇\n` + `当前回收站总数: ${totalRecycleBin} 条`,
+          '数据导入',
+          { timeOut: 5000 },
+        );
+      } catch (error) {
+        console.error('[导入数据] 解析或保存失败:', error);
+        toastr.error(`导入失败: ${error.message}`, '数据导入');
+      }
+    };
+
+    reader.onerror = () => {
+      console.error('[导入数据] 文件读取失败');
+      toastr.error('文件读取失败', '数据导入');
+    };
+
+    reader.readAsText(file);
+
+    // 清空文件输入，允许重复导入同一文件
+    event.target.value = '';
+  } catch (error) {
+    console.error('[导入数据] 导入失败:', error);
+    toastr.error(`导入失败: ${error.message}`, '数据导入');
+  }
 }
 
 // ===== 自动写日记配置管理 =====
@@ -329,7 +1172,7 @@ async function triggerAutoDiary(characterName, currentFloor) {
 
     // 第三步：使用 /gen 后台生成日记内容
     const diaryPrompt =
-      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？</日记>';
+      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>\n标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}</日记>\n\n日记正确格式示例如下：\n<日记>\n标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？</日记>';
 
     console.log('[自动写日记] 开始后台生成日记内容...');
 
@@ -384,7 +1227,7 @@ async function triggerAutoDiary(characterName, currentFloor) {
       // 解析失败，保存到回收站
       console.log('[自动写日记] 日记内容解析失败，保存到回收站');
       try {
-        await saveToRecycleBin(generatedContent, characterName, '自动写日记 - 正则匹配失败');
+        await saveToRecycleBinFile(generatedContent, characterName, '自动写日记 - 正则匹配失败');
         toastr.error('日记内容解析失败，已保存到回收站', '自动写日记错误');
       } catch (recycleBinError) {
         console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
@@ -395,13 +1238,13 @@ async function triggerAutoDiary(characterName, currentFloor) {
 
     console.log('[自动写日记] 日记内容解析完成:', diaryData.title);
 
-    // 第六步：保存到世界书
-    const saveResult = await saveDiaryToWorldbook(diaryData, characterName);
+    // 第六步：保存到文件系统
+    const saveResult = await saveDiaryToFile(diaryData, characterName);
     if (!saveResult.success) {
       // 保存失败，将AI生成的内容保存到回收站
-      console.log('[自动写日记] 日记保存到世界书失败，保存到回收站');
+      console.log('[自动写日记] 日记保存失败，保存到回收站');
       try {
-        await saveToRecycleBin(generatedContent, characterName, '自动写日记 - 世界书保存失败');
+        await saveToRecycleBinFile(generatedContent, characterName, '自动写日记 - 文件保存失败');
         toastr.error('保存日记失败，已保存到回收站', '自动写日记错误');
       } catch (recycleBinError) {
         console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
@@ -421,7 +1264,7 @@ async function triggerAutoDiary(characterName, currentFloor) {
     // 如果有生成的内容但出现其他错误，也保存到回收站
     if (typeof generatedContent === 'string' && generatedContent.length > 0) {
       try {
-        await saveToRecycleBin(generatedContent, characterName, `自动写日记 - 系统错误: ${error.message}`);
+        await saveToRecycleBinFile(generatedContent, characterName, `自动写日记 - 系统错误: ${error.message}`);
         toastr.error(`自动写日记出错，内容已保存到回收站`, '自动写日记错误');
       } catch (recycleBinError) {
         console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
@@ -2829,7 +3672,7 @@ async function continueWriteDiary() {
     // 构建日记提示词
     console.log('构建日记提示词...');
     let diaryPrompt =
-      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}>\n</日记>\n\n日记正确格式示例如下：\n<日记>标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？\n</日记>';
+      '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>\n标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}\n</日记>\n\n日记正确格式示例如下：\n<日记>\n标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？\n</日记>';
 
     if (customCharacterName) {
       // 用户输入了自定义角色名，替换{{char}}
@@ -2878,12 +3721,12 @@ async function continueWriteDiary() {
       console.log('日记解析失败，保存到回收站...');
 
       try {
-        const recycleBinResult = await saveToRecycleBin(aiResponse, finalCharacterName, '解析失败');
+        const recycleBinResult = await saveToRecycleBinFile(aiResponse, finalCharacterName, '解析失败');
 
         if (recycleBinResult.success) {
-          console.log('AI输出已保存到回收站，条目ID:', recycleBinResult.entryId);
+          console.log('AI输出已保存到回收站，文件名:', recycleBinResult.filename);
           toastr.error(
-            `未能解析出有效的日记内容，AI输出已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+            `未能解析出有效的日记内容，AI输出已保存到回收站（${recycleBinResult.filename}）`,
             '新写日记流程',
           );
         } else {
@@ -2908,11 +3751,11 @@ async function continueWriteDiary() {
     console.log('日记内容长度:', diaryData.content.length, '字符');
     toastr.success(`成功解析日记："${diaryData.title}"`, '新写日记流程');
 
-    // 使用新的保存函数（返回详细结果）
-    console.log('开始保存日记到世界书...');
-    toastr.info('正在保存日记到世界书...', '新写日记流程');
+    // 使用新的保存函数（保存到文件系统）
+    console.log('开始保存日记到文件系统...');
+    toastr.info('正在保存日记...', '新写日记流程');
 
-    const saveResult = await saveDiaryToWorldbook(diaryData, finalCharacterName);
+    const saveResult = await saveDiaryToFile(diaryData, finalCharacterName);
 
     // 恢复预设
     if (shouldRestorePreset) {
@@ -2924,11 +3767,16 @@ async function continueWriteDiary() {
 
     if (saveResult.success) {
       console.log('写日记流程完成！');
-      console.log('日记条目ID:', saveResult.entryId);
+      console.log('日记ID:', saveResult.diaryId);
 
       // 显示保存成功弹窗（替代 toastr 提示）
       console.log('调用保存成功弹窗...');
-      showSaveSuccessDialog(saveResult);
+      showSaveSuccessDialog({
+        success: true,
+        diaryId: saveResult.diaryId,
+        title: diaryData.title,
+        characterName: finalCharacterName,
+      });
     } else {
       console.error('保存失败');
       console.log('错误信息:', saveResult.error);
@@ -2937,12 +3785,12 @@ async function continueWriteDiary() {
       console.log('日记保存失败，保存到回收站...');
 
       try {
-        const recycleBinResult = await saveToRecycleBin(aiResponse, finalCharacterName, '保存失败');
+        const recycleBinResult = await saveToRecycleBinFile(aiResponse, finalCharacterName, '保存失败');
 
         if (recycleBinResult.success) {
-          console.log('日记内容已保存到回收站，条目ID:', recycleBinResult.entryId);
+          console.log('日记内容已保存到回收站，文件名:', recycleBinResult.filename);
           toastr.error(
-            `保存日记失败: ${saveResult.error}。内容已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+            `保存日记失败: ${saveResult.error}。内容已保存到回收站（${recycleBinResult.filename}）`,
             '新写日记流程',
           );
         } else {
@@ -2966,12 +3814,12 @@ async function continueWriteDiary() {
 
       const errorContent = typeof aiResponse !== 'undefined' ? aiResponse : `系统错误：${error.message}`;
 
-      const recycleBinResult = await saveToRecycleBin(errorContent, finalCharacterName || '系统错误', '系统错误');
+      const recycleBinResult = await saveToRecycleBinFile(errorContent, finalCharacterName || '系统错误', '系统错误');
 
       if (recycleBinResult.success) {
-        console.log('错误信息已保存到回收站，条目ID:', recycleBinResult.entryId);
+        console.log('错误信息已保存到回收站，文件名:', recycleBinResult.filename);
         toastr.error(
-          `写日记功能出错: ${error.message}。错误信息已保存到回收站（ID: ${recycleBinResult.entryId}）`,
+          `写日记功能出错: ${error.message}。错误信息已保存到回收站（${recycleBinResult.filename}）`,
           '新写日记流程',
         );
       } else {
@@ -3241,6 +4089,7 @@ async function saveDiaryToWorldbook(diaryData, characterName = null) {
 // ===== 回收站功能 =====
 
 /**
+ * 【已废弃 - 使用 saveToRecycleBinFile 代替】
  * 保存失败的AI输出到回收站世界书
  * 当日记保存失败时，将AI的原始输出保存到回收站供后续处理
  * @param {string} aiOutput - AI的原始输出内容
@@ -3249,97 +4098,13 @@ async function saveDiaryToWorldbook(diaryData, characterName = null) {
  * @param {Object} context - 可选的上下文信息
  * @returns {Promise<{success: boolean, entryId?: string, error?: string}>}
  */
+/*
 async function saveToRecycleBin(aiOutput, characterName, failureReason, context = {}) {
-  console.log('角色名:', characterName);
-  console.log('失败原因:', failureReason);
-  console.log('AI输出长度:', aiOutput.length, '字符');
-
-  try {
-    const worldbookName = RECYCLE_BIN_WORLDBOOK_NAME;
-
-    // 检查和创建回收站世界书
-    if (!world_names.includes(worldbookName)) {
-      console.log(`回收站世界书"${worldbookName}"不存在，正在创建...`);
-      try {
-        await createNewWorldInfo(worldbookName, true);
-        console.log(`回收站世界书"${worldbookName}"创建成功`);
-      } catch (createError) {
-        const errorMsg = `创建回收站世界书失败: ${createError.message}`;
-        console.error(errorMsg);
-        return { success: false, error: errorMsg };
-      }
-    }
-
-    // 加载回收站世界书数据
-    console.log(`加载回收站世界书数据: ${worldbookName}`);
-    const worldData = await loadWorldInfo(worldbookName);
-
-    if (!worldData || !worldData.entries) {
-      const errorMsg = '无法加载回收站世界书数据';
-      console.error(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-
-    // 创建新的回收站条目
-    console.log('创建新的回收站条目...');
-    const newEntry = createWorldInfoEntry(worldbookName, worldData);
-
-    if (!newEntry) {
-      const errorMsg = '无法创建回收站条目';
-      console.error(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-
-    // 构建回收站条目内容（简化版本）
-    const recycleBinContent = aiOutput;
-
-    // 设置条目属性
-    const entryName = `${characterName}-回收站`;
-
-    newEntry.comment = entryName; // 条目名称
-    newEntry.key = [characterName]; // 关键词：角色名，便于分类
-    newEntry.content = recycleBinContent; // 条目内容：只保存AI原始输出
-    newEntry.enabled = true; // 启用条目
-
-    const entryId = newEntry.uid; // 获取条目ID
-
-    console.log('回收站条目信息:');
-    console.log('   - UID:', entryId);
-    console.log('   - 条目名称:', entryName);
-    console.log('   - 关键词:', characterName);
-    console.log('   - 内容长度:', recycleBinContent.length);
-
-    // 保存回收站世界书
-    console.log('保存回收站世界书数据...');
-    await saveWorldInfo(worldbookName, worldData);
-
-    console.log('内容已保存到回收站');
-    console.log('回收站条目ID:', entryId);
-
-    // 不显示toastr，因为这通常伴随着错误提示
-
-    return {
-      success: true,
-      entryId: entryId,
-      characterName: characterName,
-    };
-  } catch (error) {
-    const errorMsg = `保存到回收站失败: ${error.message}`;
-    console.error('错误类型:', error.name);
-    console.error('错误信息:站]', error.message);
-    console.error('错误堆栈:', error.stack);
-
-    return {
-      success: false,
-      error: errorMsg,
-      errorDetails: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-    };
-  }
+  // 此函数已废弃,请使用 saveToRecycleBinFile
+  console.warn('[已废弃] saveToRecycleBin 函数已被 saveToRecycleBinFile 替代');
+  return await saveToRecycleBinFile(aiOutput, characterName, failureReason);
 }
+*/
 
 // ===== 回收站UI管理功能 =====
 
@@ -3374,36 +4139,35 @@ function hideRecycleBinDialog() {
  * 刷新回收站列表
  * 从世界书加载回收站条目
  */
+/**
+ * 刷新回收站列表
+ * 从文件系统加载回收站条目
+ */
 async function refreshRecycleBin() {
-  console.log('刷新回收站列表...');
+  console.log('[回收站UI] 刷新回收站列表...');
 
   try {
-    // 获取回收站世界书
-    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+    // 从文件系统获取所有回收站文件
+    const groupedFiles = await getAllRecycleBinFiles();
 
-    // 将 entries 对象转换为数组
-    let entriesArray = [];
-    if (worldData && worldData.entries) {
-      if (Array.isArray(worldData.entries)) {
-        entriesArray = worldData.entries;
-      } else if (typeof worldData.entries === 'object') {
-        // 将对象转换为数组
-        entriesArray = Object.values(worldData.entries);
-      }
-    }
-
-    if (entriesArray.length === 0) {
-      console.log('回收站为空');
+    if (!groupedFiles || Object.keys(groupedFiles).length === 0) {
+      console.log('[回收站UI] 回收站为空');
       showEmptyRecycleBin();
       return;
     }
 
-    console.log('找到', entriesArray.length, '个回收站条目');
+    // 计算总数
+    let totalCount = 0;
+    for (const characterName in groupedFiles) {
+      totalCount += groupedFiles[characterName].length;
+    }
+
+    console.log(`[回收站UI] 找到 ${totalCount} 个回收站文件`);
 
     // 渲染回收站列表
-    renderRecycleBinList(entriesArray);
+    renderRecycleBinList(groupedFiles);
   } catch (error) {
-    console.error('刷新回收站失败:', error);
+    console.error('[回收站UI] 刷新回收站失败:', error);
     $('#recycle-bin-list').html('<div class="recycle-bin-empty">加载失败</div>');
   }
 }
@@ -3425,35 +4189,22 @@ function showEmptyRecycleBin() {
 /**
  * 渲染回收站列表
  * 按角色分类渲染回收站条目
+ * @param {Object} groupedFiles - 按角色分组的文件对象
  */
-function renderRecycleBinList(entries) {
-  console.log('渲染', entries?.length || 0, '个条目');
+function renderRecycleBinList(groupedFiles) {
+  console.log('[回收站UI] 渲染回收站列表');
 
-  // 确保 entries 是数组
-  if (!entries || !Array.isArray(entries)) {
-    console.warn('entries 不是有效的数组:', entries);
+  if (!groupedFiles || typeof groupedFiles !== 'object') {
+    console.warn('[回收站UI] groupedFiles 不是有效的对象:', groupedFiles);
     showEmptyRecycleBin();
     return;
   }
 
-  // 按角色分组
-  const groupedByCharacter = {};
-  entries.forEach(entry => {
-    // 从 key 数组中获取角色名（第一个元素通常是角色名）
-    const characterName = entry.key && entry.key[0] ? entry.key[0] : '未知角色';
-
-    if (!groupedByCharacter[characterName]) {
-      groupedByCharacter[characterName] = [];
-    }
-
-    groupedByCharacter[characterName].push(entry);
-  });
-
   let html = '';
 
   // 渲染每个角色的条目
-  Object.keys(groupedByCharacter).forEach(characterName => {
-    const characterEntries = groupedByCharacter[characterName];
+  for (const characterName in groupedFiles) {
+    const characterFiles = groupedFiles[characterName];
 
     // 角色标题（可点击展开/收起）
     html += `
@@ -3461,21 +4212,29 @@ function renderRecycleBinList(entries) {
         <div class="recycle-character-header" data-character="${characterName}">
           <span class="recycle-character-toggle">▶</span>
           <span class="recycle-character-name">📂 ${characterName}</span>
-          <span class="recycle-character-count">(${characterEntries.length}个条目)</span>
+          <span class="recycle-character-count">(${characterFiles.length}个条目)</span>
         </div>
         <div class="recycle-character-items" style="display: none;">
     `;
 
-    // 渲染该角色下的条目（不显示标题，只显示预览）
-    characterEntries.forEach(entry => {
+    // 渲染该角色下的文件
+    characterFiles.forEach(file => {
       // 生成预览文本（前80个字符）
-      const preview = entry.content.replace(/\n/g, ' ').substring(0, 80) + (entry.content.length > 80 ? '...' : '');
+      const preview = file.content.replace(/\n/g, ' ').substring(0, 80) + (file.content.length > 80 ? '...' : '');
+
+      // 显示失败原因
+      const failureReason = file.metadata['失败原因'] || '未知原因';
+      const saveTime = file.metadata['保存时间'] || '';
 
       html += `
-        <div class="recycle-bin-item" data-entry-id="${entry.uid}">
+        <div class="recycle-bin-item" data-filename="${file.filename}">
+          <div class="recycle-bin-item-header">
+            <span class="recycle-bin-item-name">序号 ${file.number}</span>
+            <small style="color: #999;">${failureReason}</small>
+          </div>
           <div class="recycle-bin-item-preview">${preview}</div>
           <div class="recycle-bin-item-actions">
-            <small style="color: #666;">${entry.content.length} 字符</small>
+            <small style="color: #666;">${file.content.length} 字符 | ${saveTime}</small>
           </div>
         </div>
       `;
@@ -3485,7 +4244,7 @@ function renderRecycleBinList(entries) {
         </div>
       </div>
     `;
-  });
+  }
 
   $('#recycle-bin-list').html(html);
 
@@ -3493,8 +4252,8 @@ function renderRecycleBinList(entries) {
   $('.recycle-bin-item')
     .off('click')
     .on('click', function () {
-      const entryId = $(this).data('entry-id');
-      showRecycleBinItemDetail(entryId);
+      const filename = $(this).data('filename');
+      showRecycleBinItemDetail(filename);
     });
 
   // 绑定角色标题展开/收起事件
@@ -3520,47 +4279,58 @@ function renderRecycleBinList(entries) {
 /**
  * 显示回收站条目详情
  * 查看和编辑特定回收站条目
+ * @param {string} filename - 回收站文件名
  */
-async function showRecycleBinItemDetail(entryId) {
-  console.log('显示条目详情:', entryId);
+async function showRecycleBinItemDetail(filename) {
+  console.log('[回收站UI] 显示条目详情:', filename);
 
   try {
-    // 获取回收站世界书
-    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
-
-    if (!worldData || !worldData.entries) {
-      console.error('无法获取回收站数据');
+    // 从文件名解析角色名和 ID
+    const match = filename.match(/^(.+)_(\d+)$/);
+    if (!match) {
+      console.error('[回收站UI] 无效的文件名格式:', filename);
+      toastr.error('无效的文件名格式', '回收站');
       return;
     }
 
-    // 将 entries 转换为数组并查找指定条目
-    let entriesArray = [];
-    if (Array.isArray(worldData.entries)) {
-      entriesArray = worldData.entries;
-    } else if (typeof worldData.entries === 'object') {
-      entriesArray = Object.values(worldData.entries);
-    }
+    const characterName = match[1];
+    const id = parseInt(match[2]);
 
-    const entry = entriesArray.find(e => e.uid === parseInt(entryId));
+    // 从存储系统读取条目
+    const item = await loadRecycleBinItem(characterName, id);
 
-    if (!entry) {
-      console.error('未找到指定条目:', entryId);
+    if (!item) {
+      console.error('[回收站UI] 无法读取条目:', filename);
+      toastr.error('无法读取回收站条目', '回收站');
       return;
     }
 
-    // 存储当前条目
-    currentRecycleBinItem = entry;
+    // 存储当前文件名
+    currentRecycleBinItem = {
+      filename: filename,
+      characterName: characterName,
+      content: item.content,
+      metadata: {
+        角色名: characterName,
+        序号: item.id,
+        失败原因: item.failureReason,
+        保存时间: item.saveTime,
+      },
+    };
 
     // 显示详情界面
-    $('#recycle-bin-item-title').text(entry.comment || '未命名条目');
-    $('#recycle-bin-content').val(entry.content);
+    const title = `${characterName} - 序号 ${item.id}`;
+    const failureReason = item.failureReason || '未知原因';
+
+    $('#recycle-bin-item-title').text(`${title} (${failureReason})`);
+    $('#recycle-bin-content').val(item.content);
 
     $('#recycle-bin-list').hide();
     $('#recycle-bin-detail').show();
 
-    console.log('条目详情显示完成');
+    console.log('[回收站UI] 条目详情显示完成');
   } catch (error) {
-    console.error('显示条目详情失败:', error);
+    console.error('[回收站UI] 显示条目详情失败:', error);
     toastr.error('显示条目详情失败', '回收站');
   }
 }
@@ -3580,10 +4350,10 @@ function hideRecycleBinDetail() {
  * 尝试重新解析和保存AI输出
  */
 async function saveRecycleBinItemAsDiary() {
-  console.log('尝试保存为日记...');
+  console.log('[回收站UI] 尝试保存为日记...');
 
   if (!currentRecycleBinItem) {
-    console.error('没有选中的条目');
+    console.error('[回收站UI] 没有选中的条目');
     return;
   }
 
@@ -3596,56 +4366,37 @@ async function saveRecycleBinItemAsDiary() {
       return;
     }
 
-    // 尝试解析日记内容
-    const diaryData = parseDiaryContent(editedContent);
+    console.log('[回收站UI] 内容长度:', editedContent.length);
 
-    if (!diaryData) {
-      toastr.error('内容格式不符合日记格式，无法保存', '回收站');
-      return;
-    }
+    // 使用新的文件系统保存函数
+    const result = await saveRecycleBinAsDiary(currentRecycleBinItem.filename, editedContent);
 
-    console.log('内容解析成功，准备保存...');
+    if (result.success) {
+      console.log('[回收站UI] 保存成功,日记ID:', result.diaryId);
+      toastr.success(`日记保存成功！ID: ${result.diaryId}`, '回收站');
 
-    // 从回收站条目的关键词中获取角色名
-    const characterName = currentRecycleBinItem.key[0] || getCurrentCharacterName() || '未知角色';
-
-    // 保存到日记世界书
-    const saveResult = await saveDiaryToWorldbook(diaryData, characterName);
-
-    if (saveResult.success) {
-      console.log('日记保存成功！');
-      toastr.success(`日记保存成功！条目ID: ${saveResult.entryId}`, '回收站');
-
-      // 添加20分钟延迟，确保日记条目已完全保存到世界书
-      await new Promise(resolve => setTimeout(resolve, 20 * 60 * 1000)); // 20分钟延迟
-
-      // 删除回收站中的该条目
-      await deleteRecycleBinItem(false); // 不显示确认
-
-      // 关闭回收站详情
+      // 返回列表并刷新
       hideRecycleBinDetail();
-
-      // 刷新回收站列表
       refreshRecycleBin();
     } else {
-      console.error('日记保存失败:', saveResult.error);
-      toastr.error(`日记保存失败: ${saveResult.error}`, '回收站');
+      console.error('[回收站UI] 保存失败:', result.error);
+      toastr.error(`保存失败: ${result.error}`, '回收站');
     }
   } catch (error) {
-    console.error('保存为日记过程中发生错误:', error);
-    toastr.error('保存为日记失败', '回收站');
+    console.error('[回收站UI] 保存过程出错:', error);
+    toastr.error(`保存出错: ${error.message}`, '回收站');
   }
 }
 
 /**
- * 删除回收站条目
+ * 删除回收站条目（UI 函数）
  * 从回收站中删除指定条目
  */
-async function deleteRecycleBinItem(showConfirm = true) {
-  console.log('删除回收站条目...');
+async function deleteRecycleBinItemUI(showConfirm = true) {
+  console.log('[回收站UI] 删除回收站条目...');
 
   if (!currentRecycleBinItem) {
-    console.error('没有选中的条目');
+    console.error('[回收站UI] 没有选中的条目');
     return;
   }
 
@@ -3654,42 +4405,25 @@ async function deleteRecycleBinItem(showConfirm = true) {
   }
 
   try {
-    // 获取回收站世界书
-    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+    const filename = currentRecycleBinItem.filename;
+    console.log('[回收站UI] 删除文件:', filename);
 
-    if (!worldData || !worldData.entries) {
-      console.error('无法获取回收站数据');
-      return;
+    // 使用新的文件系统删除函数
+    const result = await deleteRecycleBinFile(filename);
+
+    if (result.success) {
+      console.log('[回收站UI] 条目删除成功');
+      toastr.success('条目已删除', '回收站');
+
+      // 返回列表
+      hideRecycleBinDetail();
+      refreshRecycleBin();
+    } else {
+      console.error('[回收站UI] 删除失败:', result.error);
+      toastr.error(`删除失败: ${result.error}`, '回收站');
     }
-
-    // 处理对象格式的 entries，删除指定条目
-    if (Array.isArray(worldData.entries)) {
-      worldData.entries = worldData.entries.filter(e => e.uid !== currentRecycleBinItem.uid);
-    } else if (typeof worldData.entries === 'object') {
-      // 如果是对象格式，重新构建
-      const newEntries = {};
-      let index = 0;
-      for (const key in worldData.entries) {
-        const entry = worldData.entries[key];
-        if (entry.uid !== currentRecycleBinItem.uid) {
-          newEntries[index] = entry;
-          index++;
-        }
-      }
-      worldData.entries = newEntries;
-    }
-
-    // 保存回收站世界书
-    await saveWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME, worldData);
-
-    console.log('条目删除成功');
-    toastr.success('条目已删除', '回收站');
-
-    // 返回列表
-    hideRecycleBinDetail();
-    refreshRecycleBin();
   } catch (error) {
-    console.error('删除条目失败:', error);
+    console.error('[回收站UI] 删除条目失败:', error);
     toastr.error('删除条目失败', '回收站');
   }
 }
@@ -3699,40 +4433,29 @@ async function deleteRecycleBinItem(showConfirm = true) {
  * 删除所有回收站条目
  */
 async function clearRecycleBin() {
-  console.log('清空回收站...');
+  console.log('[回收站UI] 清空回收站...');
 
   if (!confirm('确定要清空整个回收站吗？这个操作无法撤销！')) {
     return;
   }
 
   try {
-    // 获取回收站世界书
-    const worldData = await loadWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME);
+    // 使用新的文件系统清空函数
+    const result = await clearRecycleBinFiles();
 
-    if (!worldData) {
-      console.log('回收站世界书不存在，无需清空');
-      toastr.info('回收站已经是空的', '回收站');
-      return;
-    }
+    if (result.success) {
+      console.log(`[回收站UI] 回收站已清空,共删除 ${result.deletedCount} 个文件`);
+      toastr.success(`回收站已清空 (删除了 ${result.deletedCount} 个文件)`, '回收站');
 
-    // 清空条目（兼容对象和数组格式）
-    if (Array.isArray(worldData.entries)) {
-      worldData.entries = [];
+      // 刷新显示
+      hideRecycleBinDetail();
+      refreshRecycleBin();
     } else {
-      worldData.entries = {};
+      console.error('[回收站UI] 清空失败:', result.error);
+      toastr.error(`清空失败: ${result.error}`, '回收站');
     }
-
-    // 保存回收站世界书
-    await saveWorldInfo(RECYCLE_BIN_WORLDBOOK_NAME, worldData);
-
-    console.log('回收站已清空');
-    toastr.success('回收站已清空', '回收站');
-
-    // 刷新显示
-    hideRecycleBinDetail();
-    refreshRecycleBin();
   } catch (error) {
-    console.error('清空回收站失败:', error);
+    console.error('[回收站UI] 清空回收站失败:', error);
     toastr.error('清空回收站失败', '回收站');
   }
 }
@@ -3795,7 +4518,7 @@ function createRecycleBinDialog() {
   $('#recycle-bin-delete-btn')
     .off('click')
     .on('click', function () {
-      deleteRecycleBinItem();
+      deleteRecycleBinItemUI();
     });
 
   console.log('✅ 回收站对话框已初始化');
@@ -3871,11 +4594,11 @@ function showSaveSuccessDialog(saveResult) {
   }
 
   // 存储当前的条目ID供查看按钮使用
-  $('#diary-save-success-dialog').data('entryId', saveResult.entryId);
+  $('#diary-save-success-dialog').data('entryId', saveResult.diaryId);
   $('#diary-save-success-dialog').data('characterName', saveResult.characterName);
 
   console.log('弹窗显示完成');
-  console.log('条目ID:', saveResult.entryId);
+  console.log('条目ID:', saveResult.diaryId);
   console.log('═══════════════════════════════════════════');
 }
 
@@ -3893,7 +4616,7 @@ function hideSaveSuccessDialog() {
 /**
  * 查看刚保存的日记
  * 打开日记本，定位到刚保存的日记
- * @param {string} entryId - 日记条目ID
+ * @param {string} entryId - 日记条目ID (实际上是 diaryId)
  * @param {string} characterName - 角色名
  */
 function viewSavedDiary(entryId, characterName) {
@@ -3916,8 +4639,8 @@ function viewSavedDiary(entryId, characterName) {
         console.log('直接显示日记详情...');
 
         try {
-          // 直接调用显示日记详情的函数
-          await showDiaryBookDetail(entryId);
+          // 直接调用显示日记详情的函数，传递 characterName 和 diaryId
+          await showDiaryBookDetail(characterName, entryId);
 
           console.log('成功显示日记详情页面');
           console.log('查看日记流程完成');
@@ -4993,40 +5716,31 @@ async function updateDiaryBookCover() {
   try {
     console.log('📖 更新日记本封面信息...');
 
-    // 检查世界书是否存在
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-    if (!world_names.includes(worldbookName)) {
-      // 世界书不存在，显示空状态
+    // 从 localStorage 获取所有角色
+    const characters = await getAllCharacters();
+    console.log('📊 获取到的角色列表:', characters);
+
+    if (characters.length === 0) {
+      // 没有日记数据，显示空状态
       $('#diary-book-total-count').text('0');
       $('#diary-book-character-count').text('0');
+      console.log('📊 没有日记数据');
       return;
     }
 
-    // 加载世界书数据
-    const worldData = await loadWorldInfo(worldbookName);
-    if (!worldData || !worldData.entries) {
-      $('#diary-book-total-count').text('0');
-      $('#diary-book-character-count').text('0');
-      return;
+    // 统计所有角色的日记总数
+    let totalDiaries = 0;
+    for (const characterName of characters) {
+      const diaries = await getCharacterDiaries(characterName);
+      console.log(`📊 角色 "${characterName}" 有 ${diaries.length} 篇日记`);
+      totalDiaries += diaries.length;
     }
-
-    // 统计日记数量和角色数量
-    const entries = Object.values(worldData.entries);
-    const totalDiaries = entries.length;
-
-    // 统计不同角色的数量
-    const characters = new Set();
-    entries.forEach(entry => {
-      if (entry.key && entry.key.length > 0) {
-        entry.key.forEach(keyword => characters.add(keyword));
-      }
-    });
 
     // 更新封面显示
     $('#diary-book-total-count').text(totalDiaries);
-    $('#diary-book-character-count').text(characters.size);
+    $('#diary-book-character-count').text(characters.length);
 
-    console.log(`📊 日记本统计: ${totalDiaries}篇日记, ${characters.size}个角色`);
+    console.log(`📊 日记本统计: ${totalDiaries}篇日记, ${characters.length}个角色`);
   } catch (error) {
     console.error('❌ 更新日记本封面信息失败:', error);
     $('#diary-book-total-count').text('?');
@@ -5257,12 +5971,13 @@ function bindDiaryBookDialogEvents() {
   // 日记卡片点击事件
   $(document).on('click', '.diary-book-diary-card', function (e) {
     e.preventDefault();
-    const entryId = $(this).data('entry-id');
+    const diaryId = $(this).data('diary-id');
+    const characterName = $(this).data('character-name');
     const diaryTitle = $(this).data('diary-title');
-    console.log(`📖 点击日记卡片: ${diaryTitle} (ID: ${entryId})`);
+    console.log(`📖 点击日记卡片: ${diaryTitle} (${characterName}/${diaryId})`);
 
     // 显示日记详情
-    showDiaryBookDetail(entryId);
+    showDiaryBookDetail(characterName, diaryId);
   });
 
   // 返回日记列表按钮点击事件
@@ -5320,48 +6035,33 @@ async function showDiaryBookCharacterList() {
 }
 
 // 从世界书加载角色数据
+// 从文件系统加载角色数据
 async function loadCharacterData() {
   try {
-    console.log('📚 从世界书加载角色数据...');
+    console.log('📚 从文件系统加载角色数据...');
 
     characterListState.characters = [];
 
-    // 检查世界书是否存在
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-    if (!world_names.includes(worldbookName)) {
-      console.log('❌ 世界书不存在，无角色数据');
+    // 从文件系统获取所有角色
+    const characterNames = await getAllCharacters();
+
+    if (!characterNames || characterNames.length === 0) {
+      console.log('❌ 暂无角色数据');
       return;
     }
 
-    // 加载世界书数据
-    const worldData = await loadWorldInfo(worldbookName);
-    if (!worldData || !worldData.entries) {
-      console.log('❌ 世界书数据为空');
-      return;
+    // 获取每个角色的日记数量
+    const characterStats = [];
+    for (const characterName of characterNames) {
+      const diaries = await getCharacterDiaries(characterName);
+      characterStats.push({
+        name: characterName,
+        count: diaries.length,
+      });
     }
 
-    // 统计每个角色的日记数量
-    const characterStats = new Map();
-    const entries = Object.values(worldData.entries);
-
-    entries.forEach(entry => {
-      if (entry.key && entry.key.length > 0) {
-        entry.key.forEach(keyword => {
-          if (!characterStats.has(keyword)) {
-            characterStats.set(keyword, {
-              name: keyword,
-              count: 0,
-            });
-          }
-
-          const charData = characterStats.get(keyword);
-          charData.count++;
-        });
-      }
-    });
-
-    // 转换为数组并按日记数量排序
-    characterListState.characters = Array.from(characterStats.values()).sort((a, b) => b.count - a.count);
+    // 按日记数量排序
+    characterListState.characters = characterStats.sort((a, b) => b.count - a.count);
 
     // 计算总页数
     characterListState.totalPages = Math.max(
@@ -5509,57 +6209,31 @@ async function showDiaryBookDiaryList(characterName) {
   renderDiaryList();
 }
 
-// 从世界书加载指定角色的日记数据
+// 从文件系统加载指定角色的日记数据
 async function loadDiaryData(characterName) {
   try {
-    console.log(`📚 从世界书加载${characterName}的日记数据...`);
+    console.log(`📚 从文件系统加载${characterName}的日记数据...`);
 
     diaryListState.diaries = [];
 
-    // 检查世界书是否存在
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-    if (!world_names.includes(worldbookName)) {
-      console.log('❌ 世界书不存在，无日记数据');
+    // 从文件系统获取该角色的所有日记
+    const diaries = await getCharacterDiaries(characterName);
+
+    if (!diaries || diaries.length === 0) {
+      console.log('❌ 该角色暂无日记');
       return;
     }
 
-    // 加载世界书数据
-    const worldData = await loadWorldInfo(worldbookName);
-    if (!worldData || !worldData.entries) {
-      console.log('❌ 世界书数据为空');
-      return;
-    }
+    // 转换为列表状态格式
+    diaryListState.diaries = diaries.map(diary => ({
+      id: diary.id,
+      title: diary.title,
+      time: diary.time,
+      content: diary.content,
+      originalTitle: diary.title,
+    }));
 
-    // 筛选该角色的日记条目
-    const entries = Object.values(worldData.entries);
-    entries.forEach(entry => {
-      if (entry.key && entry.key.includes(characterName)) {
-        // 解析日记标题和时间 (格式: "标题-时间")
-        let title = '无标题';
-        let time = '未知时间';
-
-        if (entry.comment && entry.comment.includes('-')) {
-          const parts = entry.comment.split('-');
-          title = parts[0].trim();
-          time = parts[1].trim();
-        }
-
-        // 添加到日记列表
-        diaryListState.diaries.push({
-          id: entry.uid,
-          title: title,
-          time: time,
-          content: entry.content || '',
-          originalTitle: entry.comment || title,
-        });
-      }
-    });
-
-    // 按时间排序（最新的在前面）
-    diaryListState.diaries.sort((a, b) => {
-      // 简单的时间比较，实际可能需要更复杂的解析
-      return b.time.localeCompare(a.time);
-    });
+    // 已经按 ID 降序排序了,不需要再排序
 
     // 计算总页数
     diaryListState.totalPages = Math.max(1, Math.ceil(diaryListState.diaries.length / diaryListState.pageSize));
@@ -5624,8 +6298,11 @@ function createDiaryCard(diary) {
   // 截断标题（超过7个字用省略号替代）
   const truncatedTitle = truncateTitle(diary.title, 7);
 
+  // 存储角色名和日记ID
+  const characterName = diaryListState.currentCharacter;
+
   return `
-        <div class="diary-book-diary-card" data-entry-id="${diary.id}" data-diary-title="${diary.title}">
+        <div class="diary-book-diary-card" data-diary-id="${diary.id}" data-character-name="${characterName}" data-diary-title="${diary.title}">
             <div class="diary-book-diary-header">
                 <div class="diary-book-diary-meta">
                     <div class="diary-book-diary-title" title="${diary.title}">${truncatedTitle}</div>
@@ -5689,12 +6366,12 @@ const diaryDetailState = {
 };
 
 // 显示日记详情视图
-async function showDiaryBookDetail(entryId) {
-  console.log(`📖 显示日记详情: ${entryId}...`);
+async function showDiaryBookDetail(characterName, diaryId) {
+  console.log(`📖 显示日记详情: ${characterName}/${diaryId}...`);
 
   try {
     // 加载日记详情数据
-    const diaryData = await loadDiaryDetailData(entryId);
+    const diaryData = await loadDiaryDetailData(characterName, diaryId);
 
     if (!diaryData) {
       toastr.error('无法加载日记详情', '日记本');
@@ -5715,55 +6392,27 @@ async function showDiaryBookDetail(entryId) {
   }
 }
 
-// 从世界书加载日记详情数据
-async function loadDiaryDetailData(entryId) {
+// 从文件系统加载日记详情数据
+// 注意: 参数已改为 characterName 和 diaryId
+async function loadDiaryDetailData(characterName, diaryId) {
   try {
-    console.log(`📚 从世界书加载日记详情: ${entryId}...`);
+    console.log(`📚 从文件系统加载日记详情: ${characterName}/${diaryId}...`);
 
-    // 检查世界书是否存在
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-    if (!world_names.includes(worldbookName)) {
-      console.log('❌ 世界书不存在');
+    // 从文件系统读取日记
+    const diary = await loadDiaryFromFile(characterName, diaryId);
+
+    if (!diary) {
+      console.log(`❌ 找不到日记: ${characterName}/${diaryId}`);
       return null;
-    }
-
-    // 加载世界书数据
-    const worldData = await loadWorldInfo(worldbookName);
-    if (!worldData || !worldData.entries) {
-      console.log('❌ 世界书数据为空');
-      return null;
-    }
-
-    // 查找指定的日记条目
-    const entry = worldData.entries[entryId];
-    if (!entry) {
-      console.log(`❌ 找不到日记条目: ${entryId}`);
-      return null;
-    }
-
-    // 解析日记标题和时间
-    let title = '无标题';
-    let time = '未知时间';
-
-    if (entry.comment && entry.comment.includes('-')) {
-      const parts = entry.comment.split('-');
-      title = parts[0].trim();
-      time = parts[1].trim();
-    }
-
-    // 获取角色名（从关键词中）
-    let characterName = '未知角色';
-    if (entry.key && entry.key.length > 0) {
-      characterName = entry.key[0];
     }
 
     const diaryData = {
-      id: entry.uid,
-      title: title,
-      time: time,
-      content: entry.content || '暂无内容',
+      id: diary.id,
+      title: diary.title,
+      time: diary.time,
+      content: diary.content || '暂无内容',
       character: characterName,
-      originalTitle: entry.comment || title,
+      originalTitle: diary.title,
     };
 
     console.log(`✅ 加载完成: 日记《${diaryData.title}》`);
@@ -5809,41 +6458,20 @@ async function deleteDiary() {
       return;
     }
 
-    const entryId = diaryDetailState.currentEntry.id;
-    const characterName = diaryDetailState.currentEntry.characterName;
-    console.log(`🗑️ 删除日记: ${entryId}...`);
+    const diaryId = diaryDetailState.currentEntry.id;
+    const characterName = diaryDetailState.currentEntry.character;
+    console.log(`🗑️ 删除日记: ${characterName}/${diaryId}...`);
 
-    // 检查世界书是否存在
-    const worldbookName = DIARY_WORLDBOOK_NAME;
-    if (!world_names.includes(worldbookName)) {
-      console.log('❌ 世界书不存在');
-      toastr.error('世界书不存在', '删除日记');
+    // 使用新的文件系统删除函数
+    const result = await deleteDiaryFromFile(characterName, diaryId);
+
+    if (!result.success) {
+      console.log('❌ 删除日记失败:', result.error);
+      toastr.error(`删除日记失败: ${result.error}`, '删除日记');
       return;
     }
 
-    // 加载世界书数据
-    const worldData = await loadWorldInfo(worldbookName);
-    if (!worldData || !worldData.entries) {
-      console.log('❌ 世界书数据为空');
-      toastr.error('世界书数据为空', '删除日记');
-      return;
-    }
-
-    // 检查条目是否存在
-    if (!worldData.entries[entryId]) {
-      console.log('❌ 日记条目不存在');
-      toastr.error('日记条目不存在', '删除日记');
-      return;
-    }
-
-    // 删除条目
-    delete worldData.entries[entryId];
-    console.log(`✅ 已从世界书中删除条目: ${entryId}`);
-
-    // 保存世界书
-    await saveWorldInfo(worldbookName, worldData);
-    console.log('💾 世界书已保存');
-
+    console.log('✅ 日记已删除');
     toastr.success('日记已删除', '日记本');
 
     // 清空当前日记状态
@@ -6128,7 +6756,7 @@ async function verifyAuthorInfo() {
     '%c║  作者 (Author):        Etaf Cisky                            ║',
     'color: #48bb78; font-weight: bold;',
   );
-  console.log('%c║  版本 (Version):       v4.2.0                                ║', 'color: #48bb78;');
+  console.log('%c║  版本 (Version):       v5.0.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
   console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');
@@ -6258,6 +6886,11 @@ jQuery(async () => {
     }
 
     // 绑定事件处理器
+
+    // 绑定导入导出按钮
+    $('#diary_export_data').on('click', exportDiaryData);
+    $('#diary_import_data').on('click', () => $('#diary_import_file').click());
+    $('#diary_import_file').on('change', importDiaryData);
 
     // 绑定悬浮窗控制按钮
     $('#diary_toggle_float_window').on('click', toggleFloatWindow);
