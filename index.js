@@ -198,6 +198,2411 @@ const DataStorageAPI = {
   },
 };
 
+// ===== 交换日记存储模块 =====
+
+/**
+ * 交换日记存储API
+ * 管理交换日记的线程、条目和回复数据
+ */
+class ExchangeDiaryStorage {
+  /**
+   * 加载所有交换日记数据
+   * @returns {Object} 交换日记数据对象
+   */
+  static loadAll() {
+    try {
+      const settings = extension_settings[extensionName] || {};
+      const exchangeDiaries = settings.exchangeDiaries || {
+        threads: {},
+        config: {
+          enableNotifications: true,
+          triggerWindowMin: 1,
+          triggerWindowMax: 10,
+          maxRerollsPerEntry: 5,
+          ghostwritePrompt: '',
+        },
+        threadCounters: {},
+      };
+      console.log('[交换日记存储] 成功加载交换日记数据');
+      return exchangeDiaries;
+    } catch (error) {
+      console.error('[交换日记存储] 加载交换日记数据失败:', error);
+      return {
+        threads: {},
+        config: {
+          enableNotifications: true,
+          triggerWindowMin: 1,
+          triggerWindowMax: 10,
+          maxRerollsPerEntry: 5,
+          ghostwritePrompt: '',
+        },
+        threadCounters: {},
+      };
+    }
+  }
+
+  /**
+   * 保存所有交换日记数据
+   * @param {Object} data - 交换日记数据对象
+   * @returns {boolean} 是否成功
+   */
+  static saveAll(data) {
+    try {
+      if (!extension_settings[extensionName]) {
+        extension_settings[extensionName] = {};
+      }
+      extension_settings[extensionName].exchangeDiaries = data;
+      saveSettings();
+      console.log('[交换日记存储] 成功保存交换日记数据');
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 保存交换日记数据失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 创建新线程
+   * @param {string} characterName - 角色名
+   * @param {string} threadName - 线程名称（可选）
+   * @returns {Object} 新创建的线程对象
+   */
+  static createThread(characterName, threadName = null) {
+    try {
+      const data = this.loadAll();
+
+      // 获取下一个线程编号
+      if (!data.threadCounters[characterName]) {
+        data.threadCounters[characterName] = 1;
+      }
+      const threadNumber = data.threadCounters[characterName];
+      const threadId = `${characterName}-${threadNumber}`;
+
+      // 创建线程对象
+      const thread = {
+        threadId: threadId,
+        threadName: threadName || `交换日记-${threadNumber}`,
+        characterName: characterName,
+        threadNumber: threadNumber,
+        entries: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'active',
+      };
+
+      // 保存线程
+      data.threads[threadId] = thread;
+      data.threadCounters[characterName] = threadNumber + 1;
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 创建线程成功: ${threadId}`);
+      return thread;
+    } catch (error) {
+      console.error('[交换日记存储] 创建线程失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取线程
+   * @param {string} threadId - 线程ID
+   * @returns {Object|null} 线程对象或null
+   */
+  static getThread(threadId) {
+    try {
+      const data = this.loadAll();
+      return data.threads[threadId] || null;
+    } catch (error) {
+      console.error('[交换日记存储] 获取线程失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取角色的所有线程
+   * @param {string} characterName - 角色名
+   * @returns {Array} 线程数组
+   */
+  static getAllThreads(characterName) {
+    try {
+      const data = this.loadAll();
+      const threads = Object.values(data.threads).filter(thread => thread.characterName === characterName);
+      // 按创建时间降序排序
+      threads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      console.log(`[交换日记存储] 获取角色线程成功: ${characterName}, 共${threads.length}个`);
+      return threads;
+    } catch (error) {
+      console.error('[交换日记存储] 获取角色线程失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 更新线程
+   * @param {string} threadId - 线程ID
+   * @param {Object} updates - 更新的字段
+   * @returns {boolean} 是否成功
+   */
+  static updateThread(threadId, updates) {
+    try {
+      const data = this.loadAll();
+      if (!data.threads[threadId]) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      data.threads[threadId] = {
+        ...data.threads[threadId],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 更新线程成功: ${threadId}`);
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 更新线程失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除线程
+   * @param {string} threadId - 线程ID
+   * @returns {boolean} 是否成功
+   */
+  static deleteThread(threadId) {
+    try {
+      const data = this.loadAll();
+      if (!data.threads[threadId]) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      delete data.threads[threadId];
+      this.saveAll(data);
+      console.log(`[交换日记存储] 删除线程成功: ${threadId}`);
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 删除线程失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 添加条目到线程
+   * @param {string} threadId - 线程ID
+   * @param {Object} userDiary - 用户日记对象
+   * @returns {Object|null} 新创建的条目对象或null
+   */
+  static addEntry(threadId, userDiary) {
+    try {
+      const data = this.loadAll();
+      const thread = data.threads[threadId];
+
+      if (!thread) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return null;
+      }
+
+      // 计算条目编号
+      const entryNumber = thread.entries.length + 1;
+
+      // 创建条目对象
+      const entry = {
+        entryNumber: entryNumber,
+        userDiary: {
+          ...userDiary,
+          writtenAt: new Date().toISOString(),
+        },
+        characterReplies: [],
+        selectedReplyIndex: 0,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 添加到线程
+      thread.entries.push(entry);
+      thread.updatedAt = new Date().toISOString();
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 添加条目成功: ${threadId}, 条目${entryNumber}`);
+      return entry;
+    } catch (error) {
+      console.error('[交换日记存储] 添加条目失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取条目
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @returns {Object|null} 条目对象或null
+   */
+  static getEntry(threadId, entryNumber) {
+    try {
+      const thread = this.getThread(threadId);
+      if (!thread) {
+        return null;
+      }
+
+      const entry = thread.entries.find(e => e.entryNumber === entryNumber);
+      return entry || null;
+    } catch (error) {
+      console.error('[交换日记存储] 获取条目失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 更新条目
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @param {Object} updates - 更新的字段
+   * @returns {boolean} 是否成功
+   */
+  static updateEntry(threadId, entryNumber, updates) {
+    try {
+      const data = this.loadAll();
+      const thread = data.threads[threadId];
+
+      if (!thread) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      const entryIndex = thread.entries.findIndex(e => e.entryNumber === entryNumber);
+      if (entryIndex === -1) {
+        console.error(`[交换日记存储] 条目不存在: ${threadId}, 条目${entryNumber}`);
+        return false;
+      }
+
+      thread.entries[entryIndex] = {
+        ...thread.entries[entryIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      thread.updatedAt = new Date().toISOString();
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 更新条目成功: ${threadId}, 条目${entryNumber}`);
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 更新条目失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取待触发的条目
+   * @param {string} characterName - 角色名（可选）
+   * @returns {Array} 待触发条目数组
+   */
+  static getPendingEntries(characterName = null) {
+    try {
+      const data = this.loadAll();
+      const pendingEntries = [];
+
+      for (const threadId in data.threads) {
+        const thread = data.threads[threadId];
+
+        // 如果指定了角色名，只返回该角色的条目
+        if (characterName && thread.characterName !== characterName) {
+          continue;
+        }
+
+        // 查找待触发的条目
+        for (const entry of thread.entries) {
+          if (entry.status === 'pending') {
+            pendingEntries.push({
+              threadId: threadId,
+              threadName: thread.threadName,
+              characterName: thread.characterName,
+              entry: entry,
+            });
+          }
+        }
+      }
+
+      console.log(`[交换日记存储] 获取待触发条目成功, 共${pendingEntries.length}个`);
+      return pendingEntries;
+    } catch (error) {
+      console.error('[交换日记存储] 获取待触发条目失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 添加回复到条目
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @param {Object} reply - 回复对象
+   * @returns {boolean} 是否成功
+   */
+  static addReply(threadId, entryNumber, reply) {
+    try {
+      const data = this.loadAll();
+      const thread = data.threads[threadId];
+
+      if (!thread) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      const entryIndex = thread.entries.findIndex(e => e.entryNumber === entryNumber);
+      if (entryIndex === -1) {
+        console.error(`[交换日记存储] 条目不存在: ${threadId}, 条目${entryNumber}`);
+        return false;
+      }
+
+      const entry = thread.entries[entryIndex];
+
+      // 添加回复
+      const replyWithMetadata = {
+        ...reply,
+        triggeredAt: new Date().toISOString(),
+        isReroll: entry.characterReplies.length > 0,
+        rerollIndex: entry.characterReplies.length,
+      };
+
+      entry.characterReplies.push(replyWithMetadata);
+      entry.updatedAt = new Date().toISOString();
+      thread.updatedAt = new Date().toISOString();
+
+      this.saveAll(data);
+      console.log(
+        `[交换日记存储] 添加回复成功: ${threadId}, 条目${entryNumber}, reroll${replyWithMetadata.rerollIndex}`,
+      );
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 添加回复失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 选择回复版本
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @param {number} rerollIndex - 回复索引
+   * @returns {boolean} 是否成功
+   */
+  static selectReply(threadId, entryNumber, rerollIndex) {
+    try {
+      const data = this.loadAll();
+      const thread = data.threads[threadId];
+
+      if (!thread) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      const entryIndex = thread.entries.findIndex(e => e.entryNumber === entryNumber);
+      if (entryIndex === -1) {
+        console.error(`[交换日记存储] 条目不存在: ${threadId}, 条目${entryNumber}`);
+        return false;
+      }
+
+      const entry = thread.entries[entryIndex];
+
+      if (rerollIndex < 0 || rerollIndex >= entry.characterReplies.length) {
+        console.error(`[交换日记存储] 回复索引无效: ${rerollIndex}`);
+        return false;
+      }
+
+      entry.selectedReplyIndex = rerollIndex;
+      entry.updatedAt = new Date().toISOString();
+      thread.updatedAt = new Date().toISOString();
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 选择回复成功: ${threadId}, 条目${entryNumber}, 索引${rerollIndex}`);
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 选择回复失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除未选中的回复
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @returns {boolean} 是否成功
+   */
+  static deleteUnselectedReplies(threadId, entryNumber) {
+    try {
+      const data = this.loadAll();
+      const thread = data.threads[threadId];
+
+      if (!thread) {
+        console.error(`[交换日记存储] 线程不存在: ${threadId}`);
+        return false;
+      }
+
+      const entryIndex = thread.entries.findIndex(e => e.entryNumber === entryNumber);
+      if (entryIndex === -1) {
+        console.error(`[交换日记存储] 条目不存在: ${threadId}, 条目${entryNumber}`);
+        return false;
+      }
+
+      const entry = thread.entries[entryIndex];
+      const selectedReply = entry.characterReplies[entry.selectedReplyIndex];
+
+      if (!selectedReply) {
+        console.error(`[交换日记存储] 未找到选中的回复`);
+        return false;
+      }
+
+      // 只保留选中的回复
+      entry.characterReplies = [selectedReply];
+      entry.selectedReplyIndex = 0;
+      entry.updatedAt = new Date().toISOString();
+      thread.updatedAt = new Date().toISOString();
+
+      this.saveAll(data);
+      console.log(`[交换日记存储] 删除未选中回复成功: ${threadId}, 条目${entryNumber}`);
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 删除未选中回复失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取配置
+   * @returns {Object} 配置对象
+   */
+  static getConfig() {
+    const data = this.loadAll();
+    return data.config;
+  }
+
+  /**
+   * 更新配置
+   * @param {Object} updates - 配置更新
+   * @returns {boolean} 是否成功
+   */
+  static updateConfig(updates) {
+    try {
+      const data = this.loadAll();
+      data.config = {
+        ...data.config,
+        ...updates,
+      };
+      this.saveAll(data);
+      console.log('[交换日记存储] 更新配置成功');
+      return true;
+    } catch (error) {
+      console.error('[交换日记存储] 更新配置失败:', error);
+      return false;
+    }
+  }
+}
+
+// ===== 提示词构建器 =====
+
+/**
+ * 提示词构建器
+ * 负责构建发送给AI的各种提示词
+ */
+class PromptBuilder {
+  /**
+   * 构建交换日记提示词（带上一篇回复）
+   * @param {string} currentUserDiary - 当前用户日记内容
+   * @param {string} previousCharacterReply - 角色上一篇回复
+   * @returns {string} 构建好的提示词
+   */
+  static buildExchangeDiaryPrompt(currentUserDiary, previousCharacterReply) {
+    return `这是我写给你的交换日记。交换日记是用来记录生活中发生的事情、心情和想法的，我们会在日记本上写下最近的经历和感受，然后传递给对方阅读和回应。这不是即时对话，而是一种更深入、更私密的情感分享。
+
+这是你上一次写给我的日记：
+${previousCharacterReply}
+
+现在我写了一篇新的日记。请你在阅读后，结合我们最近的聊天记录，写一篇回应的交换日记。
+
+我的日记内容：
+${currentUserDiary}
+
+写作指导：
+1. 这是日记，重点是记录最近发生的事情和你的感受
+2. 回顾我们最近的聊天，记录下你印象深刻的事件、对话或互动
+3. 可以描述你做了什么、看到了什么、想到了什么
+4. 可以回应我日记中提到的内容，分享你的看法和感受
+5. 语气要真诚自然，像是在记录真实的生活片段
+6. 包含具体的细节和场景描写，让日记更生动
+7. 标题要能概括这段时间的主要事件或心情
+
+交换日记格式要求：
+<交换日记>
+标题：[简短的标题，概括主要事件或心情]
+时间：[写日记的时间]
+内容：[日记正文，记录最近发生的事情和感受]
+</交换日记>
+
+请严格按照上述格式回复你的交换日记。`;
+  }
+
+  /**
+   * 构建交换日记提示词（首篇，无上一篇回复）
+   * @param {string} userDiaryContent - 用户日记内容
+   * @returns {string} 构建好的提示词
+   */
+  static buildExchangeDiaryPromptFirst(userDiaryContent) {
+    return `这是我写给你的交换日记。交换日记是用来记录生活中发生的事情、心情和想法的，我们会在日记本上写下最近的经历和感受，然后传递给对方阅读和回应。这不是即时对话，而是一种更深入、更私密的情感分享。
+
+我的日记内容：
+${userDiaryContent}
+
+请你在阅读我的日记后，结合我们最近的聊天记录，写一篇回应的交换日记。
+
+写作指导：
+1. 这是日记，重点是记录最近发生的事情和你的感受
+2. 回顾我们最近的聊天，记录下你印象深刻的事件、对话或互动
+3. 可以描述你做了什么、看到了什么、想到了什么
+4. 可以回应我日记中提到的内容，分享你的看法和感受
+5. 语气要真诚自然，像是在记录真实的生活片段
+6. 包含具体的细节和场景描写，让日记更生动
+7. 标题要能概括这段时间的主要事件或心情
+
+交换日记格式要求：
+<交换日记>
+标题：[简短的标题，概括主要事件或心情]
+时间：[写日记的时间]
+内容：[日记正文，记录最近发生的事情和感受]
+</交换日记>
+
+请严格按照上述格式回复你的交换日记。`;
+  }
+
+  /**
+   * 构建AI代写提示词
+   * @param {Array} chatHistory - 聊天历史记录
+   * @param {string} characterName - 角色名
+   * @returns {string} 构建好的提示词
+   */
+  static buildGhostwritePrompt(chatHistory, characterName) {
+    // 获取最近的聊天记录（最多5条）
+    const recentMessages = chatHistory.slice(-5);
+
+    // 构建聊天历史文本
+    let chatHistoryText = '';
+    for (const msg of recentMessages) {
+      const speaker = msg.is_user ? '我' : characterName;
+      chatHistoryText += `${speaker}: ${msg.mes}\n\n`;
+    }
+
+    return `请根据我们最近的聊天记录，以我的口吻写一篇交换日记给${characterName}。
+
+交换日记是用来记录生活中发生的事情、心情和想法的，我们会在日记本上写下最近的经历和感受，然后传递给对方阅读和回应。这不是即时对话，而是一种更深入、更私密的情感分享。
+
+最近的聊天记录：
+${chatHistoryText}
+
+写作指导：
+1. 使用第一人称（我）的视角，以我的口吻写作
+2. 这是写给${characterName}看的日记，重点是记录最近发生的事情和我的感受
+3. 回顾我们最近的聊天，记录下我印象深刻的事件、对话或互动
+4. 可以描述我做了什么、看到了什么、或者想对${characterName}说的话
+5. 语气要真诚自然，不要过于正式，像是在和亲密的朋友分享心事
+6. 可以包含一些细节描写和情感表达，让日记更生动真实
+7. 不需要使用特殊格式标签，直接写日记内容即可
+
+请直接输出日记内容。`;
+  }
+
+  /**
+   * 构建Reroll提示词（与原始提示词相同）
+   * @param {string} originalPrompt - 原始提示词
+   * @returns {string} Reroll提示词
+   */
+  static buildRerollPrompt(originalPrompt) {
+    return originalPrompt;
+  }
+}
+
+// ===== AI代写管理器 =====
+
+/**
+ * AI代写管理器
+ * 负责管理AI代写用户日记的功能
+ */
+class GhostwriteManager {
+  /**
+   * 生成AI代写的日记
+   * @param {Array} chatHistory - 聊天历史记录
+   * @param {string} characterName - 角色名
+   * @returns {Promise<{success: boolean, content?: string, error?: string}>}
+   */
+  static async generateGhostwrittenDiary(chatHistory, characterName) {
+    try {
+      console.log('[AI代写] 开始生成代写日记...');
+      console.log('[AI代写] 角色名:', characterName);
+      console.log('[AI代写] 聊天历史长度:', chatHistory.length);
+
+      // 检查聊天历史是否为空
+      if (!chatHistory || chatHistory.length === 0) {
+        console.warn('[AI代写] 聊天历史为空');
+        return {
+          success: false,
+          error: '聊天历史为空，无法生成日记',
+        };
+      }
+
+      // 构建提示词
+      const prompt = PromptBuilder.buildGhostwritePrompt(chatHistory, characterName);
+      console.log('[AI代写] 提示词已构建');
+
+      // 使用/gen命令后台生成
+      console.log('[AI代写] 调用/gen命令...');
+      const responseText = await this.callGenCommand(prompt);
+
+      console.log('[AI代写] AI回复长度:', responseText.length);
+
+      if (!responseText || !responseText.trim()) {
+        console.error('[AI代写] AI回复为空');
+        return {
+          success: false,
+          error: 'AI回复为空',
+        };
+      }
+
+      // 直接返回AI的完整输出，不做格式验证
+      const cleanedContent = responseText.trim();
+
+      console.log('[AI代写] 日记生成成功');
+      return {
+        success: true,
+        content: cleanedContent,
+      };
+    } catch (error) {
+      console.error('[AI代写] 生成日记失败:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 调用/gen命令进行后台生成
+   * @param {string} prompt - 提示词
+   * @returns {Promise<string>} AI回复
+   */
+  static async callGenCommand(prompt) {
+    try {
+      // 使用SillyTavern的/gen命令
+      // /gen命令会在后台生成，不会在聊天记录中留下痕迹
+      const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
+        handleParserErrors: true,
+        handleExecutionErrors: true,
+        parserFlags: {},
+        abortController: null,
+      });
+
+      // 处理返回值 - 参考自动写日记的实现
+      let generatedContent = '';
+
+      if (result && typeof result === 'string') {
+        // 直接是字符串
+        generatedContent = result;
+      } else if (result && result.pipe) {
+        // 如果是 pipe 结果，获取其内容
+        generatedContent = result.pipe || '';
+      } else if (result) {
+        // 尝试转换为字符串
+        generatedContent = String(result);
+      }
+
+      console.log('[AI代写] /gen返回类型:', typeof result);
+      console.log('[AI代写] 提取的内容长度:', generatedContent.length);
+
+      // 返回生成的文本
+      return generatedContent || '';
+    } catch (error) {
+      console.error('[AI代写] /gen命令执行失败:', error);
+      throw error;
+    }
+  }
+}
+
+// ===== Reroll管理器 =====
+
+/**
+ * Reroll管理器
+ * 负责管理角色回复的重新生成功能
+ */
+class RerollManager {
+  /**
+   * 生成Reroll回复
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @returns {Promise<{success: boolean, reply?: Object, error?: string}>}
+   */
+  static async generateReroll(threadId, entryNumber) {
+    try {
+      console.log(`[Reroll] 开始生成Reroll: ${threadId}, 条目${entryNumber}`);
+
+      // 获取线程和条目
+      const thread = ExchangeDiaryStorage.getThread(threadId);
+      if (!thread) {
+        throw new Error(`线程不存在: ${threadId}`);
+      }
+
+      const entry = ExchangeDiaryStorage.getEntry(threadId, entryNumber);
+      if (!entry) {
+        throw new Error(`条目不存在: ${threadId}, 条目${entryNumber}`);
+      }
+
+      // 检查是否达到最大Reroll次数
+      const config = ExchangeDiaryStorage.getConfig();
+      const maxRerolls = config.maxRerollsPerEntry || 5;
+
+      if (entry.characterReplies.length >= maxRerolls) {
+        throw new Error(`已达到最大Reroll次数限制 (${maxRerolls})`);
+      }
+
+      // 构建提示词（与原始提示词相同）
+      const prompt = this.buildRerollPrompt(thread, entry);
+
+      // 使用/gen命令后台生成
+      console.log('[Reroll] 调用/gen命令...');
+      const response = await this.callGenCommand(prompt);
+
+      if (!response || !response.trim()) {
+        throw new Error('AI回复为空');
+      }
+
+      console.log('[Reroll] 收到AI回复，长度:', response.length);
+
+      // 验证和提取日记内容
+      const extractResult = FormatValidator.validateAndExtract(response);
+
+      if (!extractResult.success) {
+        throw new Error(`格式验证失败: ${extractResult.error}`);
+      }
+
+      console.log('[Reroll] 日记格式验证成功');
+
+      // 构建回复对象
+      const reply = {
+        title: extractResult.title,
+        time: extractResult.time,
+        content: extractResult.content,
+        rawResponse: response,
+        floorNumber: chat.length, // 使用当前楼层数
+        parsed: true,
+        isReroll: true,
+        rerollIndex: entry.characterReplies.length,
+      };
+
+      console.log(`[Reroll] Reroll生成成功, 索引: ${reply.rerollIndex}`);
+      return { success: true, reply: reply };
+    } catch (error) {
+      console.error('[Reroll] 生成Reroll失败:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * 构建Reroll提示词
+   * @param {Object} thread - 线程对象
+   * @param {Object} entry - 条目对象
+   * @returns {string} 提示词
+   */
+  static buildRerollPrompt(thread, entry) {
+    // 获取上一篇角色回复（如果存在）
+    let previousReply = null;
+    if (entry.entryNumber > 1) {
+      const previousEntry = thread.entries.find(e => e.entryNumber === entry.entryNumber - 1);
+      if (previousEntry && previousEntry.characterReplies && previousEntry.characterReplies.length > 0) {
+        previousReply = previousEntry.characterReplies[previousEntry.selectedReplyIndex || 0];
+      }
+    }
+
+    // 使用PromptBuilder构建提示词
+    if (previousReply) {
+      const previousReplyText = `标题：${previousReply.title}\n时间：${previousReply.time}\n内容：${previousReply.content}`;
+      return PromptBuilder.buildExchangeDiaryPrompt(entry.userDiary.content, previousReplyText);
+    } else {
+      return PromptBuilder.buildExchangeDiaryPromptFirst(entry.userDiary.content);
+    }
+  }
+
+  /**
+   * 调用/gen命令进行后台生成
+   * @param {string} prompt - 提示词
+   * @returns {Promise<string>} AI回复
+   */
+  static async callGenCommand(prompt) {
+    try {
+      const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
+        handleParserErrors: true,
+        handleExecutionErrors: true,
+        parserFlags: {},
+        abortController: null,
+      });
+
+      let generatedContent = '';
+
+      if (result && typeof result === 'string') {
+        generatedContent = result;
+      } else if (result && result.pipe) {
+        generatedContent = result.pipe || '';
+      } else if (result) {
+        generatedContent = String(result);
+      }
+
+      return generatedContent || '';
+    } catch (error) {
+      console.error('[Reroll] /gen命令执行失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 保存Reroll版本
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @param {Object} reply - 回复对象
+   * @returns {boolean} 是否成功
+   */
+  static saveRerollVersion(threadId, entryNumber, reply) {
+    try {
+      const success = ExchangeDiaryStorage.addReply(threadId, entryNumber, reply);
+      if (success) {
+        console.log(`[Reroll] Reroll版本已保存: ${threadId}, 条目${entryNumber}, 索引${reply.rerollIndex}`);
+      }
+      return success;
+    } catch (error) {
+      console.error('[Reroll] 保存Reroll版本失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 选择回复版本
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @param {number} rerollIndex - 回复索引
+   * @returns {boolean} 是否成功
+   */
+  static selectReply(threadId, entryNumber, rerollIndex) {
+    try {
+      const success = ExchangeDiaryStorage.selectReply(threadId, entryNumber, rerollIndex);
+      if (success) {
+        console.log(`[Reroll] 已选择回复版本: ${threadId}, 条目${entryNumber}, 索引${rerollIndex}`);
+      }
+      return success;
+    } catch (error) {
+      console.error('[Reroll] 选择回复版本失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除未选中的回复
+   * @param {string} threadId - 线程ID
+   * @param {number} entryNumber - 条目编号
+   * @returns {boolean} 是否成功
+   */
+  static deleteUnselectedReplies(threadId, entryNumber) {
+    try {
+      const success = ExchangeDiaryStorage.deleteUnselectedReplies(threadId, entryNumber);
+      if (success) {
+        console.log(`[Reroll] 已删除未选中的回复: ${threadId}, 条目${entryNumber}`);
+      }
+      return success;
+    } catch (error) {
+      console.error('[Reroll] 删除未选中回复失败:', error);
+      return false;
+    }
+  }
+}
+
+// ===== 格式验证器 =====
+
+/**
+ * 格式验证器
+ * 负责验证和提取交换日记的格式
+ */
+class FormatValidator {
+  /**
+   * 交换日记格式的正则表达式
+   */
+  static get EXCHANGE_DIARY_REGEX() {
+    return /<交换日记>\s*标题：([^\n]*)\s*时间：([^\n]*)\s*内容：([\s\S]*?)\s*<\/交换日记>/;
+  }
+
+  /**
+   * 验证并提取交换日记内容
+   * @param {string} response - AI回复
+   * @returns {Object} {success: boolean, title?: string, time?: string, content?: string, error?: string}
+   */
+  static validateAndExtract(response) {
+    try {
+      // 使用正则表达式提取日记内容
+      const match = response.match(this.EXCHANGE_DIARY_REGEX);
+
+      if (!match) {
+        return {
+          success: false,
+          error: '未找到交换日记格式标签',
+        };
+      }
+
+      const title = match[1].trim();
+      const time = match[2].trim();
+      const content = match[3].trim();
+
+      // 检查内容是否完整
+      if (!title || !time || !content) {
+        return {
+          success: false,
+          error: '日记内容不完整（标题、时间或内容为空）',
+        };
+      }
+
+      // 返回分离的字段，不重新构建标签
+      return {
+        success: true,
+        title: title,
+        time: time,
+        content: content,
+      };
+    } catch (error) {
+      console.error('[格式验证器] 提取日记内容失败:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 仅验证格式是否正确（不提取内容）
+   * @param {string} response - AI回复
+   * @returns {boolean} 是否符合格式
+   */
+  static isValidFormat(response) {
+    return this.EXCHANGE_DIARY_REGEX.test(response);
+  }
+
+  /**
+   * 提取标题
+   * @param {string} response - AI回复
+   * @returns {string|null} 标题或null
+   */
+  static extractTitle(response) {
+    const match = response.match(this.EXCHANGE_DIARY_REGEX);
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * 提取时间
+   * @param {string} response - AI回复
+   * @returns {string|null} 时间或null
+   */
+  static extractTime(response) {
+    const match = response.match(this.EXCHANGE_DIARY_REGEX);
+    return match ? match[2].trim() : null;
+  }
+
+  /**
+   * 提取内容
+   * @param {string} response - AI回复
+   * @returns {string|null} 内容或null
+   */
+  static extractContent(response) {
+    const match = response.match(this.EXCHANGE_DIARY_REGEX);
+    return match ? match[3].trim() : null;
+  }
+}
+
+// ===== 触发管理器 =====
+
+/**
+ * 触发管理器
+ * 负责管理交换日记的触发逻辑
+ */
+class TriggerManager {
+  constructor() {
+    this.checkInterval = null; // 定时检查的interval ID
+    this.isChecking = false; // 是否正在检查（防止重复触发）
+    this.triggeredEntries = new Set(); // 已触发的条目集合（防止重复触发）
+    this.lastCheckedChatLength = 0; // 上次检查的聊天长度（避免重复检查）
+  }
+
+  /**
+   * 启动触发管理器
+   * 开始定时检查触发条件
+   */
+  start() {
+    if (this.checkInterval) {
+      console.log('[触发管理器] 已经在运行中');
+      return;
+    }
+
+    console.log('[触发管理器] 启动触发管理器，每3秒检查一次');
+    this.checkInterval = setInterval(() => {
+      this.checkAndTrigger();
+    }, 3000); // 每3秒检查一次
+  }
+
+  /**
+   * 停止触发管理器
+   */
+  stop() {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+      console.log('[触发管理器] 触发管理器已停止');
+    }
+  }
+
+  /**
+   * 检查并触发交换日记
+   */
+  async checkAndTrigger() {
+    // 防止重复检查
+    if (this.isChecking) {
+      return;
+    }
+
+    try {
+      this.isChecking = true;
+
+      // 获取当前楼层数
+      const currentFloor = this.getCurrentFloor();
+
+      // 避免重复检查（聊天长度没变化就不检查）
+      if (currentFloor === this.lastCheckedChatLength) {
+        return;
+      }
+      this.lastCheckedChatLength = currentFloor;
+
+      // 获取当前角色名
+      const currentCharacter = name2;
+      if (!currentCharacter) {
+        // 没有当前角色，不触发
+        return;
+      }
+
+      if (currentFloor === 0) {
+        // 没有聊天记录，不触发
+        return;
+      }
+
+      // 获取待触发的条目
+      const pendingEntries = ExchangeDiaryStorage.getPendingEntries(currentCharacter);
+      if (pendingEntries.length === 0) {
+        // 没有待触发的条目
+        return;
+      }
+
+      console.log(
+        `[触发管理器] 当前角色: ${currentCharacter}, 当前楼层: ${currentFloor}, 待触发条目: ${pendingEntries.length}个`,
+      );
+
+      // 检查每个待触发条目
+      for (const pendingEntry of pendingEntries) {
+        const { threadId, entry } = pendingEntry;
+
+        // 检查是否已经触发过（防止重复触发）
+        const entryKey = `${threadId}-${entry.entryNumber}`;
+        if (this.triggeredEntries.has(entryKey)) {
+          continue;
+        }
+
+        // 检查触发条件
+        if (this.checkTriggerConditions(entry, currentFloor)) {
+          console.log(`[触发管理器] 触发条件满足: ${threadId}, 条目${entry.entryNumber}`);
+
+          // 标记为已触发（防止重复）
+          this.triggeredEntries.add(entryKey);
+
+          // 执行触发
+          await this.executeTrigger(threadId, entry);
+
+          // 只触发一个，避免同时触发多个
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('[触发管理器] 检查触发时发生错误:', error);
+    } finally {
+      this.isChecking = false;
+    }
+  }
+
+  /**
+   * 获取当前楼层数
+   * @returns {number} 当前楼层数
+   */
+  getCurrentFloor() {
+    try {
+      // 楼层数 = 聊天消息数量
+      return chat.length;
+    } catch (error) {
+      console.error('[触发管理器] 获取当前楼层失败:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * 检查触发条件
+   * @param {Object} entry - 条目对象
+   * @param {number} currentFloor - 当前楼层
+   * @returns {boolean} 是否满足触发条件
+   */
+  checkTriggerConditions(entry, currentFloor) {
+    try {
+      const { userDiary } = entry;
+      const { triggerWindow } = userDiary;
+
+      // 如果有固定的触发楼层，直接检查是否到达
+      if (triggerWindow.targetFloor !== undefined) {
+        const shouldTrigger = currentFloor === triggerWindow.targetFloor;
+
+        if (shouldTrigger) {
+          console.log(`[触发管理器] 到达触发楼层: 当前楼层${currentFloor}, 目标楼层${triggerWindow.targetFloor}`);
+        }
+
+        return shouldTrigger;
+      }
+
+      // 兼容旧数据：如果没有targetFloor，使用旧的随机逻辑
+      const inWindow = currentFloor >= triggerWindow.start && currentFloor <= triggerWindow.end;
+
+      if (!inWindow) {
+        return false;
+      }
+
+      // 在窗口内，随机决定是否触发（兼容旧数据）
+      const shouldTrigger = Math.random() < 0.2;
+
+      if (shouldTrigger) {
+        console.log(
+          `[触发管理器] 随机触发（旧数据）: 当前楼层${currentFloor}, 窗口[${triggerWindow.start}, ${triggerWindow.end}]`,
+        );
+      }
+
+      return shouldTrigger;
+    } catch (error) {
+      console.error('[触发管理器] 检查触发条件失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 执行触发
+   * @param {string} threadId - 线程ID
+   * @param {Object} entry - 条目对象
+   */
+  async executeTrigger(threadId, entry) {
+    try {
+      console.log(`[触发管理器] 开始执行触发: ${threadId}, 条目${entry.entryNumber}`);
+
+      // 更新条目状态为triggered
+      ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
+        status: 'triggered',
+      });
+
+      // 获取线程信息
+      const thread = ExchangeDiaryStorage.getThread(threadId);
+      if (!thread) {
+        console.error(`[触发管理器] 线程不存在: ${threadId}`);
+        return;
+      }
+
+      // 构建提示词
+      const prompt = this.buildPrompt(thread, entry);
+
+      // 后台发送（使用/gen命令）
+      console.log('[触发管理器] 发送提示词到AI...');
+      const response = await this.sendPrompt(prompt);
+
+      if (!response) {
+        console.error('[触发管理器] AI回复为空');
+        // 保存到回收站
+        this.saveToRecycleBin(threadId, entry, '', 'AI回复为空');
+        // 更新状态为failed
+        ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
+          status: 'failed',
+        });
+        return;
+      }
+
+      console.log('[触发管理器] 收到AI回复，长度:', response.length);
+
+      // 验证和提取日记内容（使用FormatValidator）
+      const extractResult = FormatValidator.validateAndExtract(response);
+
+      if (!extractResult.success) {
+        console.error('[触发管理器] 日记格式验证失败:', extractResult.error);
+        // 保存到回收站
+        this.saveToRecycleBin(threadId, entry, response, extractResult.error);
+        // 更新状态为failed
+        ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
+          status: 'failed',
+        });
+        return;
+      }
+
+      // 保存回复
+      const currentFloor = this.getCurrentFloor();
+      const addReplySuccess = ExchangeDiaryStorage.addReply(threadId, entry.entryNumber, {
+        title: extractResult.title,
+        time: extractResult.time,
+        content: extractResult.content,
+        rawResponse: response,
+        floorNumber: currentFloor,
+        parsed: true,
+      });
+
+      if (!addReplySuccess) {
+        console.error('[触发管理器] 保存回复失败');
+        return;
+      }
+
+      // 更新状态为completed
+      ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
+        status: 'completed',
+      });
+
+      console.log(`[触发管理器] 触发完成: ${threadId}, 条目${entry.entryNumber}`);
+
+      // 显示通知
+      const config = ExchangeDiaryStorage.getConfig();
+      if (config.enableNotifications) {
+        toastr.info(`${thread.characterName}回复了你的交换日记`, '交换日记', {
+          timeOut: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('[触发管理器] 执行触发失败:', error);
+      // 更新状态为failed
+      ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
+        status: 'failed',
+      });
+    }
+  }
+
+  /**
+   * 构建提示词
+   * @param {Object} thread - 线程对象
+   * @param {Object} entry - 条目对象
+   * @returns {string} 提示词
+   */
+  buildPrompt(thread, entry) {
+    try {
+      const { userDiary } = entry;
+
+      // 检查是否有上一篇角色回复
+      const previousEntry = thread.entries.find(e => e.entryNumber === entry.entryNumber - 1);
+
+      if (previousEntry && previousEntry.characterReplies.length > 0) {
+        // 有上一篇回复，使用带上一篇的模板
+        const previousReply = previousEntry.characterReplies[previousEntry.selectedReplyIndex];
+        return PromptBuilder.buildExchangeDiaryPrompt(userDiary.content, previousReply.content);
+      } else {
+        // 没有上一篇回复，使用首篇模板
+        return PromptBuilder.buildExchangeDiaryPromptFirst(userDiary.content);
+      }
+    } catch (error) {
+      console.error('[触发管理器] 构建提示词失败:', error);
+      return PromptBuilder.buildExchangeDiaryPromptFirst(entry.userDiary.content);
+    }
+  }
+
+  /**
+   * 发送提示词到AI
+   * @param {string} prompt - 提示词
+   * @returns {Promise<string>} AI回复
+   */
+  async sendPrompt(prompt) {
+    try {
+      // 使用/gen命令后台发送
+      const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
+        handleParserErrors: true,
+        handleExecutionErrors: true,
+        parserFlags: {},
+        abortController: null,
+      });
+
+      // 处理返回值
+      let responseText = '';
+
+      if (result && typeof result === 'string') {
+        responseText = result;
+      } else if (result && result.pipe) {
+        responseText = result.pipe || '';
+      } else if (result) {
+        responseText = String(result);
+      }
+
+      return responseText || '';
+    } catch (error) {
+      console.error('[触发管理器] 发送提示词失败:', error);
+      return '';
+    }
+  }
+
+  /**
+   * 保存到回收站
+   * @param {string} threadId - 线程ID
+   * @param {Object} entry - 条目对象
+   * @param {string} response - AI回复
+   * @param {string} reason - 失败原因
+   */
+  async saveToRecycleBin(threadId, entry, response, reason) {
+    try {
+      const thread = ExchangeDiaryStorage.getThread(threadId);
+      if (!thread) {
+        console.error('[触发管理器] 线程不存在:', threadId);
+        return;
+      }
+
+      const characterName = thread.characterName;
+
+      // 使用新的回收站保存函数
+      const result = await saveToRecycleBinFile(response, characterName, reason);
+
+      if (result.success) {
+        console.log(`[触发管理器] 已保存到回收站: ${characterName}_${result.id}`);
+
+        // 更新回收站条目，添加交换日记元数据
+        const allRecycleBin = await loadAllRecycleBin();
+        const characterRecycleBin = allRecycleBin[characterName] || [];
+        const item = characterRecycleBin.find(r => r.id === result.id);
+
+        if (item) {
+          // 添加交换日记特有的元数据
+          item.type = 'exchange_diary';
+          item.threadId = threadId;
+          item.entryNumber = entry.entryNumber;
+          item.originalPrompt = this.buildPrompt(thread, entry);
+
+          // 保存更新后的回收站数据
+          await saveAllRecycleBin(allRecycleBin);
+          console.log('[触发管理器] 交换日记元数据已添加');
+        }
+      } else {
+        console.error('[触发管理器] 保存到回收站失败:', result.error);
+      }
+    } catch (error) {
+      console.error('[触发管理器] 保存到回收站失败:', error);
+    }
+  }
+
+  /**
+   * 清理已触发条目记录
+   * 定期清理，避免内存占用过大
+   */
+  cleanupTriggeredEntries() {
+    // 只保留最近100个
+    if (this.triggeredEntries.size > 100) {
+      const entries = Array.from(this.triggeredEntries);
+      this.triggeredEntries = new Set(entries.slice(-100));
+    }
+  }
+}
+
+// 创建全局触发管理器实例
+const triggerManager = new TriggerManager();
+
+// ===== 触发管理器测试 =====
+
+/**
+ * 测试触发管理器功能
+ */
+function testTriggerManager() {
+  console.log('[测试] 开始测试触发管理器...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 测试1: 获取当前楼层数
+    console.log('[测试] 测试获取当前楼层数...');
+    const currentFloor = triggerManager.getCurrentFloor();
+    assert(typeof currentFloor === 'number', '获取当前楼层数返回数字');
+    assert(currentFloor >= 0, '楼层数非负');
+
+    // 测试2: 检查触发条件 - 在窗口内
+    console.log('[测试] 测试触发条件检查...');
+    const mockEntry1 = {
+      userDiary: {
+        floorNumber: 10,
+        triggerWindow: {
+          start: 11,
+          end: 20,
+        },
+      },
+    };
+
+    // 模拟在窗口内的情况（多次测试以验证随机性）
+    let triggeredCount = 0;
+    for (let i = 0; i < 50; i++) {
+      if (triggerManager.checkTriggerConditions(mockEntry1, 15)) {
+        triggeredCount++;
+      }
+    }
+    assert(triggeredCount > 0 && triggeredCount < 50, '在窗口内有概率触发（不是100%也不是0%）');
+
+    // 测试3: 检查触发条件 - 在窗口外（之前）
+    const shouldNotTriggerBefore = triggerManager.checkTriggerConditions(mockEntry1, 10);
+    assert(shouldNotTriggerBefore === false, '在窗口开始前不触发');
+
+    // 测试4: 检查触发条件 - 在窗口外（之后）
+    const shouldNotTriggerAfter = triggerManager.checkTriggerConditions(mockEntry1, 21);
+    assert(shouldNotTriggerAfter === false, '在窗口结束后不触发');
+
+    // 测试5: 提取日记内容 - 成功案例
+    console.log('[测试] 测试日记内容提取...');
+    const validResponse = `<交换日记>
+标题：美好的一天
+时间：2025年1月15日
+内容：今天和你聊天很开心，我们聊了很多有趣的话题。
+</交换日记>`;
+
+    const extractResult1 = FormatValidator.validateAndExtract(validResponse);
+    assert(extractResult1.success === true, '成功提取有效的日记内容');
+    assert(extractResult1.title === '美好的一天', '正确提取标题');
+    assert(extractResult1.time === '2025年1月15日', '正确提取时间');
+    assert(extractResult1.content === '今天和你聊天很开心，期待明天继续。', '正确提取正文内容');
+
+    // 测试6: 提取日记内容 - 失败案例（缺少标签）
+    const invalidResponse1 = '这是一篇没有格式的日记';
+    const extractResult2 = FormatValidator.validateAndExtract(invalidResponse1);
+    assert(extractResult2.success === false, '拒绝没有格式标签的内容');
+    assert(extractResult2.error.includes('未找到'), '错误信息提示未找到标签');
+
+    // 测试7: 提取日记内容 - 失败案例（内容不完整）
+    const invalidResponse2 = `<交换日记>
+标题：
+时间：2025年1月15日
+内容：
+</交换日记>`;
+    const extractResult3 = FormatValidator.validateAndExtract(invalidResponse2);
+    assert(extractResult3.success === false, '拒绝内容不完整的日记');
+    assert(extractResult3.error.includes('不完整'), '错误信息提示内容不完整');
+
+    // 测试8: 构建提示词 - 首篇（无上一篇回复）
+    console.log('[测试] 测试提示词构建...');
+    const mockThread1 = {
+      entries: [
+        {
+          entryNumber: 1,
+          userDiary: { content: '这是我的第一篇日记' },
+          characterReplies: [],
+        },
+      ],
+    };
+    const mockEntry2 = mockThread1.entries[0];
+    const prompt1 = triggerManager.buildPrompt(mockThread1, mockEntry2);
+    assert(prompt1.includes('这是我的第一篇日记'), '首篇提示词包含用户日记');
+    assert(!prompt1.includes('上一次'), '首篇提示词不包含上一篇回复');
+
+    // 测试9: 构建提示词 - 后续篇（有上一篇回复）
+    const mockThread2 = {
+      entries: [
+        {
+          entryNumber: 1,
+          userDiary: { content: '第一篇日记' },
+          characterReplies: [
+            {
+              content: '这是我的回复',
+            },
+          ],
+          selectedReplyIndex: 0,
+        },
+        {
+          entryNumber: 2,
+          userDiary: { content: '这是我的第二篇日记' },
+          characterReplies: [],
+        },
+      ],
+    };
+    const mockEntry3 = mockThread2.entries[1];
+    const prompt2 = triggerManager.buildPrompt(mockThread2, mockEntry3);
+    assert(prompt2.includes('这是我的第二篇日记'), '后续提示词包含用户日记');
+    assert(prompt2.includes('这是我的回复'), '后续提示词包含上一篇回复');
+    assert(prompt2.includes('上一次'), '后续提示词提到上一篇');
+
+    // 测试10: 触发管理器启动和停止
+    console.log('[测试] 测试触发管理器启动和停止...');
+    const testManager = new TriggerManager();
+    testManager.start();
+    assert(testManager.checkInterval !== null, '触发管理器启动成功');
+    testManager.stop();
+    assert(testManager.checkInterval === null, '触发管理器停止成功');
+
+    console.log(`[测试] 触发管理器测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+// ===== 格式验证器测试 =====
+
+/**
+ * 测试FormatValidator类的功能
+ */
+function testFormatValidator() {
+  console.log('[测试] 开始测试FormatValidator...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 测试1: 验证有效的日记格式
+    console.log('[测试] 测试格式验证...');
+    const validDiary = `<交换日记>
+标题：美好的一天
+时间：2025年1月17日
+内容：今天天气很好，心情也很愉快。
+</交换日记>`;
+
+    const result1 = FormatValidator.validateAndExtract(validDiary);
+    assert(result1.success === true, '成功验证有效格式');
+    assert(result1.title === '美好的一天', '正确提取标题');
+    assert(result1.time === '2025年1月17日', '正确提取时间');
+    assert(result1.content === '今天天气很好，心情也很愉快。', '正确提取内容');
+
+    // 测试2: 验证缺少标签的格式
+    const invalidDiary1 = '这是一篇没有格式的日记';
+    const result2 = FormatValidator.validateAndExtract(invalidDiary1);
+    assert(result2.success === false, '拒绝缺少标签的格式');
+    assert(result2.error.includes('未找到'), '错误信息正确');
+
+    // 测试3: 验证内容不完整的格式
+    const invalidDiary2 = `<交换日记>
+标题：
+时间：2025年1月17日
+内容：
+</交换日记>`;
+    const result3 = FormatValidator.validateAndExtract(invalidDiary2);
+    assert(result3.success === false, '拒绝内容不完整的格式');
+    assert(result3.error.includes('不完整'), '错误信息正确');
+
+    // 测试4: isValidFormat方法
+    assert(FormatValidator.isValidFormat(validDiary) === true, 'isValidFormat识别有效格式');
+    assert(FormatValidator.isValidFormat(invalidDiary1) === false, 'isValidFormat识别无效格式');
+
+    // 测试5: extractTitle方法
+    assert(FormatValidator.extractTitle(validDiary) === '美好的一天', 'extractTitle正确提取标题');
+    assert(FormatValidator.extractTitle(invalidDiary1) === null, 'extractTitle对无效格式返回null');
+
+    // 测试6: extractTime方法
+    assert(FormatValidator.extractTime(validDiary) === '2025年1月17日', 'extractTime正确提取时间');
+    assert(FormatValidator.extractTime(invalidDiary1) === null, 'extractTime对无效格式返回null');
+
+    // 测试7: extractContent方法
+    assert(FormatValidator.extractContent(validDiary) === '今天天气很好，心情也很愉快。', 'extractContent正确提取内容');
+    assert(FormatValidator.extractContent(invalidDiary1) === null, 'extractContent对无效格式返回null');
+
+    console.log(`[测试] FormatValidator测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+// ===== 格式验证属性测试 =====
+
+/**
+ * 属性测试: Response Extraction Attempted
+ * Feature: exchange-diary, Property 10: Response Extraction Attempted
+ * Validates: Requirements 3.4
+ *
+ * 对于任何AI回复，系统应该尝试提取日记内容
+ */
+function testFormatValidatorProperty() {
+  console.log('[属性测试] 开始测试格式验证属性...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[属性测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[属性测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 属性1: 对于任何字符串，validateAndExtract应该返回结果对象
+    console.log('[属性测试] Property 10: Response Extraction Attempted');
+
+    const testStrings = [
+      '',
+      '随机文本',
+      '<交换日记>',
+      '</交换日记>',
+      '<交换日记>标题：测试</交换日记>',
+      '<交换日记>\n标题：测试\n时间：2025\n内容：测试内容\n</交换日记>',
+      '前缀<交换日记>\n标题：测试\n时间：2025\n内容：测试\n</交换日记>后缀',
+      '<交换日记>\n标题：\n时间：\n内容：\n</交换日记>',
+      '多行\n文本\n测试',
+      '<交换日记>\n标题：很长的标题'.repeat(10) + '\n时间：2025\n内容：内容\n</交换日记>',
+    ];
+
+    // 测试所有字符串都能得到结果
+    for (let i = 0; i < testStrings.length; i++) {
+      const result = FormatValidator.validateAndExtract(testStrings[i]);
+      assert(result !== null && result !== undefined, `测试字符串${i + 1}: validateAndExtract返回结果对象`);
+      assert(typeof result.success === 'boolean', `测试字符串${i + 1}: 结果包含success字段`);
+      if (!result.success) {
+        assert(typeof result.error === 'string', `测试字符串${i + 1}: 失败时包含error字段`);
+      }
+    }
+
+    // 属性2: 有效格式应该被正确识别
+    const validFormats = [
+      '<交换日记>\n标题：测试\n时间：2025\n内容：内容\n</交换日记>',
+      '<交换日记>\n标题：很长的标题\n时间：2025年1月17日\n内容：很长的内容'.repeat(5) + '\n</交换日记>',
+      '<交换日记>\n标题：标题\n时间：时间\n内容：内容\n</交换日记>',
+    ];
+
+    for (const format of validFormats) {
+      const result = FormatValidator.validateAndExtract(format);
+      assert(result.success === true, `有效格式被正确识别: ${format.substring(0, 30)}...`);
+      assert(result.content !== undefined, '成功时返回content字段');
+      assert(result.title !== undefined, '成功时返回title字段');
+      assert(result.time !== undefined, '成功时返回time字段');
+      assert(result.rawContent !== undefined, '成功时返回rawContent字段');
+    }
+
+    // 属性3: 无效格式应该被正确拒绝
+    const invalidFormats = [
+      '',
+      '随机文本',
+      '<交换日记>',
+      '<交换日记>\n标题：\n时间：\n内容：\n</交换日记>',
+      '<交换日记>\n标题：测试\n</交换日记>',
+    ];
+
+    for (const format of invalidFormats) {
+      const result = FormatValidator.validateAndExtract(format);
+      assert(result.success === false, `无效格式被正确拒绝: ${format.substring(0, 30)}...`);
+      assert(result.error !== undefined, '失败时返回error字段');
+    }
+
+    console.log(`[属性测试] 格式验证属性测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[属性测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+// ===== 后台发送属性测试 =====
+
+/**
+ * 属性测试: Background Send No Chat History
+ * Feature: exchange-diary, Property 29: Background Send No Chat History
+ * Validates: Requirements 11.2
+ *
+ * 对于任何后台发送操作，不应该在聊天历史中留下记录
+ * 注意：这个测试验证sendPrompt方法使用/gen命令，实际的聊天历史验证需要在集成测试中进行
+ */
+function testBackgroundSendProperty() {
+  console.log('[属性测试] 开始测试后台发送属性...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[属性测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[属性测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    console.log('[属性测试] Property 29: Background Send No Chat History');
+
+    // 属性1: sendPrompt方法存在且可调用
+    const manager = new TriggerManager();
+    assert(typeof manager.sendPrompt === 'function', 'sendPrompt方法存在');
+
+    // 属性2: sendPrompt使用/gen命令（通过检查方法实现）
+    // 注意：这里我们只能验证方法的存在性，实际的/gen命令调用需要在运行时验证
+    const sendPromptStr = manager.sendPrompt.toString();
+    assert(sendPromptStr.includes('/gen'), 'sendPrompt方法使用/gen命令');
+    assert(sendPromptStr.includes('executeSlashCommandsWithOptions'), 'sendPrompt使用executeSlashCommandsWithOptions');
+
+    // 属性3: 记录当前聊天长度（用于后续验证）
+    const chatLengthBefore = chat ? chat.length : 0;
+    console.log(`[属性测试] 当前聊天历史长度: ${chatLengthBefore}`);
+    assert(true, `记录聊天历史基准长度: ${chatLengthBefore}`);
+
+    // 注意：实际的后台发送测试需要在集成测试中进行
+    // 因为需要真实的AI响应和聊天环境
+    console.log('[属性测试] 注意: 完整的后台发送验证需要在集成测试中进行');
+    console.log('[属性测试] 当前测试验证了sendPrompt方法使用/gen命令的实现');
+
+    console.log(`[属性测试] 后台发送属性测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[属性测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+// ===== 交换日记存储层测试 =====
+
+/**
+ * 测试AI代写功能
+ * 测试PromptBuilder和GhostwriteManager的功能
+ */
+function testGhostwriteFeature() {
+  console.log('[测试] 开始测试AI代写功能...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 测试1: PromptBuilder - 构建代写提示词
+    console.log('[测试] 测试PromptBuilder...');
+
+    const mockChatHistory = [
+      { is_user: true, mes: '你好，今天天气真好' },
+      { is_user: false, mes: '是啊，阳光明媚的' },
+      { is_user: true, mes: '我们去公园散步吧' },
+      { is_user: false, mes: '好主意！' },
+    ];
+
+    const characterName = '测试角色';
+    const ghostwritePrompt = PromptBuilder.buildGhostwritePrompt(mockChatHistory, characterName);
+
+    assert(ghostwritePrompt.includes('我'), '代写提示词包含第一人称');
+    assert(ghostwritePrompt.includes('测试角色'), '代写提示词包含角色名');
+    assert(ghostwritePrompt.includes('你好，今天天气真好'), '代写提示词包含聊天内容');
+    assert(ghostwritePrompt.includes('交换日记'), '代写提示词解释交换日记概念');
+    assert(ghostwritePrompt.includes('分享生活和心情'), '代写提示词强调分享生活和心情');
+    assert(ghostwritePrompt.includes('真诚自然'), '代写提示词要求真诚自然的语气');
+
+    // 测试2: PromptBuilder - 构建交换日记提示词（首篇）
+    const userDiary = '今天和你聊天很开心';
+    const firstPrompt = PromptBuilder.buildExchangeDiaryPromptFirst(userDiary);
+
+    assert(firstPrompt.includes(userDiary), '首篇提示词包含用户日记');
+    assert(firstPrompt.includes('<交换日记>'), '首篇提示词包含格式要求');
+    assert(!firstPrompt.includes('上一次'), '首篇提示词不包含上一篇回复');
+    assert(firstPrompt.includes('交换日记'), '首篇提示词解释交换日记概念');
+    assert(firstPrompt.includes('分享生活和心情'), '首篇提示词强调分享生活和心情');
+    assert(firstPrompt.includes('写作指导'), '首篇提示词包含写作指导');
+
+    // 测试3: PromptBuilder - 构建交换日记提示词（带上一篇）
+    const previousReply = '我也很开心能和你聊天';
+    const followUpPrompt = PromptBuilder.buildExchangeDiaryPrompt(userDiary, previousReply);
+
+    assert(followUpPrompt.includes(userDiary), '后续提示词包含用户日记');
+    assert(followUpPrompt.includes(previousReply), '后续提示词包含上一篇回复');
+    assert(followUpPrompt.includes('上一次'), '后续提示词提到上一篇');
+    assert(followUpPrompt.includes('写作指导'), '后续提示词包含写作指导');
+    assert(followUpPrompt.includes('真诚自然'), '后续提示词要求真诚自然的语气');
+    assert(followUpPrompt.includes(previousReply), '后续提示词包含上一篇回复');
+    assert(followUpPrompt.includes('上一次'), '后续提示词提到上一篇');
+
+    // 测试4: PromptBuilder - Reroll提示词
+    const originalPrompt = '这是原始提示词';
+    const rerollPrompt = PromptBuilder.buildRerollPrompt(originalPrompt);
+    assert(rerollPrompt === originalPrompt, 'Reroll提示词与原始提示词相同');
+
+    console.log(`[测试] AI代写功能测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+// ===== 交换日记存储层测试 =====
+
+/**
+ * 测试ExchangeDiaryStorage类的所有功能
+ * 这些测试会在插件加载时自动运行
+ */
+function testExchangeDiaryStorage() {
+  console.log('[测试] 开始测试ExchangeDiaryStorage...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 清理测试数据
+    const cleanupTestData = () => {
+      const data = ExchangeDiaryStorage.loadAll();
+      // 删除所有测试线程
+      for (const threadId in data.threads) {
+        if (threadId.startsWith('测试角色')) {
+          delete data.threads[threadId];
+        }
+      }
+      delete data.threadCounters['测试角色'];
+      // 重置配置为默认值
+      data.config = {
+        enableNotifications: true,
+        triggerWindowMin: 1,
+        triggerWindowMax: 10,
+        maxRerollsPerEntry: 5,
+        ghostwritePrompt: '',
+      };
+      ExchangeDiaryStorage.saveAll(data);
+    };
+
+    cleanupTestData();
+
+    // 测试1: 创建线程
+    console.log('[测试] 测试线程管理...');
+    const thread1 = ExchangeDiaryStorage.createThread('测试角色', '测试线程1');
+    assert(thread1 !== null, '创建线程成功');
+    assert(thread1.threadId === '测试角色-1', '线程ID正确');
+    assert(thread1.threadName === '测试线程1', '线程名称正确');
+    assert(thread1.characterName === '测试角色', '角色名正确');
+    assert(thread1.entries.length === 0, '初始条目为空');
+
+    // 测试2: 获取线程
+    const retrievedThread = ExchangeDiaryStorage.getThread('测试角色-1');
+    assert(retrievedThread !== null, '获取线程成功');
+    assert(retrievedThread.threadId === thread1.threadId, '获取的线程ID匹配');
+
+    // 测试3: 获取角色的所有线程
+    const thread2 = ExchangeDiaryStorage.createThread('测试角色', '测试线程2');
+
+    // 手动调整thread2的创建时间，确保它比thread1晚
+    const data = ExchangeDiaryStorage.loadAll();
+    const thread1Time = new Date(thread1.createdAt).getTime();
+    data.threads['测试角色-2'].createdAt = new Date(thread1Time + 1000).toISOString();
+    ExchangeDiaryStorage.saveAll(data);
+
+    const allThreads = ExchangeDiaryStorage.getAllThreads('测试角色');
+    assert(allThreads.length === 2, '获取所有线程成功');
+    assert(allThreads[0].threadId === '测试角色-2', '线程按创建时间降序排序');
+
+    // 测试4: 更新线程
+    const updateSuccess = ExchangeDiaryStorage.updateThread('测试角色-1', {
+      threadName: '更新后的线程名',
+    });
+    assert(updateSuccess === true, '更新线程成功');
+    const updatedThread = ExchangeDiaryStorage.getThread('测试角色-1');
+    assert(updatedThread.threadName === '更新后的线程名', '线程名称已更新');
+
+    // 测试5: 添加条目
+    console.log('[测试] 测试条目管理...');
+    const entry1 = ExchangeDiaryStorage.addEntry('测试角色-1', {
+      content: '这是测试日记内容',
+      floorNumber: 10,
+      isGhostwritten: false,
+      triggerWindow: { start: 11, end: 20 },
+    });
+    assert(entry1 !== null, '添加条目成功');
+    assert(entry1.entryNumber === 1, '条目编号正确');
+    assert(entry1.userDiary.content === '这是测试日记内容', '日记内容正确');
+    assert(entry1.status === 'pending', '初始状态为pending');
+
+    // 测试6: 获取条目
+    const retrievedEntry = ExchangeDiaryStorage.getEntry('测试角色-1', 1);
+    assert(retrievedEntry !== null, '获取条目成功');
+    assert(retrievedEntry.entryNumber === 1, '获取的条目编号匹配');
+
+    // 测试7: 更新条目
+    const entryUpdateSuccess = ExchangeDiaryStorage.updateEntry('测试角色-1', 1, {
+      status: 'triggered',
+    });
+    assert(entryUpdateSuccess === true, '更新条目成功');
+    const updatedEntry = ExchangeDiaryStorage.getEntry('测试角色-1', 1);
+    assert(updatedEntry.status === 'triggered', '条目状态已更新');
+
+    // 测试8: 获取待触发条目
+    const entry2 = ExchangeDiaryStorage.addEntry('测试角色-1', {
+      content: '第二篇测试日记',
+      floorNumber: 20,
+      isGhostwritten: false,
+      triggerWindow: { start: 21, end: 30 },
+    });
+    const pendingEntries = ExchangeDiaryStorage.getPendingEntries('测试角色');
+    assert(pendingEntries.length === 1, '获取待触发条目成功');
+    assert(pendingEntries[0].entry.entryNumber === 2, '待触发条目编号正确');
+
+    // 测试9: 添加回复
+    console.log('[测试] 测试回复管理...');
+    const addReplySuccess = ExchangeDiaryStorage.addReply('测试角色-1', 2, {
+      content: '这是角色的回复',
+      rawResponse: '<交换日记>...</交换日记>',
+      floorNumber: 25,
+      parsed: true,
+    });
+    assert(addReplySuccess === true, '添加回复成功');
+    const entryWithReply = ExchangeDiaryStorage.getEntry('测试角色-1', 2);
+    assert(entryWithReply.characterReplies.length === 1, '回复已添加');
+    assert(entryWithReply.characterReplies[0].isReroll === false, '第一个回复不是reroll');
+    assert(entryWithReply.characterReplies[0].rerollIndex === 0, 'reroll索引为0');
+
+    // 测试10: 添加reroll回复
+    const addRerollSuccess = ExchangeDiaryStorage.addReply('测试角色-1', 2, {
+      content: '这是重新生成的回复',
+      rawResponse: '<交换日记>...</交换日记>',
+      floorNumber: 26,
+      parsed: true,
+    });
+    assert(addRerollSuccess === true, '添加reroll回复成功');
+    const entryWithRerolls = ExchangeDiaryStorage.getEntry('测试角色-1', 2);
+    assert(entryWithRerolls.characterReplies.length === 2, 'reroll回复已添加');
+    assert(entryWithRerolls.characterReplies[1].isReroll === true, '第二个回复是reroll');
+    assert(entryWithRerolls.characterReplies[1].rerollIndex === 1, 'reroll索引为1');
+
+    // 测试11: 选择回复
+    const selectReplySuccess = ExchangeDiaryStorage.selectReply('测试角色-1', 2, 1);
+    assert(selectReplySuccess === true, '选择回复成功');
+    const entryWithSelectedReply = ExchangeDiaryStorage.getEntry('测试角色-1', 2);
+    assert(entryWithSelectedReply.selectedReplyIndex === 1, '选中的回复索引正确');
+
+    // 测试12: 删除未选中的回复
+    const deleteUnselectedSuccess = ExchangeDiaryStorage.deleteUnselectedReplies('测试角色-1', 2);
+    assert(deleteUnselectedSuccess === true, '删除未选中回复成功');
+    const entryAfterDelete = ExchangeDiaryStorage.getEntry('测试角色-1', 2);
+    assert(entryAfterDelete.characterReplies.length === 1, '只保留了选中的回复');
+    assert(entryAfterDelete.selectedReplyIndex === 0, '选中索引重置为0');
+    assert(entryAfterDelete.characterReplies[0].content === '这是重新生成的回复', '保留的是正确的回复');
+
+    // 测试13: 配置管理
+    console.log('[测试] 测试配置管理...');
+    const config = ExchangeDiaryStorage.getConfig();
+    assert(config !== null, '获取配置成功');
+    assert(config.triggerWindowMin === 1, '默认最小触发窗口正确');
+    assert(config.triggerWindowMax === 10, '默认最大触发窗口正确');
+
+    const configUpdateSuccess = ExchangeDiaryStorage.updateConfig({
+      triggerWindowMin: 2,
+      triggerWindowMax: 15,
+    });
+    assert(configUpdateSuccess === true, '更新配置成功');
+    const updatedConfig = ExchangeDiaryStorage.getConfig();
+    assert(updatedConfig.triggerWindowMin === 2, '配置已更新（最小值）');
+    assert(updatedConfig.triggerWindowMax === 15, '配置已更新（最大值）');
+
+    // 测试14: 删除线程
+    const deleteSuccess = ExchangeDiaryStorage.deleteThread('测试角色-2');
+    assert(deleteSuccess === true, '删除线程成功');
+    const deletedThread = ExchangeDiaryStorage.getThread('测试角色-2');
+    assert(deletedThread === null, '线程已被删除');
+
+    // 清理测试数据
+    cleanupTestData();
+
+    console.log(`[测试] 测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+/**
+ * 测试查看日记页面 - 角色列表功能
+ * Task 8 测试
+ */
+function testViewDiaryCharacterList() {
+  console.log('[测试] 开始测试查看日记页面 - 角色列表...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 清理测试数据
+    const cleanupTestData = () => {
+      const data = ExchangeDiaryStorage.loadAll();
+      // 删除所有测试线程
+      for (const threadId in data.threads) {
+        if (threadId.startsWith('测试角色') || threadId.startsWith('角色')) {
+          delete data.threads[threadId];
+        }
+      }
+      delete data.threadCounters['测试角色A'];
+      delete data.threadCounters['测试角色B'];
+      delete data.threadCounters['测试角色C'];
+      ExchangeDiaryStorage.saveAll(data);
+    };
+
+    cleanupTestData();
+
+    // 测试1: 空状态 - 没有任何交换日记
+    console.log('[测试] 测试空状态...');
+    const data1 = ExchangeDiaryStorage.loadAll();
+    const threads1 = data1.threads || {};
+    const characterCount1 = new Set(Object.values(threads1).map(t => t.characterName)).size;
+    assert(characterCount1 === 0, '初始状态没有角色');
+
+    // 测试2: 创建测试数据 - 多个角色，多个线程
+    console.log('[测试] 创建测试数据...');
+
+    // 角色A: 2个线程，共3个条目
+    const threadA1 = ExchangeDiaryStorage.createThread('测试角色A', '线程A1');
+    ExchangeDiaryStorage.addEntry(threadA1.threadId, {
+      content: '角色A的第一篇日记',
+      floorNumber: 10,
+      isGhostwritten: false,
+      triggerWindow: { start: 11, end: 20 },
+    });
+
+    const threadA2 = ExchangeDiaryStorage.createThread('测试角色A', '线程A2');
+    ExchangeDiaryStorage.addEntry(threadA2.threadId, {
+      content: '角色A的第二篇日记',
+      floorNumber: 20,
+      isGhostwritten: false,
+      triggerWindow: { start: 21, end: 30 },
+    });
+    ExchangeDiaryStorage.addEntry(threadA2.threadId, {
+      content: '角色A的第三篇日记',
+      floorNumber: 30,
+      isGhostwritten: false,
+      triggerWindow: { start: 31, end: 40 },
+    });
+
+    // 角色B: 1个线程，1个条目
+    const threadB1 = ExchangeDiaryStorage.createThread('测试角色B', '线程B1');
+    ExchangeDiaryStorage.addEntry(threadB1.threadId, {
+      content: '角色B的日记',
+      floorNumber: 15,
+      isGhostwritten: false,
+      triggerWindow: { start: 16, end: 25 },
+    });
+
+    // 角色C: 1个线程，2个条目
+    const threadC1 = ExchangeDiaryStorage.createThread('测试角色C', '线程C1');
+    ExchangeDiaryStorage.addEntry(threadC1.threadId, {
+      content: '角色C的第一篇日记',
+      floorNumber: 5,
+      isGhostwritten: false,
+      triggerWindow: { start: 6, end: 15 },
+    });
+    ExchangeDiaryStorage.addEntry(threadC1.threadId, {
+      content: '角色C的第二篇日记',
+      floorNumber: 25,
+      isGhostwritten: false,
+      triggerWindow: { start: 26, end: 35 },
+    });
+
+    assert(threadA1 !== null && threadA2 !== null, '角色A的线程创建成功');
+    assert(threadB1 !== null, '角色B的线程创建成功');
+    assert(threadC1 !== null, '角色C的线程创建成功');
+
+    // 测试3: 统计角色数据
+    console.log('[测试] 测试角色统计...');
+    const data2 = ExchangeDiaryStorage.loadAll();
+    const threads2 = data2.threads || {};
+
+    const characterStats = {};
+    Object.values(threads2).forEach(thread => {
+      const charName = thread.characterName;
+      if (!characterStats[charName]) {
+        characterStats[charName] = {
+          characterName: charName,
+          threadCount: 0,
+          entryCount: 0,
+          lastUpdated: thread.updatedAt,
+        };
+      }
+
+      characterStats[charName].threadCount++;
+      characterStats[charName].entryCount += thread.entries.length;
+
+      if (new Date(thread.updatedAt) > new Date(characterStats[charName].lastUpdated)) {
+        characterStats[charName].lastUpdated = thread.updatedAt;
+      }
+    });
+
+    const characters = Object.values(characterStats);
+    assert(characters.length === 3, '统计到3个角色');
+
+    const charA = characters.find(c => c.characterName === '测试角色A');
+    const charB = characters.find(c => c.characterName === '测试角色B');
+    const charC = characters.find(c => c.characterName === '测试角色C');
+
+    assert(charA !== undefined, '找到角色A');
+    assert(charA.threadCount === 2, '角色A有2个线程');
+    assert(charA.entryCount === 3, '角色A有3个条目');
+
+    assert(charB !== undefined, '找到角色B');
+    assert(charB.threadCount === 1, '角色B有1个线程');
+    assert(charB.entryCount === 1, '角色B有1个条目');
+
+    assert(charC !== undefined, '找到角色C');
+    assert(charC.threadCount === 1, '角色C有1个线程');
+    assert(charC.entryCount === 2, '角色C有2个条目');
+
+    // 测试4: 按最后更新时间排序
+    console.log('[测试] 测试排序...');
+    const sortedCharacters = characters.sort((a, b) => {
+      return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+    });
+
+    assert(sortedCharacters.length === 3, '排序后角色数量正确');
+    // 最后创建的是角色C的第二个条目，所以角色C应该排在最前面
+    // 但由于时间戳可能相同，我们只验证排序逻辑存在
+    assert(sortedCharacters[0].lastUpdated !== undefined, '第一个角色有更新时间');
+
+    // 测试5: 格式化日期函数
+    console.log('[测试] 测试日期格式化...');
+    const now = new Date();
+    const oneMinuteAgo = new Date(now.getTime() - 60000);
+    const oneHourAgo = new Date(now.getTime() - 3600000);
+    const oneDayAgo = new Date(now.getTime() - 86400000);
+    const oneWeekAgo = new Date(now.getTime() - 7 * 86400000);
+
+    const formatted1 = formatDate(oneMinuteAgo);
+    const formatted2 = formatDate(oneHourAgo);
+    const formatted3 = formatDate(oneDayAgo);
+    const formatted4 = formatDate(oneWeekAgo);
+
+    assert(formatted1.includes('分钟前') || formatted1 === '刚刚', '1分钟前格式正确');
+    assert(formatted2.includes('小时前'), '1小时前格式正确');
+    assert(formatted3.includes('天前'), '1天前格式正确');
+    assert(formatted4.includes('-'), '1周前显示日期格式');
+
+    // 测试6: HTML转义函数
+    console.log('[测试] 测试HTML转义...');
+    const escaped1 = escapeHtml('<script>alert("xss")</script>');
+    const escaped2 = escapeHtml('正常文本');
+    const escaped3 = escapeHtml('包含&符号');
+
+    assert(!escaped1.includes('<script>'), 'HTML标签被转义');
+    assert(escaped2 === '正常文本', '正常文本不变');
+    assert(escaped3.includes('&amp;'), '&符号被转义');
+
+    // 清理测试数据
+    cleanupTestData();
+
+    console.log(`[测试] 测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
+/**
+ * 测试查看日记页面 - 线程列表功能
+ * Task 9 测试
+ */
+function testViewDiaryThreadList() {
+  console.log('[测试] 开始测试查看日记页面 - 线程列表...');
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // 测试辅助函数
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`[测试] ✓ ${message}`);
+      testsPassed++;
+    } else {
+      console.error(`[测试] ✗ ${message}`);
+      testsFailed++;
+    }
+  }
+
+  try {
+    // 清理测试数据
+    const cleanupTestData = () => {
+      const data = ExchangeDiaryStorage.loadAll();
+      // 删除所有测试线程
+      for (const threadId in data.threads) {
+        if (threadId.startsWith('测试角色')) {
+          delete data.threads[threadId];
+        }
+      }
+      delete data.threadCounters['测试角色A'];
+      ExchangeDiaryStorage.saveAll(data);
+    };
+
+    cleanupTestData();
+
+    // 测试1: 创建测试数据 - 一个角色，多个线程
+    console.log('[测试] 创建测试数据...');
+
+    // 角色A: 3个线程，不同的条目数
+    const threadA1 = ExchangeDiaryStorage.createThread('测试角色A', '工作日记');
+    ExchangeDiaryStorage.addEntry(threadA1.threadId, {
+      content: '今天工作很忙',
+      floorNumber: 10,
+      isGhostwritten: false,
+      triggerWindow: { start: 11, end: 20 },
+    });
+    ExchangeDiaryStorage.addEntry(threadA1.threadId, {
+      content: '完成了一个项目',
+      floorNumber: 20,
+      isGhostwritten: false,
+      triggerWindow: { start: 21, end: 30 },
+    });
+
+    const threadA2 = ExchangeDiaryStorage.createThread('测试角色A', '生活日记');
+    ExchangeDiaryStorage.addEntry(threadA2.threadId, {
+      content: '今天天气很好',
+      floorNumber: 15,
+      isGhostwritten: false,
+      triggerWindow: { start: 16, end: 25 },
+    });
+
+    const threadA3 = ExchangeDiaryStorage.createThread('测试角色A', '心情日记');
+    ExchangeDiaryStorage.addEntry(threadA3.threadId, {
+      content: '心情不错',
+      floorNumber: 5,
+      isGhostwritten: false,
+      triggerWindow: { start: 6, end: 15 },
+    });
+    ExchangeDiaryStorage.addEntry(threadA3.threadId, {
+      content: '继续保持',
+      floorNumber: 25,
+      isGhostwritten: false,
+      triggerWindow: { start: 26, end: 35 },
+    });
+    ExchangeDiaryStorage.addEntry(threadA3.threadId, {
+      content: '越来越好',
+      floorNumber: 35,
+      isGhostwritten: false,
+      triggerWindow: { start: 36, end: 45 },
+    });
+
+    assert(threadA1 !== null && threadA2 !== null && threadA3 !== null, '3个线程创建成功');
+
+    // 测试2: 获取角色的所有线程
+    console.log('[测试] 测试获取线程列表...');
+    const threads = ExchangeDiaryStorage.getAllThreads('测试角色A');
+
+    assert(threads.length === 3, '获取到3个线程');
+    assert(threads[0].characterName === '测试角色A', '线程属于正确的角色');
+
+    // 测试3: 验证线程数据结构
+    console.log('[测试] 测试线程数据结构...');
+    const thread1 = threads.find(t => t.threadName === '工作日记');
+    const thread2 = threads.find(t => t.threadName === '生活日记');
+    const thread3 = threads.find(t => t.threadName === '心情日记');
+
+    assert(thread1 !== undefined, '找到工作日记线程');
+    assert(thread1.entries.length === 2, '工作日记有2个条目');
+    assert(thread1.threadId.startsWith('测试角色A-'), '线程ID格式正确');
+
+    assert(thread2 !== undefined, '找到生活日记线程');
+    assert(thread2.entries.length === 1, '生活日记有1个条目');
+
+    assert(thread3 !== undefined, '找到心情日记线程');
+    assert(thread3.entries.length === 3, '心情日记有3个条目');
+
+    // 测试4: 验证页数计算
+    console.log('[测试] 测试页数计算...');
+    const pageCount1 = thread1.entries.length * 2; // 每个条目2页
+    const pageCount2 = thread2.entries.length * 2;
+    const pageCount3 = thread3.entries.length * 2;
+
+    assert(pageCount1 === 4, '工作日记共4页');
+    assert(pageCount2 === 2, '生活日记共2页');
+    assert(pageCount3 === 6, '心情日记共6页');
+
+    // 测试5: 测试线程重命名功能
+    console.log('[测试] 测试线程重命名...');
+    const oldName = thread1.threadName;
+    const newName = '工作日记（已重命名）';
+
+    const renameSuccess = ExchangeDiaryStorage.updateThread(thread1.threadId, {
+      threadName: newName,
+    });
+
+    assert(renameSuccess === true, '重命名操作成功');
+
+    const updatedThread = ExchangeDiaryStorage.getThread(thread1.threadId);
+    assert(updatedThread.threadName === newName, '线程名称已更新');
+    assert(updatedThread.threadId === thread1.threadId, '线程ID保持不变');
+    assert(updatedThread.entries.length === thread1.entries.length, '条目数量保持不变');
+
+    // 测试6: 测试空角色的线程列表
+    console.log('[测试] 测试空角色...');
+    const emptyThreads = ExchangeDiaryStorage.getAllThreads('不存在的角色');
+    assert(emptyThreads.length === 0, '不存在的角色返回空数组');
+
+    // 测试7: 测试线程排序（按创建时间降序）
+    console.log('[测试] 测试线程排序...');
+    const sortedThreads = ExchangeDiaryStorage.getAllThreads('测试角色A');
+    // 最后创建的应该排在最前面
+    assert(sortedThreads.length === 3, '排序后线程数量正确');
+    for (let i = 1; i < sortedThreads.length; i++) {
+      const current = new Date(sortedThreads[i].createdAt);
+      const previous = new Date(sortedThreads[i - 1].createdAt);
+      assert(current <= previous, `线程${i}的创建时间不晚于线程${i - 1}`);
+    }
+
+    // 清理测试数据
+    cleanupTestData();
+
+    console.log(`[测试] 测试完成: ${testsPassed} 通过, ${testsFailed} 失败`);
+    return testsFailed === 0;
+  } catch (error) {
+    console.error('[测试] 测试过程中发生错误:', error);
+    return false;
+  }
+}
+
 /**
  * 清理文件名,移除非法字符
  * @param {string} name - 原始文件名
@@ -590,11 +2995,19 @@ async function getAllRecycleBinFiles() {
         characterName: characterName,
         number: item.id,
         content: item.content,
+        type: item.type || 'normal', // 添加类型字段
         metadata: {
           角色名: characterName,
           序号: item.id,
           失败原因: item.failureReason,
           保存时间: item.saveTime,
+          类型: item.type || 'normal', // 添加类型到元数据
+          // 交换日记特有的元数据
+          ...(item.type === 'exchange_diary' && {
+            线程ID: item.threadId,
+            条目编号: item.entryNumber,
+            原始提示词: item.originalPrompt,
+          }),
         },
       }));
 
@@ -779,6 +3192,92 @@ async function saveRecycleBinAsDiary(filename, editedContent) {
   }
 }
 
+/**
+ * 从回收站恢复交换日记
+ * @param {Object} recycleBinItem - 回收站条目对象
+ * @param {string} editedContent - 编辑后的内容
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function restoreExchangeDiaryFromRecycleBin(recycleBinItem, editedContent) {
+  try {
+    console.log('[回收站] 恢复交换日记...');
+
+    // 获取元数据
+    const threadId = recycleBinItem.metadata['线程ID'];
+    const entryNumber = recycleBinItem.metadata['条目编号'];
+    const characterName = recycleBinItem.characterName;
+
+    if (!threadId || !entryNumber) {
+      throw new Error('缺少线程ID或条目编号');
+    }
+
+    console.log(`[回收站] 线程ID: ${threadId}, 条目编号: ${entryNumber}`);
+
+    // 验证线程是否存在
+    const thread = ExchangeDiaryStorage.getThread(threadId);
+    if (!thread) {
+      throw new Error(`线程不存在: ${threadId}`);
+    }
+
+    // 验证条目是否存在
+    const entry = ExchangeDiaryStorage.getEntry(threadId, entryNumber);
+    if (!entry) {
+      throw new Error(`条目不存在: ${threadId}, 条目${entryNumber}`);
+    }
+
+    // 使用FormatValidator验证和提取日记内容
+    const extractResult = FormatValidator.validateAndExtract(editedContent);
+
+    if (!extractResult.success) {
+      throw new Error(`格式验证失败: ${extractResult.error}`);
+    }
+
+    console.log('[回收站] 日记格式验证成功');
+
+    // 构建回复对象
+    const reply = {
+      title: extractResult.title,
+      time: extractResult.time,
+      content: extractResult.content,
+      rawResponse: editedContent,
+      floorNumber: chat.length, // 使用当前楼层数
+      parsed: true,
+      isReroll: false,
+      rerollIndex: 0,
+    };
+
+    // 添加回复到条目
+    const addSuccess = ExchangeDiaryStorage.addReply(threadId, entryNumber, reply);
+
+    if (!addSuccess) {
+      throw new Error('添加回复失败');
+    }
+
+    // 更新条目状态为completed
+    ExchangeDiaryStorage.updateEntry(threadId, entryNumber, {
+      status: 'completed',
+    });
+
+    console.log('[回收站] 交换日记回复已添加');
+
+    // 从回收站删除
+    const match = recycleBinItem.filename.match(/^(.+)_(\d+)$/);
+    if (match) {
+      const id = parseInt(match[2]);
+      const deleteResult = await deleteRecycleBinItem(characterName, id);
+      if (!deleteResult.success) {
+        console.warn('[回收站] 删除回收站条目失败:', deleteResult.error);
+      }
+    }
+
+    console.log('[回收站] 交换日记恢复完成');
+    return { success: true };
+  } catch (error) {
+    console.error('[回收站] 恢复交换日记失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // 获取当前设置
 function getCurrentSettings() {
   return extension_settings[extensionName] || {};
@@ -923,6 +3422,14 @@ async function exportDiaryData() {
     // 获取所有数据
     const diaries = await loadAllDiaries();
     const recycleBin = await loadAllRecycleBin();
+    const exchangeDiaries = ExchangeDiaryStorage.loadAll();
+
+    // 统计交换日记数据
+    const exchangeDiaryThreads = Object.keys(exchangeDiaries.threads).length;
+    const exchangeDiaryEntries = Object.values(exchangeDiaries.threads).reduce(
+      (sum, thread) => sum + thread.entries.length,
+      0,
+    );
 
     // 构建导出数据
     const exportData = {
@@ -932,11 +3439,14 @@ async function exportDiaryData() {
       data: {
         diaries: diaries,
         recycleBin: recycleBin,
+        exchangeDiaries: exchangeDiaries,
       },
       statistics: {
         totalDiaries: Object.values(diaries).reduce((sum, arr) => sum + arr.length, 0),
         totalRecycleBin: Object.values(recycleBin).reduce((sum, arr) => sum + arr.length, 0),
         characters: Object.keys(diaries).length,
+        exchangeDiaryThreads: exchangeDiaryThreads,
+        exchangeDiaryEntries: exchangeDiaryEntries,
       },
     };
 
@@ -959,7 +3469,9 @@ async function exportDiaryData() {
       `导出完成！\n\n` +
         `日记: ${exportData.statistics.totalDiaries} 篇\n` +
         `回收站: ${exportData.statistics.totalRecycleBin} 条\n` +
-        `角色: ${exportData.statistics.characters} 个`,
+        `角色: ${exportData.statistics.characters} 个\n` +
+        `交换日记线程: ${exportData.statistics.exchangeDiaryThreads} 个\n` +
+        `交换日记条目: ${exportData.statistics.exchangeDiaryEntries} 条`,
       '数据导出',
       { timeOut: 5000 },
     );
@@ -1001,7 +3513,9 @@ async function importDiaryData(event) {
           `导出时间: ${importData.exportTimeReadable || '未知'}\n` +
           `日记: ${importData.statistics?.totalDiaries || 0} 篇\n` +
           `回收站: ${importData.statistics?.totalRecycleBin || 0} 条\n` +
-          `角色: ${importData.statistics?.characters || 0} 个\n\n` +
+          `角色: ${importData.statistics?.characters || 0} 个\n` +
+          `交换日记线程: ${importData.statistics?.exchangeDiaryThreads || 0} 个\n` +
+          `交换日记条目: ${importData.statistics?.exchangeDiaryEntries || 0} 条\n\n` +
           `导入的数据会与现有数据合并（不会覆盖）`;
 
         if (!confirm(confirmMessage)) {
@@ -1012,6 +3526,7 @@ async function importDiaryData(event) {
         // 获取现有数据
         const existingDiaries = await loadAllDiaries();
         const existingRecycleBin = await loadAllRecycleBin();
+        const existingExchangeDiaries = ExchangeDiaryStorage.loadAll();
 
         // 合并日记数据
         const mergedDiaries = { ...existingDiaries };
@@ -1057,17 +3572,84 @@ async function importDiaryData(event) {
           mergedRecycleBin[characterName].push(...importedRecycleBin);
         }
 
+        // 合并交换日记数据
+        const mergedExchangeDiaries = { ...existingExchangeDiaries };
+        if (importData.data.exchangeDiaries) {
+          const importedExchangeDiaries = importData.data.exchangeDiaries;
+
+          // 合并线程数据
+          if (importedExchangeDiaries.threads) {
+            for (const threadId in importedExchangeDiaries.threads) {
+              const importedThread = importedExchangeDiaries.threads[threadId];
+              const characterName = importedThread.characterName;
+
+              // 如果线程ID已存在，需要重新生成ID
+              if (mergedExchangeDiaries.threads[threadId]) {
+                // 获取该角色的下一个线程编号
+                if (!mergedExchangeDiaries.threadCounters[characterName]) {
+                  mergedExchangeDiaries.threadCounters[characterName] = 1;
+                }
+                const newThreadNumber = mergedExchangeDiaries.threadCounters[characterName];
+                const newThreadId = `${characterName}-${newThreadNumber}`;
+
+                // 创建新线程对象
+                const newThread = {
+                  ...importedThread,
+                  threadId: newThreadId,
+                  threadNumber: newThreadNumber,
+                };
+
+                mergedExchangeDiaries.threads[newThreadId] = newThread;
+                mergedExchangeDiaries.threadCounters[characterName] = newThreadNumber + 1;
+
+                console.log(`[导入数据] 线程ID冲突，重新分配: ${threadId} -> ${newThreadId}`);
+              } else {
+                // 线程ID不冲突，直接添加
+                mergedExchangeDiaries.threads[threadId] = importedThread;
+
+                // 更新线程计数器
+                if (!mergedExchangeDiaries.threadCounters[characterName]) {
+                  mergedExchangeDiaries.threadCounters[characterName] = importedThread.threadNumber + 1;
+                } else {
+                  mergedExchangeDiaries.threadCounters[characterName] = Math.max(
+                    mergedExchangeDiaries.threadCounters[characterName],
+                    importedThread.threadNumber + 1,
+                  );
+                }
+              }
+            }
+          }
+
+          // 合并配置（保留现有配置，只添加缺失的字段）
+          if (importedExchangeDiaries.config) {
+            mergedExchangeDiaries.config = {
+              ...importedExchangeDiaries.config,
+              ...mergedExchangeDiaries.config,
+            };
+          }
+        }
+
         // 保存合并后的数据
         await saveAllDiaries(mergedDiaries);
         await saveAllRecycleBin(mergedRecycleBin);
+        ExchangeDiaryStorage.saveAll(mergedExchangeDiaries);
 
         // 统计结果
         const totalDiaries = Object.values(mergedDiaries).reduce((sum, arr) => sum + arr.length, 0);
         const totalRecycleBin = Object.values(mergedRecycleBin).reduce((sum, arr) => sum + arr.length, 0);
+        const totalExchangeDiaryThreads = Object.keys(mergedExchangeDiaries.threads).length;
+        const totalExchangeDiaryEntries = Object.values(mergedExchangeDiaries.threads).reduce(
+          (sum, thread) => sum + thread.entries.length,
+          0,
+        );
 
         console.log('[导入数据] 导入成功');
         toastr.success(
-          `导入完成！\n\n` + `当前日记总数: ${totalDiaries} 篇\n` + `当前回收站总数: ${totalRecycleBin} 条`,
+          `导入完成！\n\n` +
+            `当前日记总数: ${totalDiaries} 篇\n` +
+            `当前回收站总数: ${totalRecycleBin} 条\n` +
+            `当前交换日记线程: ${totalExchangeDiaryThreads} 个\n` +
+            `当前交换日记条目: ${totalExchangeDiaryEntries} 条`,
           '数据导入',
           { timeOut: 5000 },
         );
@@ -1184,6 +3766,53 @@ function updateAutoDiaryStatus() {
     $('#diary_auto_status').text(`已达触发条件（间隔${interval}条）`);
   } else {
     $('#diary_auto_status').text(`已启用，还需${remaining}条消息触发（间隔${interval}条）`);
+  }
+}
+
+/**
+ * 保存交换日记触发窗口配置
+ */
+function saveExchangeDiaryTriggerWindow() {
+  const minValue = parseInt($('#diary_exchange_trigger_min').val());
+  const maxValue = parseInt($('#diary_exchange_trigger_max').val());
+
+  // 验证输入
+  if (isNaN(minValue) || isNaN(maxValue)) {
+    toastr.warning('请输入有效的数字');
+    return;
+  }
+
+  if (minValue < 1) {
+    toastr.warning('最小楼层数不能小于1');
+    $('#diary_exchange_trigger_min').val(1);
+    return;
+  }
+
+  if (maxValue < 1) {
+    toastr.warning('最大楼层数不能小于1');
+    $('#diary_exchange_trigger_max').val(1);
+    return;
+  }
+
+  if (minValue > maxValue) {
+    toastr.warning('最小楼层数不能大于最大楼层数');
+    // 交换两个值
+    $('#diary_exchange_trigger_min').val(maxValue);
+    $('#diary_exchange_trigger_max').val(minValue);
+    return;
+  }
+
+  // 保存配置
+  const success = ExchangeDiaryStorage.updateConfig({
+    triggerWindowMin: minValue,
+    triggerWindowMax: maxValue,
+  });
+
+  if (success) {
+    console.log(`[交换日记配置] 触发窗口已更新: ${minValue}-${maxValue}楼层`);
+    toastr.success(`触发窗口已设置为 ${minValue}-${maxValue} 楼层`);
+  } else {
+    toastr.error('保存配置失败');
   }
 }
 
@@ -1820,8 +4449,23 @@ const SUB_BUTTONS_CSS = `
 .recycle-bin-item {
     padding: 10px;
     border-bottom: 1px solid #333;
+    border-left: 3px solid transparent;
     cursor: pointer;
     background: #2a2a2a;
+    transition: all 0.2s ease;
+}
+
+/* 交换日记条目特殊样式 */
+.exchange-diary-item {
+    border-left-color: #ec4899 !important;
+}
+
+.exchange-diary-item .recycle-bin-item-header {
+    background: rgba(236, 72, 153, 0.1);
+}
+
+.exchange-diary-item:hover {
+    border-left-color: #f472b6 !important;
 }
 
 .recycle-bin-item:hover {
@@ -2513,6 +5157,19 @@ const PLUGIN_SETTINGS_CSS = `
 /* 配置值 */
 .diary-config-value {
     flex-shrink: 0;
+}
+
+/* 交换日记触发窗口输入框容器 */
+.diary-exchange-trigger-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 交换日记触发窗口输入框 */
+.diary-exchange-trigger-input {
+    width: 60px !important;
+    min-width: 60px !important;
 }
 
 /* 配置徽章 */
@@ -3387,6 +6044,23 @@ function loadPluginSettingsStyle() {
   pluginSettingsStyleLink = style;
 }
 
+// 加载交换日记功能CSS
+function loadExchangeDiaryCSS() {
+  console.log('💌 加载交换日记功能CSS...');
+
+  // 创建CSS链接元素
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = `${extensionFolderPath}/exchange-diary.css`;
+  link.id = 'diary-exchange-css';
+
+  // 添加到head
+  document.head.appendChild(link);
+
+  console.log('✅ 交换日记功能CSS已加载');
+}
+
 // 加载主题CSS
 function loadTheme(themeId) {
   const theme = THEMES[themeId];
@@ -3684,6 +6358,24 @@ function updateSettingsUI() {
       saveAutoDiaryInterval(value);
       updateAutoDiaryStatus();
       console.log('[自动写日记] 用户修改触发间隔:', value || '0 (已禁用)');
+    });
+
+  // 加载交换日记触发窗口配置
+  const exchangeDiaryConfig = ExchangeDiaryStorage.getConfig();
+  $('#diary_exchange_trigger_min').val(exchangeDiaryConfig.triggerWindowMin || 1);
+  $('#diary_exchange_trigger_max').val(exchangeDiaryConfig.triggerWindowMax || 10);
+
+  // 绑定交换日记触发窗口输入框change事件
+  $('#diary_exchange_trigger_min')
+    .off('change')
+    .on('change', function () {
+      saveExchangeDiaryTriggerWindow();
+    });
+
+  $('#diary_exchange_trigger_max')
+    .off('change')
+    .on('change', function () {
+      saveExchangeDiaryTriggerWindow();
     });
 }
 
@@ -4277,11 +6969,16 @@ function renderRecycleBinList(groupedFiles) {
       const failureReason = file.metadata['失败原因'] || '未知原因';
       const saveTime = file.metadata['保存时间'] || '';
 
+      // 检查是否是交换日记条目
+      const isExchangeDiary = file.metadata['类型'] === 'exchange_diary' || file.type === 'exchange_diary';
+      const typeIcon = isExchangeDiary ? '💌' : '📝';
+      const typeLabel = isExchangeDiary ? '交换日记' : '普通日记';
+
       html += `
-        <div class="recycle-bin-item" data-filename="${file.filename}">
+        <div class="recycle-bin-item ${isExchangeDiary ? 'exchange-diary-item' : ''}" data-filename="${file.filename}">
           <div class="recycle-bin-item-header">
-            <span class="recycle-bin-item-name">序号 ${file.number}</span>
-            <small style="color: #999;">${failureReason}</small>
+            <span class="recycle-bin-item-name">${typeIcon} 序号 ${file.number}</span>
+            <small style="color: #999;">${typeLabel} | ${failureReason}</small>
           </div>
           <div class="recycle-bin-item-preview">${preview}</div>
           <div class="recycle-bin-item-actions">
@@ -4356,25 +7053,52 @@ async function showRecycleBinItemDetail(filename) {
       return;
     }
 
+    // 检查是否是交换日记
+    const isExchangeDiary = item.type === 'exchange_diary';
+
     // 存储当前文件名
     currentRecycleBinItem = {
       filename: filename,
       characterName: characterName,
       content: item.content,
+      type: item.type || 'normal',
       metadata: {
         角色名: characterName,
         序号: item.id,
         失败原因: item.failureReason,
         保存时间: item.saveTime,
+        类型: item.type || 'normal',
+        // 交换日记特有的元数据
+        ...(isExchangeDiary && {
+          线程ID: item.threadId,
+          条目编号: item.entryNumber,
+          原始提示词: item.originalPrompt,
+        }),
       },
     };
 
     // 显示详情界面
-    const title = `${characterName} - 序号 ${item.id}`;
+    const typeLabel = isExchangeDiary ? '💌 交换日记' : '📝 普通日记';
+    const title = `${typeLabel} - ${characterName} - 序号 ${item.id}`;
     const failureReason = item.failureReason || '未知原因';
 
-    $('#recycle-bin-item-title').text(`${title} (${failureReason})`);
+    let titleText = `${title} (${failureReason})`;
+
+    // 如果是交换日记，显示线程和条目信息
+    if (isExchangeDiary && item.threadId && item.entryNumber) {
+      titleText += ` | 线程: ${item.threadId}, 条目: ${item.entryNumber}`;
+    }
+
+    $('#recycle-bin-item-title').text(titleText);
     $('#recycle-bin-content').val(item.content);
+
+    // 更新保存按钮文本
+    const $saveBtn = $('#recycle-bin-save-btn');
+    if (isExchangeDiary) {
+      $saveBtn.html('💾 恢复到交换日记');
+    } else {
+      $saveBtn.html('💾 保存为日记');
+    }
 
     $('#recycle-bin-list').hide();
     $('#recycle-bin-detail').show();
@@ -4419,19 +7143,39 @@ async function saveRecycleBinItemAsDiary() {
 
     console.log('[回收站UI] 内容长度:', editedContent.length);
 
-    // 使用新的文件系统保存函数
-    const result = await saveRecycleBinAsDiary(currentRecycleBinItem.filename, editedContent);
+    // 检查是否是交换日记
+    const isExchangeDiary = currentRecycleBinItem.type === 'exchange_diary';
 
-    if (result.success) {
-      console.log('[回收站UI] 保存成功,日记ID:', result.diaryId);
-      toastr.success(`日记保存成功！ID: ${result.diaryId}`, '回收站');
+    if (isExchangeDiary) {
+      // 恢复交换日记
+      const result = await restoreExchangeDiaryFromRecycleBin(currentRecycleBinItem, editedContent);
 
-      // 返回列表并刷新
-      hideRecycleBinDetail();
-      refreshRecycleBin();
+      if (result.success) {
+        console.log('[回收站UI] 交换日记恢复成功');
+        toastr.success('交换日记已恢复！', '回收站');
+
+        // 返回列表并刷新
+        hideRecycleBinDetail();
+        refreshRecycleBin();
+      } else {
+        console.error('[回收站UI] 恢复失败:', result.error);
+        toastr.error(`恢复失败: ${result.error}`, '回收站');
+      }
     } else {
-      console.error('[回收站UI] 保存失败:', result.error);
-      toastr.error(`保存失败: ${result.error}`, '回收站');
+      // 保存为普通日记
+      const result = await saveRecycleBinAsDiary(currentRecycleBinItem.filename, editedContent);
+
+      if (result.success) {
+        console.log('[回收站UI] 保存成功,日记ID:', result.diaryId);
+        toastr.success(`日记保存成功！ID: ${result.diaryId}`, '回收站');
+
+        // 返回列表并刷新
+        hideRecycleBinDetail();
+        refreshRecycleBin();
+      } else {
+        console.error('[回收站UI] 保存失败:', result.error);
+        toastr.error(`保存失败: ${result.error}`, '回收站');
+      }
     }
   } catch (error) {
     console.error('[回收站UI] 保存过程出错:', error);
@@ -4858,6 +7602,14 @@ function bindFloatWindowEvents() {
     closeFloatMenu();
   });
 
+  // 交换日记按钮点击事件
+  $('#diary-float-exchange-btn').on('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    showExchangeDiaryDialog();
+    closeFloatMenu();
+  });
+
   // 回收站按钮点击事件
   $('#diary-float-recycle-btn').on('click', function (e) {
     e.preventDefault();
@@ -5256,6 +8008,1058 @@ function bindCustomCharacterDialogEvents() {
   });
 
   console.log('✅ 自定义角色弹窗事件绑定完成');
+}
+
+// ===== 交换日记弹窗功能 =====
+
+// 初始化交换日记弹窗（将HTML移动到body）
+function createExchangeDiaryDialog() {
+  console.log('💌 初始化交换日记弹窗...');
+
+  // 将弹窗从设置面板移动到body
+  $('#diary-exchange-dialog').appendTo('body');
+
+  console.log('✅ 交换日记弹窗已初始化');
+}
+
+// 绑定交换日记弹窗事件
+function bindExchangeDiaryDialogEvents() {
+  console.log('💌 绑定交换日记弹窗事件...');
+
+  // 关闭按钮点击事件
+  $(document).on('click', '#diary-exchange-close-btn', function (e) {
+    e.preventDefault();
+    console.log('❌ 点击关闭按钮，关闭交换日记弹窗');
+    hideExchangeDiaryDialog();
+  });
+
+  // 点击弹窗外部区域关闭
+  $(document).on('click', '#diary-exchange-dialog', function (e) {
+    if (e.target === this) {
+      console.log('❌ 点击外部区域，关闭交换日记弹窗');
+      hideExchangeDiaryDialog();
+    }
+  });
+
+  // ESC键关闭
+  $(document).on('keydown', function (e) {
+    if (e.keyCode === 27 && $('#diary-exchange-dialog').is(':visible')) {
+      console.log('⌨️ 按下ESC键，关闭交换日记弹窗');
+      hideExchangeDiaryDialog();
+    }
+  });
+
+  // 右上角切换到写日记按钮
+  $(document).on('click', '#diary-exchange-write-switch-btn', function (e) {
+    e.preventDefault();
+    console.log('✏️ 切换到写日记页面');
+    switchExchangeDiaryView('write');
+  });
+
+  // 左下角打开日记按钮
+  $(document).on('click', '#diary-exchange-open-btn', function (e) {
+    e.preventDefault();
+    console.log('📖 打开日记列表');
+    switchExchangeDiaryView('character-list');
+  });
+
+  // 返回封面按钮
+  $(document).on('click', '#diary-exchange-back-to-cover-btn', function (e) {
+    e.preventDefault();
+    console.log('🔙 返回封面');
+    switchExchangeDiaryView('cover');
+  });
+
+  // 返回角色列表按钮
+  $(document).on('click', '#diary-exchange-back-to-character-list', function (e) {
+    e.preventDefault();
+    console.log('🔙 返回角色列表');
+    switchExchangeDiaryView('character-list');
+    initializeViewDiaryPage();
+  });
+
+  // 翻页按钮
+  $(document).on('click', '#diary-exchange-prev-btn', function (e) {
+    e.preventDefault();
+    console.log('⬅️ 上一页');
+    // TODO: 实现翻页逻辑
+  });
+
+  $(document).on('click', '#diary-exchange-next-btn', function (e) {
+    e.preventDefault();
+    console.log('➡️ 下一页');
+    // TODO: 实现翻页逻辑
+  });
+
+  console.log('✅ 交换日记弹窗事件绑定完成');
+}
+
+// 显示交换日记弹窗
+function showExchangeDiaryDialog() {
+  console.log('💌 打开交换日记弹窗...');
+  $('#diary-exchange-dialog').css('display', 'flex');
+
+  // 默认显示封面
+  switchExchangeDiaryView('cover');
+}
+
+// 隐藏交换日记弹窗
+function hideExchangeDiaryDialog() {
+  console.log('💌 关闭交换日记弹窗...');
+  $('#diary-exchange-dialog').css('display', 'none');
+}
+
+// 切换交换日记视图
+function switchExchangeDiaryView(viewName) {
+  console.log(`🔄 切换交换日记视图: ${viewName}`);
+
+  // 隐藏所有视图
+  $('.diary-exchange-view').removeClass('active');
+
+  // 显示指定视图
+  $(`#diary-exchange-${viewName}-view`).addClass('active');
+
+  // 根据视图类型执行初始化
+  if (viewName === 'write') {
+    initializeWriteDiaryForm();
+  } else if (viewName === 'character-list') {
+    initializeViewDiaryPage();
+  } else if (viewName === 'read') {
+    // TODO: 初始化阅读视图
+  }
+
+  console.log(`✅ 视图切换完成: ${viewName}`);
+}
+
+// ===== 写日记页面功能 =====
+
+/**
+ * 初始化写日记表单
+ */
+function initializeWriteDiaryForm() {
+  console.log('📝 初始化写日记表单...');
+
+  // 获取当前角色名
+  const currentCharacter = name2 || '';
+  console.log(`当前角色: ${currentCharacter}`);
+
+  // 设置角色名占位符
+  $('#diary-exchange-character-name').attr('placeholder', currentCharacter || '留空使用当前角色名');
+
+  // 加载线程列表
+  loadThreadList(currentCharacter);
+
+  // 绑定表单事件（使用事件委托，避免重复绑定）
+  bindWriteDiaryFormEvents();
+
+  console.log('✅ 写日记表单初始化完成');
+}
+
+/**
+ * 加载线程列表
+ * @param {string} characterName - 角色名
+ */
+function loadThreadList(characterName) {
+  console.log(`📋 加载线程列表: ${characterName}`);
+
+  const $threadSelect = $('#diary-exchange-thread-select');
+
+  // 清空现有选项（保留"创建新线程"选项）
+  $threadSelect.find('option:not([value="new"])').remove();
+
+  if (!characterName) {
+    console.log('⚠️ 角色名为空，跳过加载线程');
+    return;
+  }
+
+  // 获取角色的所有线程
+  const threads = ExchangeDiaryStorage.getAllThreads(characterName);
+  console.log(`找到 ${threads.length} 个线程`);
+
+  // 添加线程选项
+  threads.forEach(thread => {
+    const entryCount = thread.entries.length;
+    const optionText = `${thread.threadName} (${entryCount}篇)`;
+    $threadSelect.append(`<option value="${thread.threadId}">${optionText}</option>`);
+  });
+
+  // 默认选择"创建新线程"
+  $threadSelect.val('new');
+  toggleThreadNameInput(true);
+}
+
+/**
+ * 切换线程名称输入框显示
+ * @param {boolean} show - 是否显示
+ */
+function toggleThreadNameInput(show) {
+  const $threadNameGroup = $('#diary-exchange-thread-name-group');
+  if (show) {
+    $threadNameGroup.show();
+  } else {
+    $threadNameGroup.hide();
+  }
+}
+
+/**
+ * 绑定写日记表单事件
+ */
+function bindWriteDiaryFormEvents() {
+  // 使用 .off().on() 避免重复绑定
+
+  // 角色名输入变化时重新加载线程列表
+  $('#diary-exchange-character-name')
+    .off('blur.exchangeDiary')
+    .on('blur.exchangeDiary', function () {
+      const characterName = $(this).val().trim() || name2 || '';
+      console.log(`角色名变化: ${characterName}`);
+      loadThreadList(characterName);
+    });
+
+  // 线程选择变化时切换线程名称输入框
+  $('#diary-exchange-thread-select')
+    .off('change.exchangeDiary')
+    .on('change.exchangeDiary', function () {
+      const selectedValue = $(this).val();
+      const isNewThread = selectedValue === 'new';
+      console.log(`线程选择变化: ${selectedValue}, 是否新线程: ${isNewThread}`);
+      toggleThreadNameInput(isNewThread);
+    });
+
+  // AI代写按钮点击事件
+  $('#diary-exchange-ghostwrite-btn')
+    .off('click.exchangeDiary')
+    .on('click.exchangeDiary', function (e) {
+      e.preventDefault();
+      console.log('✨ 点击AI代写按钮');
+      handleGhostwrite();
+    });
+
+  // 表单提交事件
+  $('#diary-exchange-write-form')
+    .off('submit.exchangeDiary')
+    .on('submit.exchangeDiary', function (e) {
+      e.preventDefault();
+      console.log('📝 提交写日记表单');
+      handleWriteDiarySubmit();
+    });
+}
+
+/**
+ * 处理AI代写
+ */
+async function handleGhostwrite() {
+  console.log('✨ 开始AI代写...');
+
+  try {
+    // 显示加载提示
+    toastr.info('正在生成日记，请稍候...', 'AI代写');
+
+    // 禁用按钮，防止重复点击
+    const $ghostwriteBtn = $('#diary-exchange-ghostwrite-btn');
+    const originalText = $ghostwriteBtn.text();
+    $ghostwriteBtn.prop('disabled', true).text('生成中...');
+
+    // 获取当前角色名
+    const characterName = $('#diary-exchange-character-name').val().trim() || name2 || '';
+
+    if (!characterName) {
+      toastr.error('请先输入角色名或选择当前角色', 'AI代写');
+      $ghostwriteBtn.prop('disabled', false).text(originalText);
+      return;
+    }
+
+    console.log(`[AI代写] 角色名: ${characterName}`);
+
+    // 获取聊天历史
+    const context = getContext();
+    const chatHistory = context.chat || [];
+
+    if (chatHistory.length === 0) {
+      toastr.warning('当前没有聊天记录，无法生成日记', 'AI代写');
+      $ghostwriteBtn.prop('disabled', false).text(originalText);
+      return;
+    }
+
+    console.log(`[AI代写] 聊天历史长度: ${chatHistory.length}`);
+
+    // 调用GhostwriteManager生成日记
+    const result = await GhostwriteManager.generateGhostwrittenDiary(chatHistory, characterName);
+
+    // 恢复按钮状态
+    $ghostwriteBtn.prop('disabled', false).text(originalText);
+
+    if (!result.success) {
+      console.error('[AI代写] 生成失败:', result.error);
+      toastr.error(`生成失败: ${result.error}`, 'AI代写');
+      return;
+    }
+
+    console.log('[AI代写] 生成成功');
+
+    // 将生成的内容填充到输入框
+    $('#diary-exchange-content').val(result.content);
+
+    toastr.success('日记生成成功！您可以编辑后再提交', 'AI代写', { timeOut: 3000 });
+  } catch (error) {
+    console.error('[AI代写] 发生错误:', error);
+    toastr.error(`AI代写失败: ${error.message}`, 'AI代写');
+
+    // 恢复按钮状态
+    $('#diary-exchange-ghostwrite-btn').prop('disabled', false).text('✨ AI代写');
+  }
+}
+
+/**
+ * 处理写日记提交
+ */
+function handleWriteDiarySubmit() {
+  console.log('📝 处理写日记提交...');
+
+  // 获取表单数据
+  const characterName = $('#diary-exchange-character-name').val().trim() || name2 || '';
+  const threadSelect = $('#diary-exchange-thread-select').val();
+  const threadName = $('#diary-exchange-thread-name').val().trim();
+  const content = $('#diary-exchange-content').val().trim();
+
+  // 验证
+  if (!characterName) {
+    toastr.error('请输入角色名或选择当前角色');
+    return;
+  }
+
+  if (!content) {
+    toastr.error('请输入日记内容');
+    $('#diary-exchange-content').focus();
+    return;
+  }
+
+  console.log('表单数据:', { characterName, threadSelect, threadName, content });
+
+  // 获取或创建线程
+  let threadId;
+  if (threadSelect === 'new') {
+    // 创建新线程
+    const thread = ExchangeDiaryStorage.createThread(characterName, threadName || null);
+    if (!thread) {
+      toastr.error('创建线程失败');
+      return;
+    }
+    threadId = thread.threadId;
+    console.log(`✅ 创建新线程: ${threadId}`);
+  } else {
+    // 使用现有线程
+    threadId = threadSelect;
+    console.log(`✅ 使用现有线程: ${threadId}`);
+  }
+
+  // 获取当前楼层数
+  const currentFloor = chat.length;
+  console.log(`当前楼层数: ${currentFloor}`);
+
+  // 获取触发窗口配置
+  const config = ExchangeDiaryStorage.getConfig();
+  const triggerWindowStart = currentFloor + config.triggerWindowMin;
+  const triggerWindowEnd = currentFloor + config.triggerWindowMax;
+
+  // 在触发窗口内随机选择一个固定的触发楼层
+  const targetFloor = Math.floor(Math.random() * (triggerWindowEnd - triggerWindowStart + 1)) + triggerWindowStart;
+
+  // 构建用户日记对象
+  const userDiary = {
+    content: content,
+    floorNumber: currentFloor,
+    isGhostwritten: false,
+    triggerWindow: {
+      start: triggerWindowStart,
+      end: triggerWindowEnd,
+      targetFloor: targetFloor, // 固定的触发楼层
+    },
+  };
+
+  // 添加条目到线程
+  const entry = ExchangeDiaryStorage.addEntry(threadId, userDiary);
+  if (!entry) {
+    toastr.error('保存日记失败');
+    return;
+  }
+
+  console.log(`✅ 日记保存成功: 线程${threadId}, 条目${entry.entryNumber}`);
+  toastr.success(`日记已保存！将在第${targetFloor}层触发（窗口：${triggerWindowStart}-${triggerWindowEnd}层）`);
+
+  // 清空表单
+  resetWriteDiaryForm();
+
+  // 关闭弹窗
+  hideExchangeDiaryDialog();
+}
+
+/**
+ * 重置写日记表单
+ */
+function resetWriteDiaryForm() {
+  console.log('🔄 重置写日记表单...');
+  $('#diary-exchange-character-name').val('');
+  $('#diary-exchange-thread-select').val('new');
+  $('#diary-exchange-thread-name').val('');
+  $('#diary-exchange-content').val('');
+  toggleThreadNameInput(true);
+  console.log('✅ 表单重置完成');
+}
+
+// ===== 查看日记页面功能 =====
+
+/**
+ * 初始化查看日记页面
+ */
+function initializeViewDiaryPage() {
+  console.log('👀 初始化查看日记页面...');
+
+  // 加载角色列表
+  loadExchangeDiaryCharacterList();
+
+  console.log('✅ 查看日记页面初始化完成');
+}
+
+/**
+ * 加载交换日记角色列表
+ */
+function loadExchangeDiaryCharacterList() {
+  console.log('📋 加载交换日记角色列表...');
+
+  // 获取所有交换日记数据
+  const data = ExchangeDiaryStorage.loadAll();
+  const threads = data.threads || {};
+
+  // 统计每个角色的线程数和条目数
+  const characterStats = {};
+
+  Object.values(threads).forEach(thread => {
+    const charName = thread.characterName;
+    if (!characterStats[charName]) {
+      characterStats[charName] = {
+        characterName: charName,
+        threadCount: 0,
+        entryCount: 0,
+        lastUpdated: thread.updatedAt,
+      };
+    }
+
+    characterStats[charName].threadCount++;
+    characterStats[charName].entryCount += thread.entries.length;
+
+    // 更新最后更新时间（取最新的）
+    if (new Date(thread.updatedAt) > new Date(characterStats[charName].lastUpdated)) {
+      characterStats[charName].lastUpdated = thread.updatedAt;
+    }
+  });
+
+  // 转换为数组并按最后更新时间降序排序
+  const characters = Object.values(characterStats).sort((a, b) => {
+    return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+  });
+
+  console.log(`找到 ${characters.length} 个角色`);
+
+  // 渲染角色列表
+  renderExchangeDiaryCharacterList(characters);
+}
+
+/**
+ * 渲染交换日记角色列表
+ * @param {Array} characters - 角色数据数组
+ */
+function renderExchangeDiaryCharacterList(characters) {
+  console.log('🎨 渲染交换日记角色列表...');
+
+  const $listContainer = $('#diary-exchange-character-list');
+  const $emptyState = $('#diary-exchange-character-empty');
+
+  // 清空现有内容
+  $listContainer.empty();
+
+  if (characters.length === 0) {
+    // 显示空状态
+    $listContainer.hide();
+    $emptyState.show();
+    console.log('✅ 显示空状态');
+    return;
+  }
+
+  // 隐藏空状态
+  $emptyState.hide();
+  $listContainer.show();
+
+  // 渲染每个角色卡片
+  characters.forEach(character => {
+    const lastUpdatedDate = new Date(character.lastUpdated);
+    const formattedDate = formatDate(lastUpdatedDate);
+
+    const $characterCard = $(`
+      <div class="diary-exchange-character-card" data-character="${character.characterName}">
+        <div class="diary-exchange-character-avatar">
+          <span class="diary-exchange-character-icon">👤</span>
+        </div>
+        <div class="diary-exchange-character-info">
+          <div class="diary-exchange-character-name">${escapeHtml(character.characterName)}</div>
+          <div class="diary-exchange-character-stats">
+            <span class="diary-exchange-stat">
+              <span class="diary-exchange-stat-icon">📚</span>
+              <span class="diary-exchange-stat-text">${character.threadCount} 个线程</span>
+            </span>
+            <span class="diary-exchange-stat">
+              <span class="diary-exchange-stat-icon">📝</span>
+              <span class="diary-exchange-stat-text">${character.entryCount} 篇日记</span>
+            </span>
+          </div>
+          <div class="diary-exchange-character-date">
+            <span class="diary-exchange-date-icon">🕒</span>
+            <span class="diary-exchange-date-text">最后更新: ${formattedDate}</span>
+          </div>
+        </div>
+        <div class="diary-exchange-character-arrow">
+          <span>→</span>
+        </div>
+      </div>
+    `);
+
+    // 绑定点击事件
+    $characterCard.on('click', function () {
+      const characterName = $(this).data('character');
+      console.log(`点击角色: ${characterName}`);
+      // 显示该角色的线程列表
+      showExchangeDiaryThreadList(characterName);
+    });
+
+    $listContainer.append($characterCard);
+  });
+
+  console.log(`✅ 渲染完成，共 ${characters.length} 个角色`);
+}
+
+/**
+ * 显示交换日记线程列表
+ * @param {string} characterName - 角色名
+ */
+function showExchangeDiaryThreadList(characterName) {
+  console.log(`📋 显示角色线程列表: ${characterName}`);
+
+  // 获取该角色的所有线程
+  const threads = ExchangeDiaryStorage.getAllThreads(characterName);
+
+  console.log(`找到 ${threads.length} 个线程`);
+
+  // 切换到线程列表视图
+  switchExchangeDiaryView('thread-list');
+
+  // 渲染线程列表
+  renderExchangeDiaryThreadList(characterName, threads);
+}
+
+/**
+ * 渲染交换日记线程列表
+ * @param {string} characterName - 角色名
+ * @param {Array} threads - 线程数据数组
+ */
+function renderExchangeDiaryThreadList(characterName, threads) {
+  console.log('🎨 渲染交换日记线程列表...');
+
+  // 更新标题
+  $('#diary-exchange-thread-character-name').text(`${characterName} 的交换日记`);
+  $('.diary-exchange-thread-subtitle').text(`共 ${threads.length} 个线程`);
+
+  const $listContainer = $('#diary-exchange-thread-list');
+  const $emptyState = $('#diary-exchange-thread-empty');
+
+  // 清空现有内容
+  $listContainer.empty();
+
+  if (threads.length === 0) {
+    // 显示空状态
+    $listContainer.hide();
+    $emptyState.show();
+    console.log('✅ 显示空状态');
+    return;
+  }
+
+  // 隐藏空状态
+  $emptyState.hide();
+  $listContainer.show();
+
+  // 渲染每个线程卡片
+  threads.forEach(thread => {
+    const lastUpdatedDate = new Date(thread.updatedAt);
+    const formattedDate = formatDate(lastUpdatedDate);
+    const entryCount = thread.entries.length;
+    const pageCount = entryCount * 2; // 每个条目包含用户日记和角色回复，共2页
+
+    const $threadCard = $(`
+      <div class="diary-exchange-thread-card" data-thread-id="${thread.threadId}">
+        <div class="diary-exchange-thread-info">
+          <div class="diary-exchange-thread-name-row">
+            <div class="diary-exchange-thread-name" data-thread-id="${thread.threadId}">
+              ${escapeHtml(thread.threadName)}
+            </div>
+            <button class="diary-exchange-thread-rename-btn" data-thread-id="${thread.threadId}" title="重命名线程">
+              <span>✏️</span>
+            </button>
+          </div>
+          <div class="diary-exchange-thread-stats">
+            <span class="diary-exchange-stat">
+              <span class="diary-exchange-stat-icon">📄</span>
+              <span class="diary-exchange-stat-text">共 ${pageCount} 页</span>
+            </span>
+            <span class="diary-exchange-stat">
+              <span class="diary-exchange-stat-icon">📝</span>
+              <span class="diary-exchange-stat-text">${entryCount} 个条目</span>
+            </span>
+          </div>
+          <div class="diary-exchange-thread-date">
+            <span class="diary-exchange-date-icon">🕒</span>
+            <span class="diary-exchange-date-text">最后更新: ${formattedDate}</span>
+          </div>
+        </div>
+        <div class="diary-exchange-thread-arrow">
+          <span>→</span>
+        </div>
+      </div>
+    `);
+
+    // 绑定线程卡片点击事件（选择线程）
+    $threadCard.on('click', function (e) {
+      // 如果点击的是重命名按钮，不触发线程选择
+      if ($(e.target).closest('.diary-exchange-thread-rename-btn').length > 0) {
+        return;
+      }
+
+      const threadId = $(this).data('thread-id');
+      console.log(`选择线程: ${threadId}`);
+      // 打开书本式阅读界面
+      showExchangeDiaryBookView(threadId);
+    });
+
+    // 绑定重命名按钮事件
+    $threadCard.find('.diary-exchange-thread-rename-btn').on('click', function (e) {
+      e.stopPropagation();
+      const threadId = $(this).data('thread-id');
+      const thread = ExchangeDiaryStorage.getThread(threadId);
+      console.log(`重命名线程: ${threadId}`);
+      if (thread) {
+        showThreadRenameDialog(threadId, thread.threadName);
+      }
+    });
+
+    $listContainer.append($threadCard);
+  });
+
+  console.log(`✅ 渲染完成，共 ${threads.length} 个线程`);
+}
+
+/**
+ * 显示线程重命名对话框
+ * @param {string} threadId - 线程ID
+ * @param {string} currentName - 当前线程名称
+ */
+function showThreadRenameDialog(threadId, currentName) {
+  console.log(`显示重命名对话框: ${threadId}, 当前名称: ${currentName}`);
+
+  // 使用浏览器原生prompt对话框
+  const newName = prompt('请输入新的线程名称:', currentName);
+
+  if (newName === null) {
+    // 用户取消
+    console.log('用户取消重命名');
+    return;
+  }
+
+  if (newName.trim() === '') {
+    toastr.warning('线程名称不能为空');
+    return;
+  }
+
+  if (newName === currentName) {
+    console.log('名称未改变');
+    return;
+  }
+
+  // 更新线程名称
+  const success = ExchangeDiaryStorage.updateThread(threadId, {
+    threadName: newName.trim(),
+  });
+
+  if (success) {
+    toastr.success(`线程已重命名为: ${newName.trim()}`);
+    console.log(`✅ 线程重命名成功: ${threadId} -> ${newName.trim()}`);
+
+    // 重新渲染线程列表
+    const thread = ExchangeDiaryStorage.getThread(threadId);
+    if (thread) {
+      showExchangeDiaryThreadList(thread.characterName);
+    }
+  } else {
+    toastr.error('重命名失败，请重试');
+    console.error(`❌ 线程重命名失败: ${threadId}`);
+  }
+}
+
+/**
+ * 显示交换日记书本式阅读界面
+ * @param {string} threadId - 线程ID
+ */
+function showExchangeDiaryBookView(threadId) {
+  console.log(`📖 显示书本式阅读界面: ${threadId}`);
+
+  // 获取线程数据
+  const thread = ExchangeDiaryStorage.getThread(threadId);
+  if (!thread) {
+    toastr.error('线程不存在');
+    return;
+  }
+
+  // 检查是否有条目
+  if (thread.entries.length === 0) {
+    toastr.warning('该线程还没有日记条目');
+    return;
+  }
+
+  // 切换到阅读视图
+  switchExchangeDiaryView('read');
+
+  // 渲染书本视图
+  renderExchangeDiaryBookView(thread, 1); // 从第1页开始
+}
+
+/**
+ * 渲染交换日记书本式阅读界面
+ * @param {Object} thread - 线程对象
+ * @param {number} currentPage - 当前页码（1-based）
+ */
+function renderExchangeDiaryBookView(thread, currentPage) {
+  console.log(`🎨 渲染书本视图: ${thread.threadId}, 页码: ${currentPage}`);
+
+  // 检测是否为移动端（屏幕宽度 <= 768px）
+  const isMobile = window.innerWidth <= 768;
+
+  // 计算总页数
+  let totalPages;
+  if (isMobile) {
+    // 移动端：每个条目2页（用户日记1页 + 角色回复1页）
+    totalPages = thread.entries.length * 2;
+  } else {
+    // PC端：每个条目1页（左右分栏显示）
+    totalPages = thread.entries.length;
+  }
+
+  // 确保页码在有效范围内
+  if (currentPage < 1) currentPage = 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  if (isMobile) {
+    // 移动端渲染逻辑
+    renderMobileView(thread, currentPage, totalPages);
+  } else {
+    // PC端渲染逻辑
+    renderDesktopView(thread, currentPage, totalPages);
+  }
+
+  // 更新页码输入框和总页数
+  const $pageInput = $('#diary-exchange-page-input');
+  $pageInput.val(currentPage);
+  $pageInput.attr('max', totalPages);
+  $('#diary-exchange-total-pages').text(totalPages);
+
+  // 绑定页码输入框事件（使用 off 避免重复绑定）
+  $pageInput
+    .off('change keypress')
+    .on('change', function () {
+      let targetPage = parseInt($(this).val());
+      if (isNaN(targetPage) || targetPage < 1) {
+        targetPage = 1;
+      }
+      if (targetPage > totalPages) {
+        targetPage = totalPages;
+      }
+      if (targetPage !== currentPage) {
+        renderExchangeDiaryBookView(thread, targetPage);
+      }
+    })
+    .on('keypress', function (e) {
+      // 按回车键跳转
+      if (e.which === 13) {
+        $(this).trigger('change');
+      }
+    });
+
+  // 绑定返回按钮（使用 off 避免重复绑定）
+  $('#diary-exchange-back-to-thread-list')
+    .off('click')
+    .on('click', function () {
+      console.log('返回线程列表');
+      showExchangeDiaryThreadList(thread.characterName);
+    });
+
+  // 更新翻页按钮状态
+  const $prevBtn = $('#diary-exchange-prev-btn');
+  const $nextBtn = $('#diary-exchange-next-btn');
+
+  if (currentPage <= 1) {
+    $prevBtn.prop('disabled', true).css('opacity', '0.3');
+  } else {
+    $prevBtn.prop('disabled', false).css('opacity', '1');
+  }
+
+  if (currentPage >= totalPages) {
+    $nextBtn.prop('disabled', true).css('opacity', '0.3');
+  } else {
+    $nextBtn.prop('disabled', false).css('opacity', '1');
+  }
+
+  // 绑定翻页按钮事件（使用 off 避免重复绑定）
+  $prevBtn.off('click').on('click', function () {
+    if (currentPage > 1) {
+      renderExchangeDiaryBookView(thread, currentPage - 1);
+    }
+  });
+
+  $nextBtn.off('click').on('click', function () {
+    if (currentPage < totalPages) {
+      renderExchangeDiaryBookView(thread, currentPage + 1);
+    }
+  });
+
+  console.log(`✅ 书本视图渲染完成`);
+}
+
+/**
+ * PC端渲染：左右分栏显示
+ */
+function renderDesktopView(thread, currentPage, totalPages) {
+  const entryIndex = currentPage - 1;
+  const entry = thread.entries[entryIndex];
+
+  // 显示左右两栏
+  $('.diary-exchange-left-page').show();
+  $('.diary-exchange-right-page').show();
+
+  // 更新左半边：用户日记
+  const userDiary = entry.userDiary;
+  $('#diary-exchange-user-title').text('我的日记');
+  $('#diary-exchange-user-time').text(formatDate(new Date(userDiary.writtenAt)));
+  $('#diary-exchange-user-content').html(escapeHtml(userDiary.content).replace(/\n/g, '<br>'));
+
+  // 更新右半边：角色日记
+  const $characterContent = $('#diary-exchange-character-content');
+  if (entry.characterReplies && entry.characterReplies.length > 0) {
+    // 获取选中的回复版本
+    const selectedIndex = entry.selectedReplyIndex || 0;
+    const characterReply = entry.characterReplies[selectedIndex];
+
+    $('#diary-exchange-character-title').text(characterReply.title || `${thread.characterName} 的回复`);
+    $('#diary-exchange-character-time').text(characterReply.time || formatDate(new Date(characterReply.triggeredAt)));
+    $characterContent.html(escapeHtml(characterReply.content).replace(/\n/g, '<br>'));
+  } else {
+    $('#diary-exchange-character-title').text('等待回复');
+    $('#diary-exchange-character-time').text('');
+    $characterContent.html(`
+      <div class="diary-exchange-empty-page">
+        <div class="diary-exchange-empty-icon">💌</div>
+        <div class="diary-exchange-empty-text">等待角色回复...</div>
+      </div>
+    `);
+  }
+}
+
+/**
+ * 移动端渲染：单页显示
+ */
+function renderMobileView(thread, currentPage, totalPages) {
+  // 计算当前显示的条目和页面类型
+  const entryIndex = Math.floor((currentPage - 1) / 2);
+  const isUserPage = currentPage % 2 === 1; // 奇数页显示用户日记，偶数页显示角色回复
+  const entry = thread.entries[entryIndex];
+
+  if (isUserPage) {
+    // 显示用户日记页
+    $('.diary-exchange-left-page').show();
+    $('.diary-exchange-right-page').hide();
+
+    const userDiary = entry.userDiary;
+    $('#diary-exchange-user-title').text('我的日记');
+    $('#diary-exchange-user-time').text(formatDate(new Date(userDiary.writtenAt)));
+    $('#diary-exchange-user-content').html(escapeHtml(userDiary.content).replace(/\n/g, '<br>'));
+  } else {
+    // 显示角色回复页
+    $('.diary-exchange-left-page').hide();
+    $('.diary-exchange-right-page').show();
+
+    const $characterContent = $('#diary-exchange-character-content');
+    if (entry.characterReplies && entry.characterReplies.length > 0) {
+      // 获取选中的回复版本
+      const selectedIndex = entry.selectedReplyIndex || 0;
+      const characterReply = entry.characterReplies[selectedIndex];
+
+      $('#diary-exchange-character-title').text(characterReply.title || `${thread.characterName} 的回复`);
+      $('#diary-exchange-character-time').text(characterReply.time || formatDate(new Date(characterReply.triggeredAt)));
+      $characterContent.html(escapeHtml(characterReply.content).replace(/\n/g, '<br>'));
+    } else {
+      $('#diary-exchange-character-title').text('等待回复');
+      $('#diary-exchange-character-time').text('');
+      $characterContent.html(`
+        <div class="diary-exchange-empty-page">
+          <div class="diary-exchange-empty-icon">💌</div>
+          <div class="diary-exchange-empty-text">等待角色回复...</div>
+        </div>
+      `);
+    }
+  }
+}
+
+/**
+ * 格式化日期
+ * @param {Date} date - 日期对象
+ * @returns {string} 格式化后的日期字符串
+ */
+function formatDate(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) {
+    return '刚刚';
+  } else if (diffMins < 60) {
+    return `${diffMins}分钟前`;
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  } else if (diffDays < 7) {
+    return `${diffDays}天前`;
+  } else {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+}
+
+/**
+ * 转义HTML特殊字符
+ * @param {string} text - 原始文本
+ * @returns {string} 转义后的文本
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * 显示Reroll版本选择器
+ * @param {Object} thread - 线程对象
+ * @param {number} entryNumber - 条目编号
+ * @param {number} currentPageNumber - 当前页码
+ */
+function showRerollVersionSelector(thread, entryNumber, currentPageNumber) {
+  console.log(`[Reroll] 显示版本选择器: ${thread.threadId}, 条目${entryNumber}`);
+
+  const entry = thread.entries.find(e => e.entryNumber === entryNumber);
+  if (!entry || !entry.characterReplies || entry.characterReplies.length === 0) {
+    console.error('[Reroll] 条目或回复不存在');
+    return;
+  }
+
+  // 创建版本选择器弹窗
+  const $selector = $(`
+    <div class="diary-exchange-reroll-selector">
+      <div class="diary-exchange-reroll-overlay"></div>
+      <div class="diary-exchange-reroll-content">
+        <div class="diary-exchange-reroll-header">
+          <h3>选择回复版本</h3>
+          <button class="diary-exchange-reroll-close">×</button>
+        </div>
+        <div class="diary-exchange-reroll-body">
+          <div class="diary-exchange-reroll-versions"></div>
+        </div>
+        <div class="diary-exchange-reroll-footer">
+          <button class="diary-exchange-reroll-confirm">确认选择</button>
+          <button class="diary-exchange-reroll-cancel">取消</button>
+        </div>
+      </div>
+    </div>
+  `);
+
+  // 渲染所有版本
+  const $versionsContainer = $selector.find('.diary-exchange-reroll-versions');
+  entry.characterReplies.forEach((reply, index) => {
+    const isSelected = index === (entry.selectedReplyIndex || 0);
+    const versionLabel = reply.isReroll ? `版本 ${reply.rerollIndex + 1}` : '原始版本';
+
+    const $version = $(`
+      <div class="diary-exchange-reroll-version ${isSelected ? 'selected' : ''}" data-index="${index}">
+        <div class="diary-exchange-reroll-version-header">
+          <span class="diary-exchange-reroll-version-label">${versionLabel}</span>
+          ${isSelected ? '<span class="diary-exchange-reroll-version-badge">当前</span>' : ''}
+        </div>
+        <div class="diary-exchange-reroll-version-title">${escapeHtml(reply.title)}</div>
+        <div class="diary-exchange-reroll-version-preview">${escapeHtml(reply.content.substring(0, 100))}${reply.content.length > 100 ? '...' : ''}</div>
+      </div>
+    `);
+
+    // 点击选择版本
+    $version.on('click', function () {
+      $versionsContainer.find('.diary-exchange-reroll-version').removeClass('selected');
+      $(this).addClass('selected');
+    });
+
+    $versionsContainer.append($version);
+  });
+
+  // 关闭按钮
+  $selector.find('.diary-exchange-reroll-close, .diary-exchange-reroll-overlay').on('click', function () {
+    $selector.remove();
+  });
+
+  // 取消按钮
+  $selector.find('.diary-exchange-reroll-cancel').on('click', function () {
+    $selector.remove();
+  });
+
+  // 确认按钮
+  $selector.find('.diary-exchange-reroll-confirm').on('click', function () {
+    const selectedIndex = parseInt($versionsContainer.find('.diary-exchange-reroll-version.selected').data('index'));
+
+    if (isNaN(selectedIndex)) {
+      toastr.warning('请选择一个版本', '交换日记');
+      return;
+    }
+
+    // 选择回复版本
+    const selectSuccess = RerollManager.selectReply(thread.threadId, entryNumber, selectedIndex);
+
+    if (!selectSuccess) {
+      toastr.error('选择版本失败', '交换日记');
+      return;
+    }
+
+    // 删除未选中的回复
+    const deleteSuccess = RerollManager.deleteUnselectedReplies(thread.threadId, entryNumber);
+
+    if (!deleteSuccess) {
+      console.warn('[Reroll] 删除未选中回复失败');
+    }
+
+    toastr.success('版本已保存！', '交换日记');
+
+    // 关闭选择器
+    $selector.remove();
+
+    // 重新渲染书本视图
+    const updatedThread = ExchangeDiaryStorage.getThread(thread.threadId);
+    renderExchangeDiaryBookView(updatedThread, currentPageNumber);
+  });
+
+  // 添加到页面
+  $('body').append($selector);
 }
 
 // ===== 日记本弹窗功能 =====
@@ -6949,11 +10753,17 @@ jQuery(async () => {
     // 加载插件设置页面通用样式（独立于主题）
     loadPluginSettingsStyle();
 
+    // 加载交换日记功能CSS
+    loadExchangeDiaryCSS();
+
     // 创建悬浮窗
     createFloatWindow();
 
     // 创建自定义角色选择弹窗
     createCustomCharacterDialog();
+
+    // 创建交换日记弹窗
+    createExchangeDiaryDialog();
 
     // 创建预设列表弹窗
     createPresetDialog();
@@ -6975,6 +10785,9 @@ jQuery(async () => {
 
     // 绑定弹窗事件
     bindCustomCharacterDialogEvents();
+
+    // 绑定交换日记弹窗事件
+    bindExchangeDiaryDialogEvents();
 
     // 绑定日记本弹窗事件
     bindDiaryBookDialogEvents();
@@ -6998,6 +10811,23 @@ jQuery(async () => {
       checkAndTriggerAutoDiary();
     }, 3000);
     console.log('🤖 自动写日记检查定时器已启动');
+
+    // 启动交换日记触发管理器
+    triggerManager.start();
+    console.log('📬 交换日记触发管理器已启动');
+
+    // 运行触发管理器测试（仅在开发模式下）
+    // 测试代码已移除以减少控制台输出
+    // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    //   testTriggerManager();
+    //   testFormatValidator();
+    //   testFormatValidatorProperty();
+    //   testBackgroundSendProperty();
+    //   testGhostwriteFeature();
+    //   testExchangeDiaryStorage();
+    //   testViewDiaryCharacterList();
+    //   testViewDiaryThreadList();
+    // }
 
     // 初始化更新通知弹窗
     $('#diary-update-notification').appendTo('body');

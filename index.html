@@ -151,23 +151,54 @@
               </div>
             </div>
 
-            <!-- 预设管理 -->
+            <!-- 交换日记触发窗口配置 -->
             <div class="diary-config-group">
-              <h4>预设管理</h4>
+              <h4>交换日记</h4>
               <div class="diary-config-item">
                 <div class="diary-config-label">
-                  <span class="diary-config-title">日记专用预设</span>
-                  <span class="diary-config-desc">为日记生成优化的AI预设配置</span>
+                  <span class="diary-config-title">触发范围</span>
+                  <span class="diary-config-desc">设置多少楼层内随机触发。例如1-10表示在1到10层楼之间随机触发。</span>
                 </div>
-                <div class="diary-config-value">
-                  <button id="diary_configure_presets" class="diary-btn diary-btn-primary">
-                    <span>⚙️ 配置预设</span>
-                  </button>
+                <div class="diary-config-value diary-exchange-trigger-inputs">
+                  <input
+                    type="number"
+                    id="diary_exchange_trigger_min"
+                    class="diary-select diary-exchange-trigger-input"
+                    min="1"
+                    step="1"
+                    placeholder="1"
+                  />
+                  <span>至</span>
+                  <input
+                    type="number"
+                    id="diary_exchange_trigger_max"
+                    class="diary-select diary-exchange-trigger-input"
+                    min="1"
+                    step="1"
+                    placeholder="10"
+                  />
+                  <span>楼层</span>
                 </div>
               </div>
-              <div class="diary-config-item diary-preset-status">
-                <span id="diary_selected_preset" class="diary-preset-info">未选择预设</span>
+            </div>
+          </div>
+
+          <!-- 预设管理 -->
+          <div class="diary-config-group">
+            <h4>预设管理</h4>
+            <div class="diary-config-item">
+              <div class="diary-config-label">
+                <span class="diary-config-title">日记专用预设</span>
+                <span class="diary-config-desc">为日记生成优化的AI预设配置</span>
               </div>
+              <div class="diary-config-value">
+                <button id="diary_configure_presets" class="diary-btn diary-btn-primary">
+                  <span>⚙️ 配置预设</span>
+                </button>
+              </div>
+            </div>
+            <div class="diary-config-item diary-preset-status">
+              <span id="diary_selected_preset" class="diary-preset-info">未选择预设</span>
             </div>
           </div>
 
@@ -347,6 +378,9 @@
     </div>
     <div class="diary-float-sub-btn diary-float-write-btn" id="diary-float-write-btn" title="写日记">
       <span>✏️</span>
+    </div>
+    <div class="diary-float-sub-btn diary-float-exchange-btn" id="diary-float-exchange-btn" title="交换日记">
+      <span>💌</span>
     </div>
     <div class="diary-float-sub-btn diary-float-recycle-btn" id="diary-float-recycle-btn" title="回收站">
       <span>🗑️</span>
@@ -644,6 +678,190 @@
     </div>
     <div class="diary-update-footer">
       <button id="diary-update-confirm-btn" class="diary-update-btn">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 交换日记弹窗 -->
+<div id="diary-exchange-dialog" class="diary-exchange-dialog" style="display: none">
+  <div class="diary-exchange-content">
+    <!-- 关闭按钮（右上角固定） -->
+    <button id="diary-exchange-close-btn" class="diary-exchange-close">&times;</button>
+
+    <!-- 交换日记主体内容 -->
+    <div class="diary-exchange-body">
+      <!-- 封面视图 -->
+      <div id="diary-exchange-cover-view" class="diary-exchange-view diary-exchange-cover-view active">
+        <div class="diary-exchange-cover-content">
+          <div class="diary-exchange-cover-title">交换日记</div>
+          <div class="diary-exchange-cover-subtitle">与角色分享你的心情和故事</div>
+        </div>
+
+        <!-- 左上角写日记按钮 -->
+        <button id="diary-exchange-write-switch-btn" class="diary-exchange-write-switch-btn">✏️ 写日记</button>
+
+        <!-- 右下角打开目录按钮 -->
+        <button id="diary-exchange-open-btn" class="diary-exchange-open-btn">→</button>
+      </div>
+
+      <!-- 写日记视图 -->
+      <div id="diary-exchange-write-view" class="diary-exchange-view diary-exchange-write-view">
+        <!-- 返回封面按钮 -->
+        <button id="diary-exchange-back-to-cover-btn" class="diary-exchange-back-to-cover-btn">← 返回</button>
+
+        <div class="diary-exchange-write-content">
+          <form id="diary-exchange-write-form" class="diary-exchange-form">
+            <!-- 角色名输入 -->
+            <div class="diary-exchange-form-group">
+              <label for="diary-exchange-character-name" class="diary-exchange-label">
+                角色名称
+                <span class="diary-exchange-hint">（留空则使用当前角色）</span>
+              </label>
+              <input
+                type="text"
+                id="diary-exchange-character-name"
+                class="diary-exchange-input"
+                placeholder="留空使用当前角色名"
+              />
+            </div>
+
+            <!-- 线程选择器 -->
+            <div class="diary-exchange-form-group">
+              <label for="diary-exchange-thread-select" class="diary-exchange-label"> 选择线程 </label>
+              <select id="diary-exchange-thread-select" class="diary-exchange-select">
+                <option value="new">+ 创建新线程</option>
+                <!-- 现有线程将动态加载 -->
+              </select>
+            </div>
+
+            <!-- 线程名称输入（仅在创建新线程时显示） -->
+            <div class="diary-exchange-form-group" id="diary-exchange-thread-name-group">
+              <label for="diary-exchange-thread-name" class="diary-exchange-label">
+                线程名称
+                <span class="diary-exchange-hint">（留空则自动生成）</span>
+              </label>
+              <input
+                type="text"
+                id="diary-exchange-thread-name"
+                class="diary-exchange-input"
+                placeholder="交换日记-编号"
+              />
+            </div>
+
+            <!-- 日记内容输入 -->
+            <div class="diary-exchange-form-group">
+              <label for="diary-exchange-content" class="diary-exchange-label">
+                日记内容
+                <span class="diary-exchange-required">*</span>
+              </label>
+              <textarea
+                id="diary-exchange-content"
+                class="diary-exchange-textarea"
+                placeholder="写下你想对角色说的话..."
+                rows="10"
+              ></textarea>
+            </div>
+
+            <!-- 按钮组 -->
+            <div class="diary-exchange-form-actions">
+              <button
+                type="button"
+                id="diary-exchange-ghostwrite-btn"
+                class="diary-exchange-btn diary-exchange-btn-secondary"
+              >
+                ✨ AI代写
+              </button>
+              <button
+                type="submit"
+                id="diary-exchange-submit-btn"
+                class="diary-exchange-btn diary-exchange-btn-primary"
+              >
+                📝 提交日记
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 角色列表视图 -->
+      <div id="diary-exchange-character-list-view" class="diary-exchange-view diary-exchange-character-list-view">
+        <div class="diary-exchange-view-content">
+          <!-- 角色列表将在这里动态生成 -->
+          <div id="diary-exchange-character-list" class="diary-exchange-character-list"></div>
+
+          <!-- 空状态 -->
+          <div id="diary-exchange-character-empty" class="diary-exchange-empty-state" style="display: none">
+            <div class="diary-exchange-empty-icon">📚</div>
+            <div class="diary-exchange-empty-text">暂无交换日记</div>
+            <div class="diary-exchange-empty-hint">开始写交换日记来创建你的第一篇作品吧！</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 线程列表视图 -->
+      <div id="diary-exchange-thread-list-view" class="diary-exchange-view diary-exchange-thread-list-view">
+        <!-- 线程列表头部 -->
+        <div class="diary-exchange-thread-header">
+          <button id="diary-exchange-back-to-character-list" class="diary-exchange-back-btn">
+            <span class="diary-exchange-back-icon">←</span>
+            <span class="diary-exchange-back-text">返回</span>
+          </button>
+          <div class="diary-exchange-thread-title">
+            <h3 id="diary-exchange-thread-character-name">角色名称</h3>
+            <p class="diary-exchange-thread-subtitle">选择一个线程查看日记</p>
+          </div>
+        </div>
+
+        <div class="diary-exchange-view-content">
+          <!-- 线程列表将在这里动态生成 -->
+          <div id="diary-exchange-thread-list" class="diary-exchange-thread-list"></div>
+
+          <!-- 空状态 -->
+          <div id="diary-exchange-thread-empty" class="diary-exchange-empty-state" style="display: none">
+            <div class="diary-exchange-empty-icon">💌</div>
+            <div class="diary-exchange-empty-text">该角色暂无交换日记线程</div>
+            <div class="diary-exchange-empty-hint">开始写交换日记来创建第一个线程吧！</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阅读视图（左右分栏） -->
+      <div id="diary-exchange-read-view" class="diary-exchange-view diary-exchange-read-view">
+        <!-- 右上角返回按钮 -->
+        <button id="diary-exchange-back-to-thread-list" class="diary-exchange-back-to-thread-btn">← 返回</button>
+
+        <!-- 左半边：用户日记 -->
+        <div class="diary-exchange-left-page">
+          <div class="diary-exchange-page-title" id="diary-exchange-user-title">用户日记标题</div>
+          <div class="diary-exchange-page-time" id="diary-exchange-user-time">时间</div>
+          <div class="diary-exchange-page-content" id="diary-exchange-user-content">日记内容...</div>
+        </div>
+
+        <!-- 右半边：角色日记 -->
+        <div class="diary-exchange-right-page">
+          <div class="diary-exchange-page-title" id="diary-exchange-character-title">角色日记标题</div>
+          <div class="diary-exchange-page-time" id="diary-exchange-character-time">时间</div>
+          <div class="diary-exchange-page-content" id="diary-exchange-character-content">
+            <div class="diary-exchange-empty-page">
+              <div class="diary-exchange-empty-icon">💌</div>
+              <div class="diary-exchange-empty-text">等待角色回复...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部页码 -->
+        <div class="diary-exchange-pagination">
+          <span class="diary-exchange-page-label">第</span>
+          <input type="number" id="diary-exchange-page-input" class="diary-exchange-page-input" value="1" min="1" />
+          <span class="diary-exchange-page-label">/ <span id="diary-exchange-total-pages">1</span> 页</span>
+        </div>
+
+        <!-- 左下角翻页按钮 -->
+        <button id="diary-exchange-prev-btn" class="diary-exchange-prev-btn">←</button>
+
+        <!-- 右下角翻页按钮 -->
+        <button id="diary-exchange-next-btn" class="diary-exchange-next-btn">→</button>
+      </div>
     </div>
   </div>
 </div>
