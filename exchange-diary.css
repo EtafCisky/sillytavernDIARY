@@ -1803,38 +1803,36 @@
   /* 条目列表视图移动端优化 */
   .diary-exchange-entry-list-view {
     padding: 15px;
-    position: relative;
   }
 
-  /* 条目列表头部 - 重新布局 */
+  /* 条目列表头部 - 标题在上方 */
   .diary-exchange-entry-list-header {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 15px;
+    gap: 10px;
     position: relative;
-    padding-top: 45px;
   }
 
-  /* 返回按钮 - 固定在左上角 */
+  /* 返回按钮 - 左上角 */
   .diary-exchange-entry-list-header .diary-exchange-back-btn {
-    position: absolute;
-    top: 0;
-    left: 0;
+    order: 1;
     padding: 6px 12px;
     font-size: 18px;
   }
 
-  /* 操作按钮容器 - 固定在右上角 */
+  /* 操作按钮容器 - 右上角 */
   .diary-exchange-entry-list-header .diary-exchange-entry-list-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
+    order: 3;
+    margin-left: auto;
   }
 
-  /* 标题容器 - 占满宽度，在按钮下方 */
+  /* 标题容器 - 占满第二行 */
   .diary-exchange-entry-list-title-container {
+    order: 2;
     width: 100%;
-    padding-top: 0;
+    flex-basis: 100%;
+    margin-top: 10px;
   }
 
   .diary-exchange-entry-list-title-container h3 {
@@ -1865,39 +1863,38 @@
 
   /* 系列列表视图移动端优化 */
   .diary-exchange-thread-list-view {
-    position: relative;
+    padding: 15px;
   }
 
-  /* 系列列表头部 - 重新布局 */
+  /* 系列列表头部 - 标题在上方 */
   .diary-exchange-thread-header {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 15px;
+    gap: 10px;
     margin-bottom: 20px;
     position: relative;
-    padding-top: 45px;
   }
 
-  /* 返回按钮 - 固定在左上角 */
+  /* 返回按钮 - 左上角 */
   .diary-exchange-thread-header .diary-exchange-back-btn {
-    position: absolute;
-    top: 0;
-    left: 0;
+    order: 1;
     padding: 6px 12px;
     font-size: 18px;
   }
 
-  /* 操作按钮容器 - 固定在右上角 */
+  /* 操作按钮容器 - 右上角 */
   .diary-exchange-thread-header .diary-exchange-thread-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
+    order: 3;
+    margin-left: auto;
   }
 
-  /* 标题容器 - 占满宽度，在按钮下方 */
+  /* 标题容器 - 占满第二行 */
   .diary-exchange-thread-title {
+    order: 2;
     width: 100%;
-    padding-top: 0;
+    flex-basis: 100%;
+    margin-top: 10px;
   }
 
   .diary-exchange-thread-title h3 {
