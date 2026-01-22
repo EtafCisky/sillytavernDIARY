@@ -1805,7 +1805,7 @@
     padding: 15px;
   }
 
-  /* 条目列表头部 - 标题在上方 */
+  /* 条目列表头部 - 标题在上方居中 */
   .diary-exchange-entry-list-header {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1827,16 +1827,21 @@
     margin-left: auto;
   }
 
-  /* 标题容器 - 占满第二行 */
+  /* 标题容器 - 占满第二行，居中显示 */
   .diary-exchange-entry-list-title-container {
     order: 2;
     width: 100%;
     flex-basis: 100%;
     margin-top: 10px;
+    text-align: center;
   }
 
   .diary-exchange-entry-list-title-container h3 {
     font-size: 20px;
+  }
+
+  .diary-exchange-entry-list-subtitle {
+    font-size: 13px;
   }
 
   /* 条目列表 - 单列布局 */
@@ -1866,7 +1871,7 @@
     padding: 15px;
   }
 
-  /* 系列列表头部 - 标题在上方 */
+  /* 系列列表头部 - 标题在上方居中 */
   .diary-exchange-thread-header {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1889,12 +1894,13 @@
     margin-left: auto;
   }
 
-  /* 标题容器 - 占满第二行 */
+  /* 标题容器 - 占满第二行，居中显示 */
   .diary-exchange-thread-title {
     order: 2;
     width: 100%;
     flex-basis: 100%;
     margin-top: 10px;
+    text-align: center;
   }
 
   .diary-exchange-thread-title h3 {
