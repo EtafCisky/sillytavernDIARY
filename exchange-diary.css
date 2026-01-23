@@ -1810,6 +1810,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
+    justify-content: space-between;
     gap: 10px;
     position: relative;
   }
@@ -1823,13 +1824,12 @@
 
   /* 操作按钮容器 - 右上角 */
   .diary-exchange-entry-list-header .diary-exchange-entry-list-actions {
-    order: 3;
-    margin-left: auto;
+    order: 2;
   }
 
   /* 标题容器 - 占满第二行，居中显示 */
   .diary-exchange-entry-list-title-container {
-    order: 2;
+    order: 3;
     width: 100%;
     flex-basis: 100%;
     margin-top: 10px;
@@ -1842,12 +1842,14 @@
 
   .diary-exchange-entry-list-subtitle {
     font-size: 13px;
+    text-align: center;
   }
 
   /* 条目列表 - 单列布局 */
   .diary-exchange-entry-list-container {
     grid-template-columns: 1fr;
     gap: 20px;
+    padding: 10px;
   }
 
   .diary-exchange-entry-card {
@@ -1876,6 +1878,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
+    justify-content: space-between;
     gap: 10px;
     margin-bottom: 20px;
     position: relative;
@@ -1890,13 +1893,12 @@
 
   /* 操作按钮容器 - 右上角 */
   .diary-exchange-thread-header .diary-exchange-thread-actions {
-    order: 3;
-    margin-left: auto;
+    order: 2;
   }
 
   /* 标题容器 - 占满第二行，居中显示 */
   .diary-exchange-thread-title {
-    order: 2;
+    order: 3;
     width: 100%;
     flex-basis: 100%;
     margin-top: 10px;
@@ -1909,6 +1911,7 @@
 
   .diary-exchange-thread-subtitle {
     font-size: 13px;
+    text-align: center;
   }
 
   .diary-exchange-thread-card {
