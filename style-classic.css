@@ -3435,3 +3435,355 @@
 创建时间: 2025-10-03
 维护者: 日记本插件开发团队
 */
+
+/* ========================================= */
+/* 交换日记功能美化 - 经典主题               */
+/* ========================================= */
+
+/* 交换日记弹窗 - 古典书本风格 */
+.diary-exchange-dialog {
+  background:
+    radial-gradient(circle at 20% 80%, rgba(205, 133, 63, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(210, 180, 140, 0.15) 0%, transparent 50%), rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.diary-exchange-content {
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(255, 215, 180, 0.18) 0%, transparent 60%),
+    linear-gradient(135deg, #f6ecd9 0%, #efe1c8 50%, #e6d6b8 100%);
+  border: 2px solid #caa574;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    0 10px 30px rgba(0, 0, 0, 0.22),
+    inset 0 2px 0 rgba(255, 255, 255, 0.65);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  animation: dialogFadeIn 0.3s ease;
+}
+
+/* 皮革书本质感装饰 */
+.diary-exchange-content::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(196, 168, 124, 0.5);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.25);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(210, 180, 140, 0.1) 29px,
+    rgba(210, 180, 140, 0.1) 30px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 确保内容在装饰层之上 */
+.diary-exchange-header,
+.diary-exchange-body {
+  position: relative;
+  z-index: 1;
+}
+
+/* 标题栏 - 华丽装饰 */
+.diary-exchange-header {
+  background: linear-gradient(135deg, rgba(222, 184, 135, 0.3) 0%, rgba(210, 180, 140, 0.2) 100%);
+  border-bottom: 2px solid #caa574;
+  padding: 20px 28px;
+}
+
+.diary-exchange-title {
+  color: #5d4e37;
+  font-size: 22px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.5px;
+}
+
+.diary-exchange-close {
+  color: #8b7355;
+  font-size: 32px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-close:hover {
+  background: rgba(205, 133, 63, 0.2);
+  color: #5d4e37;
+  transform: rotate(90deg);
+}
+
+/* 标签页导航 - 书签风格 */
+.diary-exchange-tabs {
+  background: linear-gradient(180deg, rgba(222, 184, 135, 0.15) 0%, transparent 100%);
+  border-bottom: 2px solid #caa574;
+  padding: 0 10px;
+}
+
+.diary-exchange-tab {
+  color: #8b7355;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 20px;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #cd853f, transparent);
+  transition: width 0.3s ease;
+}
+
+.diary-exchange-tab:hover {
+  background: rgba(222, 184, 135, 0.2);
+  color: #5d4e37;
+}
+
+.diary-exchange-tab:hover::before {
+  width: 80%;
+}
+
+.diary-exchange-tab.active {
+  color: #5d4e37;
+  background: rgba(255, 255, 255, 0.4);
+  border-bottom-color: #cd853f;
+  box-shadow: inset 0 -2px 4px rgba(205, 133, 63, 0.2);
+}
+
+/* 表单元素 - 羊皮纸风格 */
+.diary-exchange-label {
+  color: #5d4e37;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.diary-exchange-input,
+.diary-exchange-select,
+.diary-exchange-textarea {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid #d2b48c;
+  color: #5d4e37;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-input:focus,
+.diary-exchange-select:focus,
+.diary-exchange-textarea:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #cd853f;
+  box-shadow: 0 0 0 3px rgba(205, 133, 63, 0.1);
+}
+
+/* 按钮 - 古典装饰 */
+.diary-exchange-btn {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.diary-exchange-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.diary-exchange-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.diary-exchange-btn-primary {
+  background: linear-gradient(135deg, #cd853f 0%, #b8860b 100%);
+  border: 2px solid #b8860b;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(205, 133, 63, 0.4);
+}
+
+.diary-exchange-btn-primary:hover {
+  background: linear-gradient(135deg, #daa520 0%, #cd853f 100%);
+  box-shadow: 0 6px 16px rgba(205, 133, 63, 0.6);
+  transform: translateY(-2px);
+}
+
+.diary-exchange-btn-secondary {
+  background: linear-gradient(135deg, #8b7355 0%, #6b5d4f 100%);
+  border: 2px solid #6b5d4f;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.4);
+}
+
+.diary-exchange-btn-secondary:hover {
+  background: linear-gradient(135deg, #9d8568 0%, #8b7355 100%);
+  box-shadow: 0 6px 16px rgba(139, 115, 85, 0.6);
+  transform: translateY(-2px);
+}
+
+/* 角色卡片 - 古典书页风格 */
+.diary-exchange-character-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(246, 236, 217, 0.9) 100%);
+  border: 2px solid #d2b48c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-character-card:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 245, 230, 1) 100%);
+  border-color: #cd853f;
+  box-shadow: 0 8px 20px rgba(205, 133, 63, 0.3);
+  transform: translateY(-4px);
+}
+
+.diary-exchange-character-name,
+.diary-exchange-thread-name {
+  color: #5d4e37;
+  font-weight: 700;
+}
+
+/* 书本阅读界面 - 古典书页 */
+.diary-exchange-book-page {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 245, 235, 1) 100%);
+  border: 2px solid #d2b48c;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+/* 书页纹理 */
+.diary-exchange-book-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(210, 180, 140, 0.05) 29px,
+    rgba(210, 180, 140, 0.05) 30px
+  );
+  pointer-events: none;
+}
+
+.diary-exchange-book-left-page {
+  border-right: 3px solid #caa574;
+}
+
+.diary-exchange-book-right-page {
+  border-left: 3px solid #caa574;
+}
+
+.diary-exchange-book-diary-title {
+  color: #5d4e37;
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.diary-exchange-book-diary-content {
+  color: #5d4e37;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.9;
+}
+
+/* 导航按钮 - 古典装饰 */
+.diary-exchange-book-prev-btn,
+.diary-exchange-book-next-btn,
+.diary-exchange-back-btn {
+  background: linear-gradient(135deg, #cd853f 0%, #b8860b 100%);
+  border: 2px solid #b8860b;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(205, 133, 63, 0.3);
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-book-prev-btn:hover:not(:disabled),
+.diary-exchange-book-next-btn:hover:not(:disabled),
+.diary-exchange-back-btn:hover {
+  background: linear-gradient(135deg, #daa520 0%, #cd853f 100%);
+  box-shadow: 0 4px 12px rgba(205, 133, 63, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Reroll版本选择器 - 古典风格 */
+.diary-exchange-reroll-content {
+  background: linear-gradient(135deg, #f6ecd9 0%, #efe1c8 100%);
+  border: 2px solid #caa574;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.diary-exchange-reroll-header {
+  background: linear-gradient(135deg, rgba(222, 184, 135, 0.3) 0%, rgba(210, 180, 140, 0.2) 100%);
+  border-bottom: 2px solid #caa574;
+}
+
+.diary-exchange-reroll-version {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid #d2b48c;
+  transition: all 0.3s ease;
+}
+
+.diary-exchange-reroll-version:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #cd853f;
+  box-shadow: 0 4px 12px rgba(205, 133, 63, 0.3);
+}
+
+.diary-exchange-reroll-version.selected {
+  background: rgba(255, 245, 230, 1);
+  border-color: #cd853f;
+  box-shadow: 0 0 0 3px rgba(205, 133, 63, 0.2);
+}
+
+/* 动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
