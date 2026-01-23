@@ -1800,10 +1800,10 @@
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-  /* 条目列表视图移动端优化 - 强制垂直布局 */
-  .diary-exchange-entry-list-view {
-    padding: 15px;
-    display: block;
+  /* 条目列表视图移动端优化 - 改为垂直flex布局 */
+  .diary-exchange-entry-list-view.active {
+    display: flex;
+    flex-direction: column;
   }
 
   /* 条目列表头部 - 标题在上方居中 */
@@ -1816,6 +1816,7 @@
     gap: 10px;
     position: relative;
     width: 100%;
+    flex-shrink: 0;
   }
 
   /* 返回按钮 - 左上角 */
@@ -1854,11 +1855,12 @@
 
   /* 视图内容区域 - 占满宽度，在标题下方 */
   .diary-exchange-entry-list-view .diary-exchange-view-content {
-    display: block;
+    flex: 1;
     width: 100%;
     max-width: 100%;
     padding: 10px 0;
     margin: 0;
+    overflow-y: auto;
   }
 
   /* 条目列表 - 单列布局 */
@@ -1887,10 +1889,10 @@
     padding: 5px 8px;
   }
 
-  /* 系列列表视图移动端优化 - 强制垂直布局 */
-  .diary-exchange-thread-list-view {
-    padding: 15px;
-    display: block;
+  /* 系列列表视图移动端优化 - 改为垂直flex布局 */
+  .diary-exchange-thread-list-view.active {
+    display: flex;
+    flex-direction: column;
   }
 
   /* 系列列表头部 - 标题在上方居中 */
@@ -1904,6 +1906,7 @@
     margin-bottom: 20px;
     position: relative;
     width: 100%;
+    flex-shrink: 0;
   }
 
   /* 返回按钮 - 左上角 */
@@ -1942,11 +1945,12 @@
 
   /* 视图内容区域 - 占满宽度，在标题下方 */
   .diary-exchange-thread-list-view .diary-exchange-view-content {
-    display: block;
+    flex: 1;
     width: 100%;
     max-width: 100%;
     padding: 10px 0;
     margin: 0;
+    overflow-y: auto;
   }
 
   /* 系列列表 - 占满宽度 */
