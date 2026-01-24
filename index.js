@@ -7604,6 +7604,28 @@ function bindFloatWindowEvents() {
   const $menu = $('#diary-float-menu');
   const $window = $('#diary-float-window');
 
+  // 设置子按钮位置（避免与主按钮重合）
+  // 按钮排列：book(上), write(左上), exchange(右上), recycle(右)
+  $('#diary-float-book-btn').css({
+    top: '-60px',
+    left: '4px',
+  });
+
+  $('#diary-float-write-btn').css({
+    top: '-42px',
+    left: '-42px',
+  });
+
+  $('#diary-float-exchange-btn').css({
+    top: '60px',
+    left: '0px',
+  });
+
+  $('#diary-float-recycle-btn').css({
+    top: '-42px',
+    left: '50px',
+  });
+
   // 主按钮点击事件 - 展开/收起菜单
   // 同时监听 click 和 touchend 事件，确保移动端也能响应
   $mainBtn.on('click touchend', function (e) {
