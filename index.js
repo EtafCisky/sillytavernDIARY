@@ -6,7 +6,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   6.0.0
+ * @version   6.1.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
@@ -58,7 +58,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const PLUGIN_AUTHOR = {
   name: 'Etaf Cisky',
   github: 'https://github.com/EtafCisky/sillytavernDIARY',
-  version: '6.0.0',
+  version: '6.1.0',
   fingerprint: 'EC-STD-2025',
   copyright: 'Copyright (c) 2025 Etaf Cisky',
 };
@@ -2488,7 +2488,7 @@ async function exportDiaryData() {
 
     // 构建导出数据
     const exportData = {
-      version: '6.0.0',
+      version: '6.1.0',
       exportTime: new Date().toISOString(),
       exportTimeReadable: new Date().toLocaleString('zh-CN'),
       data: {
@@ -10307,7 +10307,7 @@ async function verifyAuthorInfo() {
     '%c║  作者 (Author):        Etaf Cisky                            ║',
     'color: #48bb78; font-weight: bold;',
   );
-  console.log('%c║  版本 (Version):       v6.0.0                                ║', 'color: #48bb78;');
+  console.log('%c║  版本 (Version):       v6.1.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
   console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');
