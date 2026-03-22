@@ -1,31 +1,46 @@
 {
-  "version": "6.1.0",
+  "version": "6.2.0",
   "date": "2025-01-26",
-  "title": "v6.1.0 更新 - 问题修复",
+  "title": "v6.2.0 更新 - 交换日记重roll功能优化",
   "highlights": [
     {
-      "title": "移动端布局修复",
-      "description": "修复移动端日记内容被返回按钮和页码遮挡的问题"
+      "title": "重roll功能优化",
+      "description": "优化交换日记重roll按钮显示逻辑，支持楼层达到后手动生成回复"
     },
     {
-      "title": "触发机制优化",
-      "description": "修复交换日记触发时因AI生成跳过检查导致无法触发的问题"
+      "title": "触发机制持久化",
+      "description": "改进触发记录存储机制，解决刷新页面后触发状态丢失的问题"
     }
   ],
   "details": [
     {
-      "category": "移动端布局修复",
+      "category": "重roll功能优化",
       "items": [
-        "增加标题区域顶部间距（padding-top: 70px），避免被返回按钮和关闭按钮遮挡",
-        "增加内容区域底部间距（padding-bottom: 100px），避免被页码和翻页按钮遮挡日记结尾内容"
+        "修改重roll按钮显示条件：从「必须有回复才显示」改为「楼层达到触发楼层即可显示」",
+        "添加canUseReroll永久标记机制，一次判定后永久生效，不受聊天切换影响",
+        "支持在没有自动回复的情况下手动生成第一个版本",
+        "生成第一个版本后自动选择并更新条目状态，自动刷新视图",
+        "添加空回复列表的友好提示界面",
+        "兼容旧数据格式（targetFloor和triggerWindow.end）"
       ]
     },
     {
-      "category": "触发机制优化",
+      "category": "触发机制持久化改进",
       "items": [
-        "修改触发条件检查逻辑：从 currentFloor === targetFloor 改为 currentFloor >= targetFloor",
-        "当超过目标楼层时也会立即触发，避免因AI生成时跳过检查而错过触发",
-        "保持多层防重复触发保护机制，确保每个条目只触发一次"
+        "将已触发记录从内存Set改为存储在chatMetadata中",
+        "触发后立即持久化到数据库，刷新页面不会丢失触发状态",
+        "改进AI生成期间的触发检测逻辑，添加pendingCheck机制",
+        "AI生成完成后立即执行待处理的检查，避免错过触发时机",
+        "添加数据迁移函数，自动为旧聊天添加triggeredEntries字段"
+      ]
+    },
+    {
+      "category": "代码质量提升",
+      "items": [
+        "添加所有characterReplies访问的空值检查，提升代码健壮性",
+        "优化RerollManager中的回复计数逻辑，避免undefined错误",
+        "改进触发管理器的buildPrompt函数，添加previousEntry的安全检查",
+        "统一自动写日记和交换日记的AI生成检测逻辑"
       ]
     }
   ],

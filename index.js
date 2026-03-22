@@ -6,7 +6,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   6.1.0
+ * @version   6.2.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================
@@ -58,7 +58,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const PLUGIN_AUTHOR = {
   name: 'Etaf Cisky',
   github: 'https://github.com/EtafCisky/sillytavernDIARY',
-  version: '6.1.0',
+  version: '6.2.0',
   fingerprint: 'EC-STD-2025',
   copyright: 'Copyright (c) 2025 Etaf Cisky',
 };
@@ -559,6 +559,11 @@ class ExchangeDiaryStorage {
 
       const entry = thread.entries[entryIndex];
 
+      // 确保characterReplies数组存在
+      if (!entry.characterReplies) {
+        entry.characterReplies = [];
+      }
+
       // 添加回复
       const replyWithMetadata = {
         ...reply,
@@ -606,6 +611,11 @@ class ExchangeDiaryStorage {
       }
 
       const entry = thread.entries[entryIndex];
+
+      // 确保characterReplies数组存在
+      if (!entry.characterReplies) {
+        entry.characterReplies = [];
+      }
 
       if (rerollIndex < 0 || rerollIndex >= entry.characterReplies.length) {
         console.error(`[交换日记存储] 回复索引无效: ${rerollIndex}`);
@@ -958,8 +968,9 @@ class RerollManager {
       // 检查是否达到最大Reroll次数
       const config = ExchangeDiaryStorage.getConfig();
       const maxRerolls = config.maxRerollsPerEntry || 5;
+      const currentReplyCount = entry.characterReplies ? entry.characterReplies.length : 0;
 
-      if (entry.characterReplies.length >= maxRerolls) {
+      if (currentReplyCount >= maxRerolls) {
         throw new Error(`已达到最大Reroll次数限制 (${maxRerolls})`);
       }
 
@@ -986,6 +997,7 @@ class RerollManager {
       console.log('[Reroll] 日记格式验证成功');
 
       // 构建回复对象
+      const currentReplyCount = entry.characterReplies ? entry.characterReplies.length : 0;
       const reply = {
         title: extractResult.title,
         time: extractResult.time,
@@ -993,8 +1005,8 @@ class RerollManager {
         rawResponse: response,
         floorNumber: chat.length, // 使用当前楼层数
         parsed: true,
-        isReroll: true,
-        rerollIndex: entry.characterReplies.length,
+        isReroll: currentReplyCount > 0,
+        rerollIndex: currentReplyCount,
       };
 
       console.log(`[Reroll] Reroll生成成功, 索引: ${reply.rerollIndex}`);
@@ -1230,8 +1242,9 @@ class TriggerManager {
   constructor() {
     this.checkInterval = null; // 定时检查的interval ID
     this.isChecking = false; // 是否正在检查（防止重复触发）
-    this.triggeredEntries = new Set(); // 已触发的条目集合（防止重复触发）
     this.lastCheckedChatLength = 0; // 上次检查的聊天长度（避免重复检查）
+    this.pendingCheck = false; // 是否有待执行的检查（AI生成完成后触发）
+    this.lastAIGeneratingState = false; // 上次AI生成状态
   }
 
   /**
@@ -1265,10 +1278,28 @@ class TriggerManager {
    * 检查并触发交换日记
    */
   async checkAndTrigger() {
-    // 检查AI是否正在生成回复
-    if (isAIGenerating()) {
-      console.log('[触发管理器] AI正在生成回复，跳过检查');
+    // 检测AI生成状态变化
+    const currentAIGenerating = isAIGenerating();
+
+    // 如果AI正在生成，标记需要在生成完成后检查
+    if (currentAIGenerating) {
+      if (!this.lastAIGeneratingState) {
+        console.log('[触发管理器] AI开始生成回复，将在生成完成后检查');
+      }
+      this.pendingCheck = true;
+      this.lastAIGeneratingState = true;
       return;
+    }
+
+    // AI生成刚完成，立即执行待处理的检查
+    if (this.lastAIGeneratingState && !currentAIGenerating) {
+      console.log('[触发管理器] AI生成完成，执行待处理的检查');
+      this.pendingCheck = false;
+      this.lastAIGeneratingState = false;
+      // 继续执行检查逻辑
+    } else if (!this.pendingCheck) {
+      // 如果没有待处理的检查，且AI没在生成，正常检查
+      this.lastAIGeneratingState = false;
     }
 
     // 防止重复检查
@@ -1283,10 +1314,12 @@ class TriggerManager {
       const currentFloor = this.getCurrentFloor();
 
       // 避免重复检查（聊天长度没变化就不检查）
-      if (currentFloor === this.lastCheckedChatLength) {
+      // 但如果是AI生成完成后的检查，即使长度相同也要检查
+      if (currentFloor === this.lastCheckedChatLength && !this.pendingCheck) {
         return;
       }
       this.lastCheckedChatLength = currentFloor;
+      this.pendingCheck = false; // 清除待处理标记
 
       // 获取当前角色名
       const currentCharacter = name2;
@@ -1310,6 +1343,9 @@ class TriggerManager {
           pendingEntries: [], // 存储在当前聊天中待触发的条目
         };
       }
+
+      // 获取已触发记录（从extension_settings中读取）
+      const triggeredEntries = this.getTriggeredEntries();
 
       // 获取待触发的条目（只获取当前角色的）
       const allPendingEntries = ExchangeDiaryStorage.getPendingEntries(currentCharacter);
@@ -1340,9 +1376,10 @@ class TriggerManager {
       for (const pendingEntry of chatPendingEntries) {
         const { threadId, entry } = pendingEntry;
 
-        // 检查是否已经触发过（防止重复触发）
+        // 检查是否已经触发过（从extension_settings中检查）
         const entryKey = `${threadId}-${entry.entryNumber}`;
-        if (this.triggeredEntries.has(entryKey)) {
+        if (triggeredEntries[entryKey]) {
+          console.log(`[触发管理器] 条目已触发过，跳过: ${entryKey}`);
           continue;
         }
 
@@ -1350,15 +1387,17 @@ class TriggerManager {
         if (this.checkTriggerConditions(entry, currentFloor)) {
           console.log(`[触发管理器] 触发条件满足: ${threadId}, 条目${entry.entryNumber}`);
 
-          // 标记为已触发（防止重复）
-          this.triggeredEntries.add(entryKey);
+          // 标记为已触发（保存到extension_settings）
+          this.markAsTriggered(entryKey);
 
           // 从当前聊天的待触发列表中移除
           const index = chatMetadata.exchangeDiary.pendingEntries.indexOf(entryKey);
           if (index > -1) {
             chatMetadata.exchangeDiary.pendingEntries.splice(index, 1);
-            context.saveMetadata();
           }
+
+          // 保存元数据
+          context.saveMetadata();
 
           // 执行触发
           await this.executeTrigger(threadId, entry);
@@ -1389,6 +1428,42 @@ class TriggerManager {
   }
 
   /**
+   * 获取已触发的条目记录
+   * @returns {Object} 已触发的条目记录 {entryKey: timestamp}
+   */
+  getTriggeredEntries() {
+    try {
+      const data = ExchangeDiaryStorage.loadAll();
+      if (!data.triggeredEntries) {
+        data.triggeredEntries = {};
+        ExchangeDiaryStorage.saveAll(data);
+      }
+      return data.triggeredEntries;
+    } catch (error) {
+      console.error('[触发管理器] 获取已触发记录失败:', error);
+      return {};
+    }
+  }
+
+  /**
+   * 标记条目为已触发
+   * @param {string} entryKey - 条目键（格式：threadId-entryNumber）
+   */
+  markAsTriggered(entryKey) {
+    try {
+      const data = ExchangeDiaryStorage.loadAll();
+      if (!data.triggeredEntries) {
+        data.triggeredEntries = {};
+      }
+      data.triggeredEntries[entryKey] = Date.now();
+      ExchangeDiaryStorage.saveAll(data);
+      console.log(`[触发管理器] 已标记为已触发: ${entryKey}`);
+    } catch (error) {
+      console.error('[触发管理器] 标记已触发失败:', error);
+    }
+  }
+
+  /**
    * 检查触发条件
    * @param {Object} entry - 条目对象
    * @param {number} currentFloor - 当前楼层
@@ -1409,7 +1484,9 @@ class TriggerManager {
           if (currentFloor === triggerWindow.targetFloor) {
             console.log(`[触发管理器] 到达触发楼层: 当前楼层${currentFloor}, 目标楼层${triggerWindow.targetFloor}`);
           } else {
-            console.log(`[触发管理器] 超过触发楼层，立即触发: 当前楼层${currentFloor}, 目标楼层${triggerWindow.targetFloor}`);
+            console.log(
+              `[触发管理器] 超过触发楼层，立即触发: 当前楼层${currentFloor}, 目标楼层${triggerWindow.targetFloor}`,
+            );
           }
         }
 
@@ -1510,9 +1587,10 @@ class TriggerManager {
         return;
       }
 
-      // 更新状态为completed
+      // 更新状态为completed，并标记可以使用重roll
       ExchangeDiaryStorage.updateEntry(threadId, entry.entryNumber, {
         status: 'completed',
+        canUseReroll: true, // 自动触发成功后，标记可以使用重roll
       });
 
       console.log(`[触发管理器] 触发完成: ${threadId}, 条目${entry.entryNumber}`);
@@ -1546,9 +1624,9 @@ class TriggerManager {
       // 检查是否有上一篇角色回复
       const previousEntry = thread.entries.find(e => e.entryNumber === entry.entryNumber - 1);
 
-      if (previousEntry && previousEntry.characterReplies.length > 0) {
+      if (previousEntry && previousEntry.characterReplies && previousEntry.characterReplies.length > 0) {
         // 有上一篇回复，使用带上一篇的模板
-        const previousReply = previousEntry.characterReplies[previousEntry.selectedReplyIndex];
+        const previousReply = previousEntry.characterReplies[previousEntry.selectedReplyIndex || 0];
         return PromptBuilder.buildExchangeDiaryPrompt(userDiary.content, previousReply.content);
       } else {
         // 没有上一篇回复，使用首篇模板
@@ -1639,24 +1717,31 @@ class TriggerManager {
       console.error('[触发管理器] 保存到回收站失败:', error);
     }
   }
-
-  /**
-   * 清理已触发条目记录
-   * 定期清理，避免内存占用过大
-   */
-  cleanupTriggeredEntries() {
-    // 只保留最近100个
-    if (this.triggeredEntries.size > 100) {
-      const entries = Array.from(this.triggeredEntries);
-      this.triggeredEntries = new Set(entries.slice(-100));
-    }
-  }
 }
 
 // 创建全局触发管理器实例
 const triggerManager = new TriggerManager();
 
+/**
+ * 数据迁移函数
+ * 确保extension_settings中有triggeredEntries字段
+ */
+function migrateExchangeDiaryData() {
+  try {
+    const data = ExchangeDiaryStorage.loadAll();
 
+    // 确保triggeredEntries字段存在
+    if (!data.triggeredEntries) {
+      data.triggeredEntries = {};
+      ExchangeDiaryStorage.saveAll(data);
+      console.log('[数据迁移] 已添加triggeredEntries字段到extension_settings');
+    }
+
+    console.log('[数据迁移] 交换日记数据检查完成');
+  } catch (error) {
+    console.error('[数据迁移] 数据迁移失败:', error);
+  }
+}
 
 /**
  * 清理文件名,移除非法字符
@@ -2488,7 +2573,7 @@ async function exportDiaryData() {
 
     // 构建导出数据
     const exportData = {
-      version: '6.1.0',
+      version: '6.2.0',
       exportTime: new Date().toISOString(),
       exportTimeReadable: new Date().toLocaleString('zh-CN'),
       data: {
@@ -2881,9 +2966,12 @@ function isAIGenerating() {
 
 // 检查是否需要自动写日记
 async function checkAndTriggerAutoDiary() {
-  // 检查AI是否正在生成回复
-  if (isAIGenerating()) {
-    console.log('[自动写日记] AI正在生成回复，跳过检查');
+  // 检测AI生成状态
+  const currentAIGenerating = isAIGenerating();
+
+  // 如果AI正在生成，等待生成完成
+  if (currentAIGenerating) {
+    // 不跳过，而是等待下次检查（AI生成完成后会自动检查）
     return;
   }
 
@@ -8340,6 +8428,28 @@ function renderDesktopView(thread, currentPage, totalPages) {
   const $characterContent = $('#diary-exchange-character-content');
   const $rerollBtn = $('#diary-exchange-reroll-btn');
 
+  // 检查是否可以使用Reroll功能
+  // 方案：一旦条目达到可以使用重roll的条件，就永久标记它（存储在entry.canUseReroll）
+  // 这样即使用户切换聊天，也不会受到影响
+  let canUseReroll = entry.canUseReroll || false;
+
+  // 如果还没有标记过，进行一次性判定
+  if (!canUseReroll) {
+    const currentFloor = chat.length;
+    const triggerWindow = entry.userDiary?.triggerWindow;
+    // 优先使用targetFloor，如果不存在则使用end（兼容旧数据）
+    const targetFloor = triggerWindow?.targetFloor ?? triggerWindow?.end;
+
+    if (targetFloor !== undefined && currentFloor >= targetFloor) {
+      canUseReroll = true;
+      // 永久标记这个条目可以使用重roll
+      ExchangeDiaryStorage.updateEntry(thread.threadId, entry.entryNumber, {
+        canUseReroll: true,
+      });
+      console.log(`[交换日记] 条目${entry.entryNumber}已达到触发楼层，永久启用重roll功能`);
+    }
+  }
+
   if (entry.characterReplies && entry.characterReplies.length > 0) {
     // 获取选中的回复版本
     const selectedIndex = entry.selectedReplyIndex || 0;
@@ -8349,8 +8459,12 @@ function renderDesktopView(thread, currentPage, totalPages) {
     $('#diary-exchange-character-time').text(characterReply.time || formatDate(new Date(characterReply.triggeredAt)));
     $characterContent.html(escapeHtml(characterReply.content).replace(/\n/g, '<br>'));
 
-    // 显示Reroll按钮
-    $rerollBtn.show();
+    // 只要超过触发楼层就显示Reroll按钮
+    if (canUseReroll) {
+      $rerollBtn.show();
+    } else {
+      $rerollBtn.hide();
+    }
   } else {
     $('#diary-exchange-character-title').text('等待回复');
     $('#diary-exchange-character-time').text('');
@@ -8361,8 +8475,12 @@ function renderDesktopView(thread, currentPage, totalPages) {
       </div>
     `);
 
-    // 隐藏Reroll按钮
-    $rerollBtn.hide();
+    // 只要超过触发楼层就显示Reroll按钮（即使还没有回复）
+    if (canUseReroll) {
+      $rerollBtn.show();
+    } else {
+      $rerollBtn.hide();
+    }
   }
 }
 
@@ -8399,6 +8517,28 @@ function renderMobileView(thread, currentPage, totalPages) {
     const $characterContent = $('#diary-exchange-character-content');
     const $rerollBtn = $('#diary-exchange-reroll-btn');
 
+    // 检查是否可以使用Reroll功能
+    // 方案：一旦条目达到可以使用重roll的条件，就永久标记它（存储在entry.canUseReroll）
+    // 这样即使用户切换聊天，也不会受到影响
+    let canUseReroll = entry.canUseReroll || false;
+
+    // 如果还没有标记过，进行一次性判定
+    if (!canUseReroll) {
+      const currentFloor = chat.length;
+      const triggerWindow = entry.userDiary?.triggerWindow;
+      // 优先使用targetFloor，如果不存在则使用end（兼容旧数据）
+      const targetFloor = triggerWindow?.targetFloor ?? triggerWindow?.end;
+
+      if (targetFloor !== undefined && currentFloor >= targetFloor) {
+        canUseReroll = true;
+        // 永久标记这个条目可以使用重roll
+        ExchangeDiaryStorage.updateEntry(thread.threadId, entry.entryNumber, {
+          canUseReroll: true,
+        });
+        console.log(`[交换日记] 条目${entry.entryNumber}已达到触发楼层，永久启用重roll功能`);
+      }
+    }
+
     if (entry.characterReplies && entry.characterReplies.length > 0) {
       // 获取选中的回复版本
       const selectedIndex = entry.selectedReplyIndex || 0;
@@ -8408,8 +8548,12 @@ function renderMobileView(thread, currentPage, totalPages) {
       $('#diary-exchange-character-time').text(characterReply.time || formatDate(new Date(characterReply.triggeredAt)));
       $characterContent.html(escapeHtml(characterReply.content).replace(/\n/g, '<br>'));
 
-      // 显示Reroll按钮
-      $rerollBtn.show();
+      // 只要超过触发楼层就显示Reroll按钮
+      if (canUseReroll) {
+        $rerollBtn.show();
+      } else {
+        $rerollBtn.hide();
+      }
     } else {
       $('#diary-exchange-character-title').text('等待回复');
       $('#diary-exchange-character-time').text('');
@@ -8420,8 +8564,12 @@ function renderMobileView(thread, currentPage, totalPages) {
         </div>
       `);
 
-      // 隐藏Reroll按钮
-      $rerollBtn.hide();
+      // 只要超过触发楼层就显示Reroll按钮（即使还没有回复）
+      if (canUseReroll) {
+        $rerollBtn.show();
+      } else {
+        $rerollBtn.hide();
+      }
     }
   }
 }
@@ -8479,12 +8627,12 @@ function showRerollSelector() {
 
   // 获取条目数据
   const entry = ExchangeDiaryStorage.getEntry(threadId, entryNumber);
-  if (!entry || !entry.characterReplies || entry.characterReplies.length === 0) {
-    console.error('[Reroll] 条目没有角色回复');
+  if (!entry) {
+    console.error('[Reroll] 条目不存在');
     return;
   }
 
-  // 渲染版本列表
+  // 渲染版本列表（即使没有回复也可以显示）
   renderRerollVersions(entry);
 
   // 显示弹窗
@@ -8513,33 +8661,45 @@ function renderRerollVersions(entry) {
   const config = ExchangeDiaryStorage.getConfig();
   const maxRerolls = config.maxRerollsPerEntry || 5;
 
-  // 渲染每个版本
-  entry.characterReplies.forEach((reply, index) => {
-    const isSelected = index === selectedIndex;
-    const isCurrent = isSelected;
+  // 如果有回复，渲染每个版本
+  if (entry.characterReplies && entry.characterReplies.length > 0) {
+    entry.characterReplies.forEach((reply, index) => {
+      const isSelected = index === selectedIndex;
+      const isCurrent = isSelected;
 
-    const $version = $(`
-      <div class="diary-exchange-reroll-version ${isCurrent ? 'selected' : ''}" data-index="${index}">
-        <div class="diary-exchange-reroll-version-header">
-          <span class="diary-exchange-reroll-version-label">版本 ${index + 1}</span>
-          ${isCurrent ? '<span class="diary-exchange-reroll-version-badge">当前</span>' : ''}
+      const $version = $(`
+        <div class="diary-exchange-reroll-version ${isCurrent ? 'selected' : ''}" data-index="${index}">
+          <div class="diary-exchange-reroll-version-header">
+            <span class="diary-exchange-reroll-version-label">版本 ${index + 1}</span>
+            ${isCurrent ? '<span class="diary-exchange-reroll-version-badge">当前</span>' : ''}
+          </div>
+          <div class="diary-exchange-reroll-version-title">${escapeHtml(reply.title || '无标题')}</div>
+          <div class="diary-exchange-reroll-version-preview">${escapeHtml(reply.content || '无内容')}</div>
         </div>
-        <div class="diary-exchange-reroll-version-title">${escapeHtml(reply.title || '无标题')}</div>
-        <div class="diary-exchange-reroll-version-preview">${escapeHtml(reply.content || '无内容')}</div>
+      `);
+
+      $versionsContainer.append($version);
+    });
+  } else {
+    // 没有回复时显示提示
+    $versionsContainer.html(`
+      <div class="diary-exchange-empty-versions">
+        <div class="diary-exchange-empty-icon">📝</div>
+        <div class="diary-exchange-empty-text">还没有回复版本，点击下方按钮生成第一个版本</div>
       </div>
     `);
-
-    $versionsContainer.append($version);
-  });
+  }
 
   // 更新生成按钮状态
   const $generateBtn = $('#diary-exchange-reroll-generate-btn');
-  if (entry.characterReplies.length >= maxRerolls) {
+  const currentReplyCount = entry.characterReplies ? entry.characterReplies.length : 0;
+
+  if (currentReplyCount >= maxRerolls) {
     $generateBtn.prop('disabled', true);
     $generateBtn.text(`⟳ 已达到最大版本数 (${maxRerolls})`);
   } else {
     $generateBtn.prop('disabled', false);
-    $generateBtn.text(`⟳ 生成新版本 (${entry.characterReplies.length}/${maxRerolls})`);
+    $generateBtn.text(`⟳ 生成新版本 (${currentReplyCount}/${maxRerolls})`);
   }
 }
 
@@ -8579,6 +8739,39 @@ async function generateNewRerollVersion() {
     const entry = ExchangeDiaryStorage.getEntry(currentRerollThreadId, currentRerollEntryNumber);
     renderRerollVersions(entry);
 
+    // 如果这是第一个版本，自动选择它并更新条目状态
+    if (entry.characterReplies.length === 1) {
+      console.log('[Reroll] 这是第一个版本，自动选择并更新状态');
+
+      // 自动选择第一个版本
+      ExchangeDiaryStorage.selectReply(currentRerollThreadId, currentRerollEntryNumber, 0);
+
+      // 更新条目状态为completed，并标记可以使用重roll
+      ExchangeDiaryStorage.updateEntry(currentRerollThreadId, currentRerollEntryNumber, {
+        status: 'completed',
+        canUseReroll: true, // 手动生成第一个版本后，标记可以使用重roll
+      });
+
+      // 刷新书本视图
+      const thread = ExchangeDiaryStorage.getThread(currentRerollThreadId);
+      const entryIndex = thread.entries.findIndex(e => e.entryNumber === currentRerollEntryNumber);
+
+      if (window.innerWidth <= 768) {
+        // 移动端：计算当前页码（偶数页显示角色回复）
+        const currentPage = entryIndex * 2 + 2;
+        const totalPages = thread.entries.length * 2;
+        renderMobileView(thread, currentPage, totalPages);
+      } else {
+        // PC端：计算当前页码
+        const currentPage = entryIndex + 1;
+        const totalPages = thread.entries.length;
+        renderDesktopView(thread, currentPage, totalPages);
+      }
+
+      // 关闭Reroll选择器
+      hideRerollSelector();
+    }
+
     // 显示成功提示
     toastr.success('新版本生成成功！', '成功');
   } catch (error) {
@@ -8590,8 +8783,9 @@ async function generateNewRerollVersion() {
     if (entry) {
       const config = ExchangeDiaryStorage.getConfig();
       const maxRerolls = config.maxRerollsPerEntry || 5;
+      const currentReplyCount = entry.characterReplies ? entry.characterReplies.length : 0;
       $generateBtn.prop('disabled', false);
-      $generateBtn.text(`⟳ 生成新版本 (${entry.characterReplies.length}/${maxRerolls})`);
+      $generateBtn.text(`⟳ 生成新版本 (${currentReplyCount}/${maxRerolls})`);
     }
   }
 }
@@ -8604,6 +8798,15 @@ function confirmRerollSelection() {
 
   if (!currentRerollThreadId || !currentRerollEntryNumber) {
     console.error('[Reroll] 无法获取当前线程或条目信息');
+    return;
+  }
+
+  // 获取条目数据
+  const entry = ExchangeDiaryStorage.getEntry(currentRerollThreadId, currentRerollEntryNumber);
+
+  // 如果没有任何回复，提示用户先生成版本
+  if (!entry.characterReplies || entry.characterReplies.length === 0) {
+    toastr.info('请先点击"生成新版本"按钮生成第一个回复', '提示');
     return;
   }
 
@@ -10307,7 +10510,7 @@ async function verifyAuthorInfo() {
     '%c║  作者 (Author):        Etaf Cisky                            ║',
     'color: #48bb78; font-weight: bold;',
   );
-  console.log('%c║  版本 (Version):       v6.1.0                                ║', 'color: #48bb78;');
+  console.log('%c║  版本 (Version):       v6.2.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
   console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');
@@ -10519,6 +10722,10 @@ jQuery(async () => {
     // 启动交换日记触发管理器
     triggerManager.start();
     console.log('📬 交换日记触发管理器已启动');
+
+    // 数据迁移：确保所有聊天记录都有triggeredEntries字段
+    migrateExchangeDiaryData();
+    console.log('🔄 交换日记数据迁移完成');
 
     // 运行触发管理器测试（仅在开发模式下）
     // 测试代码已移除以减少控制台输出
