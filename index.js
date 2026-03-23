@@ -997,7 +997,7 @@ class RerollManager {
       console.log('[Reroll] 日记格式验证成功');
 
       // 构建回复对象
-      const currentReplyCount = entry.characterReplies ? entry.characterReplies.length : 0;
+      // currentReplyCount 已在上面声明，这里直接使用
       const reply = {
         title: extractResult.title,
         time: extractResult.time,
