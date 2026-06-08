@@ -1,6 +1,6 @@
 # 日记本插件 (sillytavernDIARY)
 
-**版本**: 6.2.0  
+**版本**: 7.1.0  
 **作者**: Etaf Cisky  
 **适配**: SillyTavern 1.12.0+  
 **状态**: 稳定版本  
@@ -38,6 +38,16 @@
 ## 🎯 简介
 
 日记本插件是一个功能完善的 SillyTavern 扩展，为您的角色对话提供完整的日记管理系统。通过智能的AI交互和优雅的界面设计，让日记记录变得轻松而有趣。
+
+## 💾 7.1.0 存储说明
+
+从 v7.1.0 开始，日记本主要数据优先保存到 SillyTavern 的 `user/files` 独立 JSON 文件中：
+
+- 普通日记：`user/files/diary-data.json`
+- 交换日记：`user/files/diary-exchange-data.json`
+- 回收站：`user/files/diary-recycle-bin.json`
+
+如果文件读取或写入失败，插件会自动回退到原来的 `extension_settings.sillytavernDIARY` 数据，尽量避免数据丢失。旧 settings 数据不会被本体插件自动删除；需要手动迁移时，请使用单独的 `diary-migration-tool`。
 
 ### ✨ 核心特色
 
@@ -123,7 +133,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
    - 输入自定义角色名（可选）
    - 或直接点击"发送"使用当前角色卡名称
 5. AI 将自动生成日记内容
-6. 日记自动保存到世界书系统
+6. 日记自动保存到独立 JSON 文件存储
 
 ### 第三步：体验交换日记
 
@@ -148,7 +158,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 
 #### 功能说明
 
-引导AI按照标准格式创作日记，使用后台生成模式，不在聊天记录中留下痕迹，自动保存到世界书系统。
+引导AI按照标准格式创作日记，使用后台生成模式，不在聊天记录中留下痕迹，自动保存到独立 JSON 文件存储。
 
 #### 使用步骤
 
@@ -297,7 +307,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 智能回收站系统，自动保存失败的AI生成内容，提供编辑和重新保存功能。适用于：
 
 - 写日记时AI生成的内容格式不正确
-- 日记保存到世界书失败
+- 日记保存到文件存储失败
 - 需要手动编辑和调整日记内容
 - 批量处理和管理失败内容
 
@@ -305,7 +315,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 
 1. **自动保存** → 系统在以下情况自动保存内容到回收站：
    - 日记格式解析失败
-   - 世界书保存失败
+   - 文件存储保存失败
    - 系统生成错误
 2. **查看回收站** → 点击 **🗑️ 回收站** 按钮
 3. **按角色分组** → 回收站按角色分组显示，默认收起
@@ -344,7 +354,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 1. 在日记详情页
 2. 点击 **🗑️ 删除日记** 按钮
 3. 确认删除
-4. 日记从世界书中永久删除
+4. 日记从当前存储中永久删除
 
 #### 导航操作
 
@@ -477,19 +487,32 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 
 ### 存储系统
 
-#### 世界书集成
+#### 独立文件存储
 
-- 所有日记存储在名为 **"日记本"** 的世界书中
-- 失败内容存储在名为 **"回收站"** 的世界书中
-- 自动创建和管理，无需手动操作
+- 普通日记存储在 `user/files/diary-data.json`
+- 交换日记存储在 `user/files/diary-exchange-data.json`
+- 失败内容和回收站存储在 `user/files/diary-recycle-bin.json`
+- 文件读写失败时自动回退到 `extension_settings.sillytavernDIARY`
 
 #### 存储格式
 
 ```javascript
 {
-  comment: "标题-时间",     // 条目名称
-  key: ["角色名"],          // 关键词（角色名）
-  content: "实际日记内容"    // 条目内容
+  schemaVersion: 1,
+  kind: "sillytavernDIARY.diaries",
+  updatedAt: "2026-06-08T00:00:00.000Z",
+  data: {
+    "角色名": [
+      {
+        id: 1,
+        title: "标题",
+        time: "时间",
+        content: "实际日记内容",
+        author: "角色名",
+        createTime: "2026-06-08T00:00:00.000Z"
+      }
+    ]
+  }
 }
 ```
 
@@ -516,7 +539,7 @@ git clone https://github.com/EtafCisky/sillytavernDIARY.git sillytavernDIARY
 #### 错误处理与回收站
 
 - 完整的异常捕获和用户提示
-- 失败内容自动保存到回收站世界书
+- 失败内容自动保存到回收站文件
 - 支持编辑和重新保存功能
 - 详细的控制台日志和友好的错误信息
 
@@ -632,8 +655,8 @@ loadPluginSettingsStyle() → 创建内联样式 → 添加到<head>
 #### API 集成
 
 ```javascript
-// 世界书操作
-import { loadWorldInfo, saveWorldInfo, createWorldInfoEntry } from "world-info.js";
+// SillyTavern 文件接口
+fetch("/api/files/upload", { method: "POST" });
 
 // 聊天操作
 import { sendMessageAsUser, Generate, chat } from "script.js";
@@ -667,13 +690,13 @@ import { executeSlashCommandsWithOptions } from "slash-commands.js";
 
 1. 检查 AI 回复是否包含正确的日记格式
 2. 打开控制台查看详细日志
-3. 检查世界书 "日记本" 是否被手动删除
+3. 检查 `user/files/diary-data.json` 是否存在，或查看 `window.diaryFileStorageStatus()`
 4. 尝试使用"记录"功能手动保存
 
 #### 日记本打开后无内容
 
 1. 确认已经写过至少一篇日记
-2. 检查世界书 "日记本" 中是否有条目
+2. 检查 `user/files/diary-data.json` 中是否有数据
 3. 查看控制台是否有加载错误
 
 #### 悬浮窗不显示
@@ -772,6 +795,22 @@ import { executeSlashCommandsWithOptions } from "slash-commands.js";
 ---
 
 ## 📝 更新日志
+
+### v7.1.0 (2026-06-08)
+
+#### 💾 独立文件存储
+- 普通日记、交换日记、回收站分别写入 `user/files` 下的三份 JSON 文件
+- 文件读写失败时回退到 `extension_settings`，保留旧数据兜底
+- 增加 `window.diaryFileStorageStatus()` 便于检查当前存储状态
+- 迁移工作交给单独的 `diary-migration-tool`，本体插件不增加迁移 UI
+
+### v7.0.0 (2026-06-08)
+
+#### 🧩 结构重构与体检
+- `index.js` 调整为薄入口，主要逻辑拆分到 `src` 模块
+- 初始化、弹窗和高风险事件绑定增加重复执行保护
+- 修复导入时的 ID/线程冲突风险
+- 交换日记 selectedReplyIndex 访问增加安全边界
 
 ### v6.2.0 (2025-01-27)
 
@@ -1029,5 +1068,5 @@ import { executeSlashCommandsWithOptions } from "slash-commands.js";
 
 ---
 
-*最后更新: 2025-01-14*  
+*最后更新: 2026-06-08*  
 *维护者: Etaf Cisky*

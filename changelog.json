@@ -1,55 +1,53 @@
 {
-  "version": "6.2.0",
-  "date": "2025-01-26",
-  "title": "v6.2.0 更新 - 交换日记重roll功能优化",
+  "version": "7.1.0",
+  "date": "2026-06-08",
+  "title": "日记本插件 v7.1.0 更新",
+  "formatNoticeLabel": "格式提醒",
   "highlights": [
     {
-      "title": "重roll功能优化",
-      "description": "优化交换日记重roll按钮显示逻辑，支持楼层达到后手动生成回复"
+      "title": "7.1.0 独立文件存储",
+      "description": "日记本主要数据现在优先保存到 user/files 下的三份独立 JSON 文件，不再只依赖 extension_settings。"
     },
     {
-      "title": "触发机制持久化",
-      "description": "改进触发记录存储机制，解决刷新页面后触发状态丢失的问题"
+      "title": "7.0 结构重构",
+      "description": "入口文件已简化，存储、解析、AI、交换日记和界面逻辑拆分到 src 模块，并补充了更稳妥的初始化保护。"
     }
   ],
   "details": [
     {
-      "category": "重roll功能优化",
+      "category": "7.1.0 存储更新",
       "items": [
-        "修改重roll按钮显示条件：从「必须有回复才显示」改为「楼层达到触发楼层即可显示」",
-        "添加canUseReroll永久标记机制，一次判定后永久生效，不受聊天切换影响",
-        "支持在没有自动回复的情况下手动生成第一个版本",
-        "生成第一个版本后自动选择并更新条目状态，自动刷新视图",
-        "添加空回复列表的友好提示界面",
-        "兼容旧数据格式（targetFloor和triggerWindow.end）"
+        "普通日记保存到 user/files/diary-data.json。",
+        "交换日记保存到 user/files/diary-exchange-data.json。",
+        "回收站数据保存到 user/files/diary-recycle-bin.json。",
+        "如果独立文件读取或写入失败，插件会自动回退到 extension_settings，尽量避免旧数据丢失或无法读取。",
+        "浏览器控制台可运行 window.diaryFileStorageStatus() 查看当前三类数据使用的是独立文件还是 settings 回退。",
+        "迁移功能放在单独的 diary-migration-tool 中，本体插件不增加迁移界面。"
       ]
     },
     {
-      "category": "触发机制持久化改进",
+      "category": "7.0 结构重构与稳定性",
       "items": [
-        "将已触发记录从内存Set改为存储在chatMetadata中",
-        "触发后立即持久化到数据库，刷新页面不会丢失触发状态",
-        "改进AI生成期间的触发检测逻辑，添加pendingCheck机制",
-        "AI生成完成后立即执行待处理的检查，避免错过触发时机",
-        "添加数据迁移函数，自动为旧聊天添加triggeredEntries字段"
-      ]
-    },
-    {
-      "category": "代码质量提升",
-      "items": [
-        "添加所有characterReplies访问的空值检查，提升代码健壮性",
-        "优化RerollManager中的回复计数逻辑，避免undefined错误",
-        "改进触发管理器的buildPrompt函数，添加previousEntry的安全检查",
-        "统一自动写日记和交换日记的AI生成检测逻辑"
+        "index.js 调整为薄入口，只负责创建应用并启动初始化。",
+        "配置、存储、解析、AI、交换日记和界面逻辑已拆分到 src 目录下的模块。",
+        "插件初始化、高风险弹窗和文档级界面事件增加了重复绑定保护。",
+        "导入导出逻辑修复了交换日记 threadId 冲突覆盖，以及普通日记/回收站导入时不安全的数字 ID 问题。",
+        "交换日记创建新线程时会扫描已有线程，避免盲目信任 threadCounters 导致编号冲突。",
+        "selectedReplyIndex 相关读取已增加越界和缺失保护，减少交换日记回复选择异常。"
       ]
     }
   ],
-  "exchangeDiaryFormat": {
-    "title": "交换日记格式说明",
-    "content": "&lt;交换日记&gt;\n标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}\n&lt;/交换日记&gt;"
-  },
   "diaryFormat": {
-    "title": "日记格式说明",
-    "content": "&lt;日记&gt;\n标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}\n&lt;/日记&gt;"
+    "title": "普通日记输出格式",
+    "content": "<日记>\n标题: {{title}}\n时间: {{time}}\n内容: {{content}}\n</日记>"
+  },
+  "exchangeDiaryFormat": {
+    "title": "交换日记输出格式",
+    "content": "<交换日记>\n标题: {{title}}\n时间: {{time}}\n内容: {{content}}\n</交换日记>"
+  },
+  "migration": {
+    "required": false,
+    "message": "旧 settings 数据会作为回退继续保留。只有需要把 settings 主动写入独立文件时，才需要运行单独的 diary-migration-tool。",
+    "steps": []
   }
 }

@@ -1,0 +1,79 @@
+import { createSettingsManager } from '../ui/settings-manager.js';
+import { createThemeManager } from '../ui/theme-manager.js';
+
+export function createSettingsUiComposition({
+  extensionSettings,
+  extensionName,
+  extensionFolderPath,
+  defaultSettings,
+  getCurrentSettings,
+  saveSettings,
+  saveSettingsDebounced,
+  exchangeDiaryStorage,
+  getAutoDiaryConfig,
+  saveAutoDiaryInterval,
+  updateAutoDiaryStatus,
+  notify,
+}) {
+  const {
+    loadFloatWindowStyle,
+    loadButtonThemeStyle,
+    loadPluginSettingsStyle,
+    loadExchangeDiaryCSS,
+    loadTheme,
+    initThemeSelector,
+    updateThemeUI,
+    initButtonThemeSelector,
+    updateButtonThemeUI,
+    initFontColorSelector,
+    updateFontColorUI,
+    applyFontColorMode,
+  } = createThemeManager({
+    extensionSettings,
+    extensionName,
+    extensionFolderPath,
+    getCurrentSettings,
+    saveSettings,
+    saveSettingsDebounced,
+    notify,
+  });
+
+  const { loadSettings } = createSettingsManager({
+    extensionSettings,
+    extensionName,
+    defaultSettings,
+    getCurrentSettings,
+    exchangeDiaryStorage,
+    loadFloatWindowStyle,
+    loadPluginSettingsStyle,
+    loadTheme,
+    loadButtonThemeStyle,
+    initThemeSelector,
+    updateThemeUI,
+    initButtonThemeSelector,
+    updateButtonThemeUI,
+    initFontColorSelector,
+    updateFontColorUI,
+    applyFontColorMode,
+    getAutoDiaryConfig,
+    saveAutoDiaryInterval,
+    updateAutoDiaryStatus,
+    notify,
+  });
+
+  return {
+    loadFloatWindowStyle,
+    loadButtonThemeStyle,
+    loadPluginSettingsStyle,
+    loadExchangeDiaryCSS,
+    loadTheme,
+    initThemeSelector,
+    updateThemeUI,
+    initButtonThemeSelector,
+    updateButtonThemeUI,
+    initFontColorSelector,
+    updateFontColorUI,
+    applyFontColorMode,
+    loadSettings,
+  };
+}
