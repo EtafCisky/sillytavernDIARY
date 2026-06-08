@@ -53,10 +53,19 @@ export function createPluginStorage({ extensionSettings, extensionName, saveSett
     }
   }
 
+  function loadLegacyStorageSnapshot() {
+    return {
+      diaries: fileStorageApi.getLegacyData('diaries'),
+      recycleBin: fileStorageApi.getLegacyData('recycleBin'),
+      exchangeDiaries: fileStorageApi.getLegacyData('exchangeDiaries'),
+    };
+  }
+
   return {
     exchangeDiaryStorage,
     initializeFileStorage,
     getFileStorageStatus: fileStorageApi.getStatus,
+    loadLegacyStorageSnapshot,
     migrateExchangeDiaryData,
     loadAllDiaries: diaryStore.loadAllDiaries,
     saveAllDiaries: diaryStore.saveAllDiaries,

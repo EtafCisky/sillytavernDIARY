@@ -5,6 +5,8 @@ export function createImportExportManager({
   loadAllRecycleBin,
   saveAllRecycleBin,
   exchangeDiaryStorage,
+  loadLegacyStorageSnapshot = () => ({ diaries: {}, recycleBin: {}, exchangeDiaries: {} }),
+  getFileStorageStatus = () => ({}),
   notify,
   confirmImport = message => confirm(message),
 }) {
@@ -36,6 +38,7 @@ export function createImportExportManager({
       const diaries = await loadAllDiaries();
       const recycleBin = await loadAllRecycleBin();
       const exchangeDiaries = exchangeDiaryStorage.loadAll();
+      const settingsBackup = loadLegacyStorageSnapshot();
       const exchangeStats = getExchangeDiaryStats(exchangeDiaries);
 
       const exportData = {
@@ -46,6 +49,11 @@ export function createImportExportManager({
           diaries,
           recycleBin,
           exchangeDiaries,
+        },
+        storageBackup: {
+          note: 'data 是当前插件正在读取的数据；settings 是 extension_settings 中残留的旧仓库备份，用于迁移前后兜底。',
+          activeSourceStatus: getFileStorageStatus(),
+          settings: settingsBackup,
         },
         statistics: {
           totalDiaries: Object.values(diaries).reduce((sum, arr) => sum + arr.length, 0),
@@ -64,7 +72,8 @@ export function createImportExportManager({
           `回收站: ${exportData.statistics.totalRecycleBin} 条\n` +
           `角色: ${exportData.statistics.characters} 个\n` +
           `交换日记线程: ${exportData.statistics.exchangeDiaryThreads} 个\n` +
-          `交换日记条目: ${exportData.statistics.exchangeDiaryEntries} 条`,
+          `交换日记条目: ${exportData.statistics.exchangeDiaryEntries} 条\n\n` +
+          `本次备份已同时包含：当前读取数据 + settings 旧仓库备份。`,
         '数据导出',
         { timeOut: 5000 },
       );

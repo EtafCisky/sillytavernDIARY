@@ -20,9 +20,13 @@
         "普通日记保存到 user/files/diary-data.json。",
         "交换日记保存到 user/files/diary-exchange-data.json。",
         "回收站数据保存到 user/files/diary-recycle-bin.json。",
+        "建议升级前先使用本体插件的导出功能做一次备份；新版导出会同时包含当前读取的数据和 settings 旧仓库备份。",
+        "在使用新版本写入新日记前，如果独立文件还不存在，本体插件依旧可以通过 settings 回退读取旧日记。",
+        "一旦对应的独立文件已经存在并且可以读取，本体插件就只读取独立文件，不再读取 settings 里的旧仓库。",
         "如果独立文件读取或写入失败，插件会自动回退到 extension_settings，尽量避免旧数据丢失或无法读取。",
         "浏览器控制台可运行 window.diaryFileStorageStatus() 查看当前三类数据使用的是独立文件还是 settings 回退。",
-        "迁移功能放在单独的 diary-migration-tool 中，本体插件不增加迁移界面。"
+        "没有运行迁移工具时也可能看到旧日记，这是 settings 回退显示，不代表旧数据已经写入独立文件。",
+        "从旧版本升级建议使用单独的 diary-migration-tool 把旧数据合并写入独立文件；迁移成功后工具会清理 settings 里的旧数据仓库。"
       ]
     },
     {
@@ -47,7 +51,15 @@
   },
   "migration": {
     "required": false,
-    "message": "旧 settings 数据会作为回退继续保留。只有需要把 settings 主动写入独立文件时，才需要运行单独的 diary-migration-tool。",
-    "steps": []
+    "title": "旧数据迁移说明",
+    "message": "如果你是从旧版本升级，建议先用本体插件导出一次备份。独立文件还没有创建时，本体仍会读取 settings 里的旧日记；但只要独立文件已经存在并可读取，本体就只读取独立文件，不再读取 settings 旧仓库。为了让旧数据正式进入新的独立文件存储，请安装并运行单独的 diary-migration-tool；迁移工具会合并写入，不会清空独立文件里已有的新日记，成功后会清理 settings 里的旧数据仓库。",
+    "downloadUrl": "https://github.com/EtafCisky/diary-migration-tool",
+    "steps": [
+      "升级或迁移前，先在本体插件里执行一次“导出数据”作为备份。",
+      "安装并启用 diary-migration-tool。",
+      "在迁移工具中选择“settings -> 独立文件存储”。",
+      "确认检查结果无误后点击“执行迁移”。",
+      "迁移完成后可在控制台运行 window.diaryFileStorageStatus()，看到 source 为 file 即表示本体正在读取独立文件。"
+    ]
   }
 }

@@ -42,8 +42,15 @@ export function createUpdateNotificationManager({ pluginVersion, extensionFolder
       });
     }
 
-    if (changelog.migration && changelog.migration.required) {
-      message += `<p><strong>需要迁移：${escapeHtml(changelog.migration.message)}</strong></p><ol>`;
+    if (changelog.migration) {
+      const migrationTitle = changelog.migration.title || (changelog.migration.required ? '需要迁移' : '迁移说明');
+      message += `<p><strong>${escapeHtml(migrationTitle)}：${escapeHtml(changelog.migration.message)}</strong></p>`;
+
+      if (changelog.migration.downloadUrl) {
+        message += `<p>迁移工具地址：<a href="${escapeAttribute(changelog.migration.downloadUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(changelog.migration.downloadUrl)}</a></p>`;
+      }
+
+      message += '<ol>';
       changelog.migration.steps.forEach(step => {
         message += `<li>${escapeHtml(step)}</li>`;
       });
@@ -55,7 +62,7 @@ export function createUpdateNotificationManager({ pluginVersion, extensionFolder
 
   async function showUpdateNotification() {
     try {
-      const changelogPath = `${extensionFolderPath}/changelog.json`;
+      const changelogPath = `${extensionFolderPath}/changelog.json?v=${encodeURIComponent(pluginVersion)}&t=${Date.now()}`;
       const response = await fetch(changelogPath);
       if (!response.ok) {
         throw new Error('Unable to load changelog.');
@@ -82,6 +89,10 @@ export function createUpdateNotificationManager({ pluginVersion, extensionFolder
     };
 
     return String(value ?? '').replace(/[&<>"']/g, char => htmlEscapes[char]);
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, '&#96;');
   }
 
   function closeUpdateNotification() {

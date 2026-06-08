@@ -42,6 +42,8 @@ function createExchangeSupportAndLibraryCompositions({
     loadAllRecycleBin: storage.loadAllRecycleBin,
     saveAllRecycleBin: storage.saveAllRecycleBin,
     exchangeDiaryStorage: storage.exchangeDiaryStorage,
+    loadLegacyStorageSnapshot: storage.loadLegacyStorageSnapshot,
+    getFileStorageStatus: storage.getFileStorageStatus,
     notify,
   });
 

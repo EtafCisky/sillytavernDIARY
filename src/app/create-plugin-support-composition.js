@@ -16,6 +16,8 @@ export function createPluginSupportComposition({
   loadAllRecycleBin,
   saveAllRecycleBin,
   exchangeDiaryStorage,
+  loadLegacyStorageSnapshot,
+  getFileStorageStatus,
   notify,
 }) {
   const {
@@ -35,6 +37,8 @@ export function createPluginSupportComposition({
     loadAllRecycleBin,
     saveAllRecycleBin,
     exchangeDiaryStorage,
+    loadLegacyStorageSnapshot,
+    getFileStorageStatus,
     notify,
   });
 

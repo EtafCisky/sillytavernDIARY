@@ -47,7 +47,13 @@
 - 交换日记：`user/files/diary-exchange-data.json`
 - 回收站：`user/files/diary-recycle-bin.json`
 
-如果文件读取或写入失败，插件会自动回退到原来的 `extension_settings.sillytavernDIARY` 数据，尽量避免数据丢失。旧 settings 数据不会被本体插件自动删除；需要手动迁移时，请使用单独的 `diary-migration-tool`。
+如果文件读取或写入失败，插件会自动回退到原来的 `extension_settings.sillytavernDIARY` 数据，尽量避免数据丢失。本体插件不会自动迁移或删除旧 settings 数据；从旧版本升级后，建议先使用本体插件的“导出数据”做一次备份，再使用单独的 `diary-migration-tool` 把旧 settings 数据正式写入独立文件。迁移工具成功写入三份独立文件后，会清理 settings 里的普通日记、交换日记、回收站旧数据。
+
+注意：在使用新版本写入新日记前，如果独立文件还不存在，本体依旧可以临时读取 settings 里的旧日记。只要对应的独立文件已经存在并可读取，本体就只显示独立文件中的数据，不再读取 settings 里的旧仓库。迁移工具会把 settings 里的旧数据合并到独立文件里，不会清空独立文件中已经存在的新日记，然后清理 settings 里的旧数据仓库。
+
+导出功能会同时导出“当前插件正在读取的数据”和“settings 旧仓库备份”，迁移前建议先导出保存一份，方便之后排查或手动恢复。
+
+迁移工具地址：<https://github.com/EtafCisky/diary-migration-tool>
 
 ### ✨ 核心特色
 
@@ -802,7 +808,10 @@ import { executeSlashCommandsWithOptions } from "slash-commands.js";
 - 普通日记、交换日记、回收站分别写入 `user/files` 下的三份 JSON 文件
 - 文件读写失败时回退到 `extension_settings`，保留旧数据兜底
 - 增加 `window.diaryFileStorageStatus()` 便于检查当前存储状态
-- 迁移工作交给单独的 `diary-migration-tool`，本体插件不增加迁移 UI
+- 独立文件还不存在时，本体仍可读取 settings 旧日记；独立文件存在并可读后，本体只读取独立文件
+- 导出功能会同时包含当前读取数据和 settings 旧仓库备份，迁移前建议先导出备份
+- 从旧版本升级建议运行单独的 `diary-migration-tool`：<https://github.com/EtafCisky/diary-migration-tool>
+- 迁移工具会把旧 settings 数据合并进独立文件，并在成功后清理 settings 旧数据仓库；本体插件不增加迁移 UI
 
 ### v7.0.0 (2026-06-08)
 
