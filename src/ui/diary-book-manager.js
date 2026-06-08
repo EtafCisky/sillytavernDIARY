@@ -42,6 +42,14 @@ export function createDiaryBookManager({
     return String(value ?? '');
   }
 
+  function formatDiaryCount(count) {
+    return `${Number(count) || 0}`;
+  }
+
+  function formatPageInfo(currentPage, totalPages) {
+    return `第 ${currentPage} 页，共 ${totalPages} 页`;
+  }
+
   function switchDiaryBookView(targetViewId) {
     const allViews = [
       '#diary-book-cover-view',
@@ -193,7 +201,7 @@ export function createDiaryBookManager({
       .on(`click${diaryBookEventNamespace}`, '#diary-book-delete-btn', async function (event) {
         event.preventDefault();
 
-        const confirmed = confirm('Delete this diary entry? This action cannot be undone.');
+        const confirmed = confirm('确定要删除这篇日记吗？此操作无法撤销。');
         if (!confirmed) {
           return;
         }
@@ -281,8 +289,8 @@ export function createDiaryBookManager({
         <div class="diary-book-character-info">
           <div class="diary-book-character-name">${escapeHtml(characterName)}</div>
           <div class="diary-book-character-stats">
-            <span class="diary-book-character-count">${escapeHtml(character.count)}</span>
-            <span class="diary-book-character-count-label">entries</span>
+            <span class="diary-book-character-count">${escapeHtml(formatDiaryCount(character.count))}</span>
+            <span class="diary-book-character-count-label">篇日记</span>
           </div>
         </div>
         <div class="diary-book-character-arrow">></div>
@@ -291,7 +299,7 @@ export function createDiaryBookManager({
   }
 
   function updateCharacterPagination() {
-    $('#diary-book-page-info').text(`Page ${characterListState.currentPage} / ${characterListState.totalPages}`);
+    $('#diary-book-page-info').text(formatPageInfo(characterListState.currentPage, characterListState.totalPages));
     $('#diary-book-prev-page').prop('disabled', characterListState.currentPage <= 1);
     $('#diary-book-next-page').prop('disabled', characterListState.currentPage >= characterListState.totalPages);
   }
@@ -313,7 +321,7 @@ export function createDiaryBookManager({
   async function showDiaryBookDiaryList(characterName) {
     diaryListState.currentCharacter = characterName;
     switchDiaryBookView('#diary-book-diary-list-view');
-    $('#diary-book-character-name').text(`${characterName} diaries`);
+    $('#diary-book-character-name').text(characterName);
 
     await loadDiaryData(characterName);
     renderDiaryList();
@@ -403,7 +411,7 @@ export function createDiaryBookManager({
   }
 
   function updateDiaryPagination() {
-    $('#diary-book-diary-page-info').text(`Page ${diaryListState.currentPage} / ${diaryListState.totalPages}`);
+    $('#diary-book-diary-page-info').text(formatPageInfo(diaryListState.currentPage, diaryListState.totalPages));
     $('#diary-book-diary-prev-page').prop('disabled', diaryListState.currentPage <= 1);
     $('#diary-book-diary-next-page').prop('disabled', diaryListState.currentPage >= diaryListState.totalPages);
   }
@@ -426,7 +434,7 @@ export function createDiaryBookManager({
     try {
       const diaryData = await loadDiaryDetailData(characterName, diaryId);
       if (!diaryData) {
-        notify.error('Failed to load diary detail', 'Diary Book');
+        notify.error('加载日记详情失败', '私人日记');
         return;
       }
 
@@ -435,7 +443,7 @@ export function createDiaryBookManager({
       renderDiaryDetail(diaryData);
     } catch (error) {
       console.error('[Diary Plugin] Failed to show diary detail:', error);
-      notify.error('Failed to show diary detail', 'Diary Book');
+      notify.error('显示日记详情失败', '私人日记');
     }
   }
 
@@ -450,7 +458,7 @@ export function createDiaryBookManager({
         id: diary.id,
         title: diary.title,
         time: diary.time,
-        content: diary.content || 'No content',
+        content: diary.content || '暂无内容',
         character: characterName,
         originalTitle: diary.title,
       };
@@ -467,16 +475,16 @@ export function createDiaryBookManager({
       $('#diary-book-detail-text').html(formatDiaryContent(diaryData.content));
     } catch (error) {
       console.error('[Diary Plugin] Failed to render diary detail:', error);
-      $('#diary-book-detail-title').text('Load failed');
+      $('#diary-book-detail-title').text('加载失败');
       $('#diary-book-detail-time').text('');
-      $('#diary-book-detail-text').text('Unable to display diary content');
+      $('#diary-book-detail-text').text('无法显示日记内容');
     }
   }
 
   async function deleteDiary() {
     try {
       if (!diaryDetailState.currentEntry) {
-        notify.error('No diary selected', 'Delete Diary');
+        notify.error('未选择要删除的日记', '删除日记');
         return;
       }
 
@@ -484,11 +492,11 @@ export function createDiaryBookManager({
       const result = await deleteDiaryFromFile(characterName, diaryId);
 
       if (!result.success) {
-        notify.error(`Failed to delete diary: ${result.error}`, 'Delete Diary');
+        notify.error(`删除日记失败：${result.error}`, '删除日记');
         return;
       }
 
-      notify.success('Diary deleted', 'Diary Book');
+      notify.success('日记已删除', '私人日记');
       diaryDetailState.currentEntry = null;
 
       if (characterName) {
@@ -498,14 +506,14 @@ export function createDiaryBookManager({
       }
     } catch (error) {
       console.error('[Diary Plugin] Failed to delete diary:', error);
-      notify.error(`Failed to delete diary: ${error.message}`, 'Delete Diary');
+      notify.error(`删除日记失败：${error.message}`, '删除日记');
     }
   }
 
   function formatDiaryContent(content) {
     const escapedContent = escapeHtml(content);
     if (!escapedContent || !safeText(content).trim()) {
-      return '<p class="diary-book-detail-empty">No content yet.</p>';
+      return '<p class="diary-book-detail-empty">暂无内容。</p>';
     }
 
     let formattedContent = escapedContent.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
