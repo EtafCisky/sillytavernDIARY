@@ -5,16 +5,163 @@ export function createImportExportManager({
   loadAllRecycleBin,
   saveAllRecycleBin,
   exchangeDiaryStorage,
+  loadDiaryGroupData = async () => ({ groups: {}, assignments: {} }),
+  saveDiaryGroupData = async () => false,
   loadLegacyStorageSnapshot = () => ({ diaries: {}, recycleBin: {}, exchangeDiaries: {} }),
   getFileStorageStatus = () => ({}),
   notify,
   confirmImport = message => confirm(message),
 }) {
+  const LEGACY_DIARY_GROUP_METADATA_KEY = '__diaryBookGroups';
+
+  function getDiaryCharacterEntries(diaries = {}) {
+    return Object.entries(diaries).filter(([, value]) => Array.isArray(value));
+  }
+
+  function countDiaryEntries(diaries = {}) {
+    return getDiaryCharacterEntries(diaries).reduce((sum, [, entries]) => sum + entries.length, 0);
+  }
+
   function getExchangeDiaryStats(exchangeDiaries) {
     const threads = exchangeDiaries?.threads || {};
     return {
       exchangeDiaryThreads: Object.keys(threads).length,
       exchangeDiaryEntries: Object.values(threads).reduce((sum, thread) => sum + (thread.entries?.length || 0), 0),
+    };
+  }
+
+  function normalizeGroupName(groupName) {
+    return String(groupName ?? '').trim();
+  }
+
+  function normalizeDiaryId(diaryId) {
+    return String(diaryId ?? '').trim();
+  }
+
+  function normalizeDiaryGroups(diaryGroups) {
+    if (!diaryGroups || typeof diaryGroups !== 'object' || Array.isArray(diaryGroups)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(diaryGroups)
+        .map(([characterName, groups]) => [
+          String(characterName || '').trim(),
+          [...new Set((Array.isArray(groups) ? groups : []).map(normalizeGroupName).filter(Boolean))],
+        ])
+        .filter(([characterName, groups]) => characterName && groups.length),
+    );
+  }
+
+  function normalizeDiaryGroupAssignments(diaryGroupAssignments) {
+    if (!diaryGroupAssignments || typeof diaryGroupAssignments !== 'object' || Array.isArray(diaryGroupAssignments)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(diaryGroupAssignments)
+        .map(([characterName, assignments]) => {
+          const key = String(characterName || '').trim();
+          if (!key || !assignments || typeof assignments !== 'object' || Array.isArray(assignments)) {
+            return [key, {}];
+          }
+
+          return [
+            key,
+            Object.fromEntries(
+              Object.entries(assignments)
+                .map(([diaryId, groupName]) => [normalizeDiaryId(diaryId), normalizeGroupName(groupName)])
+                .filter(([diaryId, groupName]) => diaryId && groupName),
+            ),
+          ];
+        })
+        .filter(([characterName, assignments]) => characterName && Object.keys(assignments).length),
+    );
+  }
+
+  function mergeDiaryGroups(existingGroups = {}, importedGroups = {}) {
+    const mergedGroups = normalizeDiaryGroups(existingGroups);
+    const normalizedImportedGroups = normalizeDiaryGroups(importedGroups);
+
+    for (const [characterName, groups] of Object.entries(normalizedImportedGroups)) {
+      mergedGroups[characterName] = [...new Set([...(mergedGroups[characterName] || []), ...groups])];
+    }
+
+    return mergedGroups;
+  }
+
+  function mergeDiaryGroupAssignments(existingAssignments = {}, importedAssignments = {}) {
+    const mergedAssignments = normalizeDiaryGroupAssignments(existingAssignments);
+    const normalizedImportedAssignments = normalizeDiaryGroupAssignments(importedAssignments);
+
+    for (const [characterName, assignments] of Object.entries(normalizedImportedAssignments)) {
+      mergedAssignments[characterName] = {
+        ...(mergedAssignments[characterName] || {}),
+        ...assignments,
+      };
+    }
+
+    return mergedAssignments;
+  }
+
+  function collectGroupsFromAssignments(diaryGroupAssignments = {}) {
+    const groupsByCharacter = {};
+
+    for (const [characterName, assignments] of Object.entries(normalizeDiaryGroupAssignments(diaryGroupAssignments))) {
+      const groups = [...new Set(Object.values(assignments).map(normalizeGroupName).filter(Boolean))];
+      if (groups.length) {
+        groupsByCharacter[characterName] = groups;
+      }
+    }
+
+    return groupsByCharacter;
+  }
+
+  function collectAssignedDiaryGroups(diaries = {}) {
+    const groupsByCharacter = {};
+
+    for (const [characterName, entries] of getDiaryCharacterEntries(diaries)) {
+      const groups = [
+        ...new Set(entries.map(diary => normalizeGroupName(diary?.group)).filter(Boolean)),
+      ];
+
+      if (groups.length) {
+        groupsByCharacter[characterName] = groups;
+      }
+    }
+
+    return groupsByCharacter;
+  }
+
+  function getImportDiaryGroupData(importData) {
+    const legacyApiSettings = importData?.data?.apiSettings || {};
+    const explicitDiaryGroups = importData?.data?.diaryGroups || {};
+
+    return {
+      groups: mergeDiaryGroups(explicitDiaryGroups.groups, legacyApiSettings.diaryGroups),
+      assignments: mergeDiaryGroupAssignments(explicitDiaryGroups.assignments, legacyApiSettings.diaryGroupAssignments),
+    };
+  }
+
+  function collectImportDiaryGroups(importData) {
+    const importGroupData = getImportDiaryGroupData(importData);
+
+    return mergeDiaryGroups(
+      mergeDiaryGroups(
+        mergeDiaryGroups(
+          importGroupData.groups,
+          importData?.data?.diaries?.[LEGACY_DIARY_GROUP_METADATA_KEY],
+        ),
+        collectAssignedDiaryGroups(importData?.data?.diaries),
+      ),
+      collectGroupsFromAssignments(importGroupData.assignments),
+    );
+  }
+
+  function getExportDiaryGroups(diaryGroupData = {}) {
+    return {
+      groups: normalizeDiaryGroups(diaryGroupData.groups),
+      assignments: normalizeDiaryGroupAssignments(diaryGroupData.assignments),
     };
   }
 
@@ -38,6 +185,7 @@ export function createImportExportManager({
       const diaries = await loadAllDiaries();
       const recycleBin = await loadAllRecycleBin();
       const exchangeDiaries = exchangeDiaryStorage.loadAll();
+      const diaryGroups = await loadDiaryGroupData();
       const settingsBackup = loadLegacyStorageSnapshot();
       const exchangeStats = getExchangeDiaryStats(exchangeDiaries);
 
@@ -49,6 +197,7 @@ export function createImportExportManager({
           diaries,
           recycleBin,
           exchangeDiaries,
+          diaryGroups: getExportDiaryGroups(diaryGroups),
         },
         storageBackup: {
           note: 'data 是当前插件正在读取的数据；settings 是 extension_settings 中残留的旧仓库备份，用于迁移前后兜底。',
@@ -56,9 +205,9 @@ export function createImportExportManager({
           settings: settingsBackup,
         },
         statistics: {
-          totalDiaries: Object.values(diaries).reduce((sum, arr) => sum + arr.length, 0),
+          totalDiaries: countDiaryEntries(diaries),
           totalRecycleBin: Object.values(recycleBin).reduce((sum, arr) => sum + arr.length, 0),
-          characters: Object.keys(diaries).length,
+          characters: getDiaryCharacterEntries(diaries).length,
           ...exchangeStats,
         },
       };
@@ -101,26 +250,47 @@ export function createImportExportManager({
     return (Array.isArray(items) ? items : []).reduce((maxId, item) => Math.max(maxId, Number(item?.id) || 0), 0);
   }
 
-  function mergeDiaries(existingDiaries, importedDiaries = {}) {
+  function mergeDiaries(existingDiaries, importedDiaries = {}, importedDiaryGroupAssignments = {}) {
     const mergedDiaries = { ...existingDiaries };
+    const remappedDiaryGroupAssignments = {};
+    const normalizedImportedAssignments = normalizeDiaryGroupAssignments(importedDiaryGroupAssignments);
 
-    for (const characterName in importedDiaries) {
+    for (const [characterName, importedCharacterDiaries] of getDiaryCharacterEntries(importedDiaries)) {
       if (!mergedDiaries[characterName]) {
         mergedDiaries[characterName] = [];
       }
 
       const maxId = getMaxNumericId(mergedDiaries[characterName]);
 
-      const remappedDiaries = importedDiaries[characterName].map((diary, index) => ({
-        ...diary,
-        id: maxId + index + 1,
-        createTime: diary.createTime || new Date().toISOString(),
-      }));
+      const remappedDiaries = importedCharacterDiaries.map((diary, index) => {
+        const newId = maxId + index + 1;
+        const group = normalizeGroupName(
+          normalizedImportedAssignments[characterName]?.[normalizeDiaryId(diary.id)] || diary.group,
+        );
+
+        if (group) {
+          if (!remappedDiaryGroupAssignments[characterName]) {
+            remappedDiaryGroupAssignments[characterName] = {};
+          }
+          remappedDiaryGroupAssignments[characterName][String(newId)] = group;
+        }
+
+        const { group: _group, ...diaryWithoutGroup } = diary;
+
+        return {
+          ...diaryWithoutGroup,
+          id: newId,
+          createTime: diary.createTime || new Date().toISOString(),
+        };
+      });
 
       mergedDiaries[characterName].push(...remappedDiaries);
     }
 
-    return mergedDiaries;
+    return {
+      diaries: mergedDiaries,
+      diaryGroupAssignments: remappedDiaryGroupAssignments,
+    };
   }
 
   function mergeRecycleBin(existingRecycleBin, importedRecycleBinData = {}) {
@@ -239,16 +409,37 @@ export function createImportExportManager({
     const existingDiaries = await loadAllDiaries();
     const existingRecycleBin = await loadAllRecycleBin();
     const existingExchangeDiaries = exchangeDiaryStorage.loadAll();
+    const existingDiaryGroupData = await loadDiaryGroupData();
+    const importDiaryGroupData = getImportDiaryGroupData(importData);
 
-    const mergedDiaries = mergeDiaries(existingDiaries, importData.data.diaries);
+    const {
+      diaries: mergedDiaries,
+      diaryGroupAssignments: remappedImportedDiaryGroupAssignments,
+    } = mergeDiaries(
+      existingDiaries,
+      importData.data.diaries,
+      importDiaryGroupData.assignments,
+    );
     const mergedRecycleBin = mergeRecycleBin(existingRecycleBin, importData.data.recycleBin);
     const mergedExchangeDiaries = mergeExchangeDiaries(existingExchangeDiaries, importData.data.exchangeDiaries);
+    const mergedDiaryGroupAssignments = mergeDiaryGroupAssignments(
+      existingDiaryGroupData.assignments,
+      remappedImportedDiaryGroupAssignments,
+    );
+    const mergedDiaryGroups = mergeDiaryGroups(
+      mergeDiaryGroups(existingDiaryGroupData.groups, collectImportDiaryGroups(importData)),
+      collectGroupsFromAssignments(mergedDiaryGroupAssignments),
+    );
 
     await saveAllDiaries(mergedDiaries);
     await saveAllRecycleBin(mergedRecycleBin);
     exchangeDiaryStorage.saveAll(mergedExchangeDiaries);
+    await saveDiaryGroupData({
+      groups: mergedDiaryGroups,
+      assignments: mergedDiaryGroupAssignments,
+    });
 
-    const totalDiaries = Object.values(mergedDiaries).reduce((sum, arr) => sum + arr.length, 0);
+    const totalDiaries = countDiaryEntries(mergedDiaries);
     const totalRecycleBin = Object.values(mergedRecycleBin).reduce((sum, arr) => sum + arr.length, 0);
     const exchangeStats = getExchangeDiaryStats(mergedExchangeDiaries);
 

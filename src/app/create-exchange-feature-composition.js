@@ -7,6 +7,7 @@ import { PromptBuilder } from '../prompts/prompt-builder.js';
 
 export function createExchangeFeatureComposition({
   executeSlashCommandsWithOptions,
+  customApiClient,
   exchangeDiaryStorage,
   getCurrentFloor,
   isAIGenerating,
@@ -20,6 +21,7 @@ export function createExchangeFeatureComposition({
 }) {
   const ghostwriteManager = createGhostwriteManager({
     executeSlashCommandsWithOptions,
+    customApiClient,
   });
 
   class FormatValidator extends ExchangeDiaryFormatValidator {}
@@ -28,6 +30,7 @@ export function createExchangeFeatureComposition({
     exchangeDiaryStorage,
     formatValidator: FormatValidator,
     executeSlashCommandsWithOptions,
+    customApiClient,
     getCurrentFloor,
   });
 
@@ -40,6 +43,7 @@ export function createExchangeFeatureComposition({
     formatValidator: FormatValidator,
     promptBuilder: PromptBuilder,
     executeSlashCommandsWithOptions,
+    customApiClient,
     saveToRecycleBinFile,
     loadAllRecycleBin,
     saveAllRecycleBin,

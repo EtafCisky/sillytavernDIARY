@@ -3,6 +3,8 @@ import { createDiaryStore } from './diary-store.js';
 import { createExchangeDiaryStorage } from './exchange-diary-store.js';
 import { createDiaryFileStorageApi } from './file-storage-api.js';
 import { createRecycleBinStore } from './recycle-bin-store.js';
+import { createApiSettingsStore } from './api-settings-store.js';
+import { createDiaryGroupStore } from './diary-group-store.js';
 
 export function createPluginStorage({ extensionSettings, extensionName, saveSettings, getRequestHeaders }) {
   const fileStorageApi = createDiaryFileStorageApi({
@@ -19,8 +21,10 @@ export function createPluginStorage({ extensionSettings, extensionName, saveSett
     fileStorageApi,
   });
 
-  const diaryStore = createDiaryStore(dataStorageApi);
   const recycleBinStore = createRecycleBinStore(dataStorageApi);
+  const apiSettingsStore = createApiSettingsStore(fileStorageApi);
+  const diaryGroupStore = createDiaryGroupStore(fileStorageApi);
+  const diaryStore = createDiaryStore(dataStorageApi, diaryGroupStore);
   const exchangeDiaryStorage = createExchangeDiaryStorage({
     extensionSettings,
     extensionName,
@@ -58,6 +62,8 @@ export function createPluginStorage({ extensionSettings, extensionName, saveSett
       diaries: fileStorageApi.getLegacyData('diaries'),
       recycleBin: fileStorageApi.getLegacyData('recycleBin'),
       exchangeDiaries: fileStorageApi.getLegacyData('exchangeDiaries'),
+      apiSettings: fileStorageApi.getLegacyData('apiSettings'),
+      diaryGroups: fileStorageApi.getLegacyData('diaryGroups'),
     };
   }
 
@@ -66,6 +72,13 @@ export function createPluginStorage({ extensionSettings, extensionName, saveSett
     initializeFileStorage,
     getFileStorageStatus: fileStorageApi.getStatus,
     loadLegacyStorageSnapshot,
+    loadApiSettings: apiSettingsStore.loadApiSettings,
+    loadApiSettingsSync: apiSettingsStore.loadApiSettingsSync,
+    saveApiSettings: apiSettingsStore.saveApiSettings,
+    saveApiSettingsQueued: apiSettingsStore.saveApiSettingsQueued,
+    loadDiaryGroupData: diaryGroupStore.loadDiaryGroupData,
+    loadDiaryGroupDataSync: diaryGroupStore.loadDiaryGroupDataSync,
+    saveDiaryGroupData: diaryGroupStore.saveDiaryGroupData,
     migrateExchangeDiaryData,
     loadAllDiaries: diaryStore.loadAllDiaries,
     saveAllDiaries: diaryStore.saveAllDiaries,
@@ -75,6 +88,11 @@ export function createPluginStorage({ extensionSettings, extensionName, saveSett
     getCharacterDiaries: diaryStore.getCharacterDiaries,
     getAllCharacters: diaryStore.getAllCharacters,
     deleteDiaryFromFile: diaryStore.deleteDiaryFromFile,
+    updateDiaryRemark: diaryStore.updateDiaryRemark,
+    getDiaryGroups: diaryStore.getDiaryGroups,
+    createDiaryGroup: diaryStore.createDiaryGroup,
+    updateDiaryGroup: diaryStore.updateDiaryGroup,
+    deleteDiaryGroup: diaryStore.deleteDiaryGroup,
     loadAllRecycleBin: recycleBinStore.loadAllRecycleBin,
     saveAllRecycleBin: recycleBinStore.saveAllRecycleBin,
     getNextRecycleBinNumber: recycleBinStore.getNextRecycleBinNumber,

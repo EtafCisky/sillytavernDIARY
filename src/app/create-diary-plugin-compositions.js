@@ -5,6 +5,7 @@ import { createDiaryLibraryComposition } from '../app/create-diary-library-compo
 import { createSettingsUiComposition } from '../app/create-settings-ui-composition.js';
 import { createDiaryWritingComposition } from '../app/create-diary-writing-composition.js';
 import { parseDiaryBlock } from '../parser/diary-parser.js';
+import { createCustomApiClient } from '../ai/custom-api-client.js';
 
 function createExchangeSupportAndLibraryCompositions({
   extensionName,
@@ -13,9 +14,11 @@ function createExchangeSupportAndLibraryCompositions({
   runtime,
   storage,
   notify,
+  customApiClient,
 }) {
   const exchangeFeature = createExchangeFeatureComposition({
     executeSlashCommandsWithOptions: runtime.executeSlashCommandsWithOptions,
+    customApiClient,
     exchangeDiaryStorage: storage.exchangeDiaryStorage,
     getCurrentFloor: runtime.getCurrentFloor,
     isAIGenerating: runtime.isAIGenerating,
@@ -42,6 +45,8 @@ function createExchangeSupportAndLibraryCompositions({
     loadAllRecycleBin: storage.loadAllRecycleBin,
     saveAllRecycleBin: storage.saveAllRecycleBin,
     exchangeDiaryStorage: storage.exchangeDiaryStorage,
+    loadDiaryGroupData: storage.loadDiaryGroupData,
+    saveDiaryGroupData: storage.saveDiaryGroupData,
     loadLegacyStorageSnapshot: storage.loadLegacyStorageSnapshot,
     getFileStorageStatus: storage.getFileStorageStatus,
     notify,
@@ -52,6 +57,11 @@ function createExchangeSupportAndLibraryCompositions({
     getCharacterDiaries: storage.getCharacterDiaries,
     loadDiaryFromFile: storage.loadDiaryFromFile,
     deleteDiaryFromFile: storage.deleteDiaryFromFile,
+    updateDiaryRemark: storage.updateDiaryRemark,
+    getDiaryGroups: storage.getDiaryGroups,
+    createDiaryGroup: storage.createDiaryGroup,
+    updateDiaryGroup: storage.updateDiaryGroup,
+    deleteDiaryGroup: storage.deleteDiaryGroup,
     notify,
   });
 
@@ -72,6 +82,7 @@ function createWritingSettingsAndOverlayCompositions({
   exchangeFeature,
   supportComposition,
   libraryComposition,
+  customApiClient,
 }) {
   let closeFloatMenu = () => {};
 
@@ -81,6 +92,7 @@ function createWritingSettingsAndOverlayCompositions({
     getContext: runtime.getContext,
     parseDiaryBlock,
     executeSlashCommandsWithOptions: runtime.executeSlashCommandsWithOptions,
+    customApiClient,
     saveDiaryToFile: storage.saveDiaryToFile,
     saveToRecycleBinFile: storage.saveToRecycleBinFile,
     showSaveSuccessDialog: libraryComposition.showSaveSuccessDialog,
@@ -113,6 +125,9 @@ function createWritingSettingsAndOverlayCompositions({
     getAutoDiaryConfig: writingComposition.getAutoDiaryConfig,
     saveAutoDiaryInterval: writingComposition.saveAutoDiaryInterval,
     updateAutoDiaryStatus: writingComposition.updateAutoDiaryStatus,
+    loadApiSettingsSync: storage.loadApiSettingsSync,
+    saveApiSettings: storage.saveApiSettings,
+    testCustomApiConnection: settings => customApiClient.testConnection(settings),
     notify,
   });
 
@@ -194,6 +209,12 @@ export function createDiaryPluginCompositions({
   storage,
   notify,
 }) {
+  const customApiClient = createCustomApiClient({
+    loadApiSettingsSync: storage.loadApiSettingsSync,
+    saveApiSettings: storage.saveApiSettings,
+    getRequestHeaders: runtime.getRequestHeaders,
+  });
+
   const {
     exchangeFeature,
     supportComposition,
@@ -205,6 +226,7 @@ export function createDiaryPluginCompositions({
     runtime,
     storage,
     notify,
+    customApiClient,
   });
 
   const {
@@ -221,6 +243,7 @@ export function createDiaryPluginCompositions({
     exchangeFeature,
     supportComposition,
     libraryComposition,
+    customApiClient,
   });
 
   return createBootstrapDependencies({

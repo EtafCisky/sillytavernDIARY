@@ -7,6 +7,7 @@ export function createTriggerManager({
   formatValidator,
   promptBuilder,
   executeSlashCommandsWithOptions,
+  customApiClient,
   saveToRecycleBinFile,
   loadAllRecycleBin,
   saveAllRecycleBin,
@@ -400,6 +401,11 @@ export function createTriggerManager({
 
     async sendPrompt(prompt) {
       try {
+        if (customApiClient?.isReady?.()) {
+          console.log('[Custom API] Using diary-specific API for exchange trigger generation');
+          return await customApiClient.generate(prompt);
+        }
+
         const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
           handleParserErrors: true,
           handleExecutionErrors: true,

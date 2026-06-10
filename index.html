@@ -7,7 +7,7 @@
   @author    Etaf Cisky
   @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
   @license   CC BY-NC-ND 4.0
-  @version   7.1.0
+  @version   7.2.0
   @link      https://github.com/EtafCisky/sillytavernDIARY
 
   ============================================================================
@@ -147,6 +147,64 @@
                 <div class="diary-config-label">
                   <span class="diary-config-title">当前状态</span>
                   <span class="diary-config-desc" id="diary_auto_status">功能未启用</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="diary-config-group">
+              <h4>AI API 自定义</h4>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">启用自定义 API</span>
+                  <span class="diary-config-desc">启用后，日记本发送给 AI 的内容将使用这里配置的 OpenAI 兼容 API。</span>
+                </div>
+                <div class="diary-config-value">
+                  <input type="checkbox" id="diary_custom_api_enabled" />
+                </div>
+              </div>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">API URL</span>
+                  <span class="diary-config-desc">填写接口基础地址，例如 https://api.openai.com/v1。</span>
+                </div>
+                <div class="diary-config-value">
+                  <input
+                    type="text"
+                    id="diary_custom_api_url"
+                    class="diary-select"
+                    placeholder="https://api.openai.com/v1"
+                    style="width: 260px"
+                  />
+                </div>
+              </div>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">API Key</span>
+                  <span class="diary-config-desc">密钥会单独保存到日记本 API 设置文件。</span>
+                </div>
+                <div class="diary-config-value">
+                  <input
+                    type="password"
+                    id="diary_custom_api_key"
+                    class="diary-select"
+                    placeholder="sk-..."
+                    autocomplete="off"
+                    style="width: 260px"
+                  />
+                </div>
+              </div>
+              <div class="diary-config-item">
+                <div class="diary-config-label">
+                  <span class="diary-config-title">模型</span>
+                  <span class="diary-config-desc" id="diary_custom_api_status">请先测试连接获取模型列表。</span>
+                </div>
+                <div class="diary-config-value">
+                  <select id="diary_custom_api_model" class="diary-select" style="width: 260px">
+                    <option value="">未选择模型</option>
+                  </select>
+                  <button id="diary_custom_api_test" class="diary-btn diary-btn-secondary" type="button">
+                    <span>测试连接</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -329,7 +387,7 @@
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">版本：</span>
-                  <span class="diary-author-value">v7.1.0</span>
+                  <span class="diary-author-value">v7.2.0</span>
                 </div>
                 <div class="diary-author-item">
                   <span class="diary-author-label">原作者：</span>
@@ -550,7 +608,28 @@
         <div class="diary-book-nav-header">
           <button id="diary-book-back-to-character-list" class="diary-book-nav-btn">← 返回</button>
           <h3 id="diary-book-character-name" class="diary-book-view-title">角色日记</h3>
-          <div class="diary-book-nav-spacer"></div>
+          <div class="diary-book-nav-actions">
+            <button id="diary-book-diary-group-menu-btn" class="diary-book-icon-btn diary-book-diary-group-menu-btn" title="日记分组" aria-label="日记分组">
+              📁
+            </button>
+            <button id="diary-book-diary-delete-mode-btn" class="diary-book-icon-btn diary-book-diary-delete-mode-btn" title="批量删除日记" aria-label="批量删除日记">
+              🗑️
+            </button>
+            <button id="diary-book-diary-cancel-delete-btn" class="diary-book-icon-btn diary-book-diary-cancel-delete-btn" title="取消批量删除" aria-label="取消批量删除" style="display: none">
+              ×
+            </button>
+            <div id="diary-book-diary-group-menu" class="diary-book-diary-group-menu" style="display: none">
+              <button id="diary-book-create-group-btn" class="diary-book-group-action-btn">创建分组</button>
+              <button id="diary-book-assign-group-btn" class="diary-book-group-action-btn">勾选日记加入分组</button>
+              <button id="diary-book-filter-group-btn" class="diary-book-group-action-btn">筛选</button>
+              <button id="diary-book-delete-group-btn" class="diary-book-group-action-btn">删除分组</button>
+              <div id="diary-book-group-selector-panel" class="diary-book-group-selector-panel" style="display: none">
+                <div id="diary-book-group-selector-title" class="diary-book-group-selector-title">选择分组</div>
+                <input id="diary-book-group-search-input" class="diary-book-group-search-input" type="search" placeholder="搜索分组" autocomplete="off">
+                <div id="diary-book-group-selector-list" class="diary-book-group-selector-list"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="diary-book-diary-content">
@@ -580,8 +659,26 @@
           <div class="diary-book-nav-spacer"></div>
         </div>
 
+        <button id="diary-book-more-actions-btn" class="diary-book-floating-btn diary-book-floating-gear-btn" aria-label="日记功能">
+          ⚙
+        </button>
+
+        <button id="diary-book-detail-prev-btn" class="diary-book-floating-btn diary-book-floating-nav-btn diary-book-floating-prev-btn" aria-label="上一篇">
+          &lt;
+        </button>
+
+        <button id="diary-book-detail-next-btn" class="diary-book-floating-btn diary-book-floating-nav-btn diary-book-floating-next-btn" aria-label="下一篇">
+          &gt;
+        </button>
+
+        <div id="diary-book-more-actions-menu" class="diary-book-more-actions-menu" style="display: none">
+          <button id="diary-book-edit-remark-btn" class="diary-book-more-action-btn">设置备注</button>
+          <button id="diary-book-clear-remark-btn" class="diary-book-more-action-btn">清除备注</button>
+        </div>
+
         <div class="diary-book-detail-content">
           <div class="diary-book-detail-page">
+
             <!-- 返回按钮 - 移动到内容卡片内 -->
             <button id="diary-book-back-to-diary-list" class="diary-book-nav-btn diary-book-back-btn-in-content">
               ← 返回
@@ -668,7 +765,7 @@
 <div id="diary-update-notification" class="diary-update-notification" style="display: none">
   <div class="diary-update-content">
     <div class="diary-update-header">
-      <span id="diary-update-version-title">v7.1.0 更新</span>
+      <span id="diary-update-version-title">v7.2.0 更新</span>
       <button id="diary-update-close-btn" class="diary-update-close">&times;</button>
     </div>
     <div class="diary-update-body">

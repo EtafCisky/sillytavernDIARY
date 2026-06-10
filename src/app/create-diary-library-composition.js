@@ -6,6 +6,11 @@ export function createDiaryLibraryComposition({
   getCharacterDiaries,
   loadDiaryFromFile,
   deleteDiaryFromFile,
+  updateDiaryRemark,
+  getDiaryGroups,
+  createDiaryGroup,
+  updateDiaryGroup,
+  deleteDiaryGroup,
   notify,
 }) {
   const {
@@ -23,6 +28,11 @@ export function createDiaryLibraryComposition({
     getCharacterDiaries,
     loadDiaryFromFile,
     deleteDiaryFromFile,
+    updateDiaryRemark,
+    getDiaryGroups,
+    createDiaryGroup,
+    updateDiaryGroup,
+    deleteDiaryGroup,
     notify,
   });
 

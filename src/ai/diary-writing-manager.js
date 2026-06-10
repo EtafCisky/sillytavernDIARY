@@ -4,6 +4,7 @@ export function createDiaryWritingManager({
   getContext,
   parseDiaryBlock,
   executeSlashCommandsWithOptions,
+  customApiClient,
   saveDiaryToFile,
   saveToRecycleBinFile,
   showSaveSuccessDialog,
@@ -22,6 +23,11 @@ export function createDiaryWritingManager({
     console.log('角色名:', characterName || '(未指定)');
 
     try {
+      if (customApiClient?.isReady?.()) {
+        console.log('[Custom API] Using diary-specific API for diary generation');
+        return normalizeGeneratedResult(await customApiClient.generate(prompt));
+      }
+
       console.log('尝试获取 SillyTavern 上下文...');
       const context = getSillyTavernContext();
 
@@ -107,12 +113,14 @@ export function createDiaryWritingManager({
     let shouldRestorePreset = false;
     let aiResponse;
 
-    try {
-      const result = await switchToDiaryPreset();
-      originalPreset = result.originalPreset;
-      shouldRestorePreset = result.switched;
-    } catch (error) {
-      console.error('预设切换失败，继续使用当前预设:', error);
+    if (!customApiClient?.isReady?.()) {
+      try {
+        const result = await switchToDiaryPreset();
+        originalPreset = result.originalPreset;
+        shouldRestorePreset = result.switched;
+      } catch (error) {
+        console.error('预设切换失败，继续使用当前预设:', error);
+      }
     }
 
     try {

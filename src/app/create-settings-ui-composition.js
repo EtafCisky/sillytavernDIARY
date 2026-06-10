@@ -13,6 +13,9 @@ export function createSettingsUiComposition({
   getAutoDiaryConfig,
   saveAutoDiaryInterval,
   updateAutoDiaryStatus,
+  loadApiSettingsSync,
+  saveApiSettings,
+  testCustomApiConnection,
   notify,
 }) {
   const {
@@ -58,6 +61,9 @@ export function createSettingsUiComposition({
     getAutoDiaryConfig,
     saveAutoDiaryInterval,
     updateAutoDiaryStatus,
+    loadApiSettingsSync,
+    saveApiSettings,
+    testCustomApiConnection,
     notify,
   });
 

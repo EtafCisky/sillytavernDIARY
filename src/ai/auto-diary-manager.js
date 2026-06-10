@@ -13,6 +13,7 @@ export function createAutoDiaryManager({
   switchToDiaryPreset,
   restoreOriginalPreset,
   executeSlashCommandsWithOptions,
+  customApiClient,
   parseDiaryContent,
   saveDiaryToFile,
   saveToRecycleBinFile,
@@ -185,23 +186,30 @@ export function createAutoDiaryManager({
       let originalPreset = null;
       let shouldRestorePreset = false;
 
-      try {
-        const result = await switchToDiaryPreset();
-        originalPreset = result.originalPreset;
-        shouldRestorePreset = result.switched;
-      } catch (error) {
-        console.error('[自动写日记] 预设切换失败，继续使用当前预设:', error);
+      if (!customApiClient?.isReady?.()) {
+        try {
+          const result = await switchToDiaryPreset();
+          originalPreset = result.originalPreset;
+          shouldRestorePreset = result.switched;
+        } catch (error) {
+          console.error('[自动写日记] 预设切换失败，继续使用当前预设:', error);
+        }
       }
 
       console.log('[自动写日记] 开始后台生成日记内容...');
 
       let genResult = null;
       try {
-        genResult = await executeSlashCommandsWithOptions(`/gen ${AUTO_DIARY_PROMPT}`, {
-          handleExecutionErrors: true,
-          handleParserErrors: true,
-          abortController: null,
-        });
+        if (customApiClient?.isReady?.()) {
+          console.log('[Custom API] Using diary-specific API for auto diary generation');
+          genResult = await customApiClient.generate(AUTO_DIARY_PROMPT);
+        } else {
+          genResult = await executeSlashCommandsWithOptions(`/gen ${AUTO_DIARY_PROMPT}`, {
+            handleExecutionErrors: true,
+            handleParserErrors: true,
+            abortController: null,
+          });
+        }
 
         console.log('[自动写日记] 后台生成完成');
 

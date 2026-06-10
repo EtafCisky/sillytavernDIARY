@@ -217,7 +217,7 @@ async function verifyAuthorInfo() {
     '%c║  作者 (Author):        Etaf Cisky                            ║',
     'color: #48bb78; font-weight: bold;',
   );
-  console.log('%c║  版本 (Version):       v7.1.0                                ║', 'color: #48bb78;');
+  console.log('%c║  版本 (Version):       v7.2.0                                ║', 'color: #48bb78;');
   console.log('%c║  许可证 (License):     CC BY-NC-ND 4.0                       ║', 'color: #48bb78;');
   console.log('%c║  GitHub:               github.com/EtafCisky/sillytavernDIARY║', 'color: #4299e1;');
   console.log('%c║  指纹 (Fingerprint):   EC-STD-2025                           ║', 'color: #ed8936;');

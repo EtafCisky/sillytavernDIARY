@@ -6,7 +6,7 @@
  * @author    Etaf Cisky
  * @copyright Copyright (c) 2025 Etaf Cisky. All rights reserved.
  * @license   CC BY-NC-ND 4.0
- * @version   7.1.0
+ * @version   7.2.0
  * @link      https://github.com/EtafCisky/sillytavernDIARY
  *
  * ============================================================================

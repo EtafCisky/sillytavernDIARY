@@ -14,6 +14,16 @@ export const DIARY_FILE_STORAGE = {
     kind: 'sillytavernDIARY.recycleBin',
     settingsKey: 'recycleBin',
   },
+  apiSettings: {
+    fileName: 'diary-api-settings.json',
+    kind: 'sillytavernDIARY.apiSettings',
+    settingsKey: 'apiSettings',
+  },
+  diaryGroups: {
+    fileName: 'diary-groups.json',
+    kind: 'sillytavernDIARY.diaryGroups',
+    settingsKey: 'diaryGroups',
+  },
 };
 
 function bytesToBase64(bytes) {

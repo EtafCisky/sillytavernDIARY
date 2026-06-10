@@ -1,8 +1,13 @@
 import { PromptBuilder } from '../prompts/prompt-builder.js';
 
-export function createGhostwriteManager({ executeSlashCommandsWithOptions }) {
+export function createGhostwriteManager({ executeSlashCommandsWithOptions, customApiClient }) {
   async function callGenCommand(prompt) {
     try {
+      if (customApiClient?.isReady?.()) {
+        console.log('[Custom API] Using diary-specific API for ghostwrite generation');
+        return await customApiClient.generate(prompt);
+      }
+
       const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
         handleParserErrors: true,
         handleExecutionErrors: true,

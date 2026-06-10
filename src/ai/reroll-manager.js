@@ -4,10 +4,16 @@ export function createRerollManager({
   exchangeDiaryStorage,
   formatValidator,
   executeSlashCommandsWithOptions,
+  customApiClient,
   getCurrentFloor,
 }) {
   async function callGenCommand(prompt) {
     try {
+      if (customApiClient?.isReady?.()) {
+        console.log('[Custom API] Using diary-specific API for reroll generation');
+        return await customApiClient.generate(prompt);
+      }
+
       const result = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
         handleParserErrors: true,
         handleExecutionErrors: true,

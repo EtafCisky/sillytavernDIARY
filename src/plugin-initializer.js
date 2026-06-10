@@ -205,8 +205,8 @@ export function createPluginInitializer({
   async function initializePluginUi() {
     bindMainSettingsEvents();
 
-    await loadSettings();
     await initializeFileStorage();
+    await loadSettings();
     loadPluginSettingsStyle();
     loadExchangeDiaryCSS();
 
