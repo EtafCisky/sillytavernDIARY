@@ -1,7 +1,9 @@
-const DIARY_REGEX = /<日记>\s*标题：([^\n]+)\s*时间：([^\n]+)\s*内容：([\s\S]*?)\s*<\/日记>/;
-const EXCHANGE_DIARY_REGEX = /<交换日记>\s*标题：([^\n]*)\s*时间：([^\n]*)\s*内容：([\s\S]*?)\s*<\/交换日记>/;
+const DIARY_REGEX =
+  /<日记>\s*标题：([^\n]+)\s*时间：([^\n]+)\s*内容：([\s\S]*?)\s*<\/日记>/;
+const EXCHANGE_DIARY_REGEX =
+  /<交换日记>\s*标题：([^\n]+)\s*时间：([^\n]+)\s*内容：([\s\S]*?)\s*<\/交换日记>/;
 
-function extractDiaryFields(response, regex, missingTagError = '未找到日记格式标签') {
+function extractDiaryFields(response, regex, missingTagError) {
   if (!response || typeof response !== 'string') {
     return {
       success: false,
@@ -10,7 +12,6 @@ function extractDiaryFields(response, regex, missingTagError = '未找到日记�
   }
 
   const match = response.match(regex);
-
   if (!match) {
     return {
       success: false,
@@ -38,7 +39,7 @@ function extractDiaryFields(response, regex, missingTagError = '未找到日记�
 }
 
 export function parseDiaryBlock(response) {
-  const result = extractDiaryFields(response, DIARY_REGEX);
+  const result = extractDiaryFields(response, DIARY_REGEX, '未找到日记格式标签');
 
   if (!result.success) {
     return result;

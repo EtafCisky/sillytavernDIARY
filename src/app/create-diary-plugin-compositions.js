@@ -213,6 +213,9 @@ export function createDiaryPluginCompositions({
     loadApiSettingsSync: storage.loadApiSettingsSync,
     saveApiSettings: storage.saveApiSettings,
     getRequestHeaders: runtime.getRequestHeaders,
+    executeSlashCommandsWithOptions: runtime.executeSlashCommandsWithOptions,
+    eventSource: runtime.eventSource,
+    eventTypes: runtime.eventTypes,
   });
 
   const {

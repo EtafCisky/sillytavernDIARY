@@ -1,4 +1,12 @@
-import { chat, getRequestHeaders, is_send_press, name2, saveSettingsDebounced } from '../../../../../../script.js';
+import {
+  chat,
+  eventSource,
+  event_types,
+  getRequestHeaders,
+  is_send_press,
+  name2,
+  saveSettingsDebounced,
+} from '../../../../../../script.js';
 import { extension_settings, getContext } from '../../../../../extensions.js';
 import { getPresetManager } from '../../../../../preset-manager.js';
 import { executeSlashCommandsWithOptions } from '../../../../../slash-commands.js';
@@ -34,6 +42,8 @@ export function createSillyTavernRuntime({ extensionName }) {
 
   return {
     extensionSettings: extension_settings,
+    eventSource,
+    eventTypes: event_types,
     getContext,
     getRequestHeaders,
     getPresetManager,

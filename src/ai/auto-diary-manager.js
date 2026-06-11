@@ -1,7 +1,39 @@
-const AUTO_DIARY_PROMPT =
-  '以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式为：\n<日记>\n标题：{{标题}}\n时间：{{时间}}\n内容：{{内容}}</日记>\n\n日记正确格式示例如下：\n<日记>\n标题：我想你了\n时间：2025年11月11日 11:11\n内容：我今天特别想你……你还好吗？</日记>';
+const AUTO_DIARY_PROMPT = `以{{char}}的口吻写一则日记，日记内容字数不得少于500字，日记格式如下：
+<日记>
+标题：{{标题}}
+时间：{{时间}}
+内容：{{内容}}
+</日记>
+
+日记正确格式示例如下：
+<日记>
+标题：我想你了
+时间：2025年1月1日 11:11
+内容：我今天特别想你……
+</日记>`;
 
 const AUTO_DIARY_COOLDOWN_MS = 10 * 60 * 1000;
+
+function extractGeneratedText(genResult) {
+  if (typeof genResult === 'string') {
+    return genResult;
+  }
+
+  if (genResult?.pipe) {
+    return genResult.pipe || '';
+  }
+
+  if (genResult?.text) {
+    return genResult.text || '';
+  }
+
+  if (genResult?.content) {
+    return genResult.content || '';
+  }
+
+  console.error('[Auto Diary] Unexpected /gen result:', genResult);
+  return null;
+}
 
 export function createAutoDiaryManager({
   getCurrentSettings,
@@ -26,22 +58,19 @@ export function createAutoDiaryManager({
   function getAutoDiaryConfig() {
     const settings = getCurrentSettings();
     if (!settings.autoDiary) {
-      return {
-        interval: 0,
-      };
+      return { interval: 0 };
     }
+
     return settings.autoDiary;
   }
 
   function saveAutoDiaryInterval(interval) {
     const settings = getCurrentSettings();
     if (!settings.autoDiary) {
-      settings.autoDiary = {
-        interval: 0,
-      };
+      settings.autoDiary = { interval: 0 };
     }
 
-    const newInterval = parseInt(interval) || 0;
+    const newInterval = parseInt(interval, 10) || 0;
     settings.autoDiary.interval = newInterval;
 
     if (newInterval > 0) {
@@ -53,14 +82,17 @@ export function createAutoDiaryManager({
       if (!chatMetadata.sillytavernDIARY) {
         chatMetadata.sillytavernDIARY = {};
       }
+
       chatMetadata.sillytavernDIARY.lastTriggerFloor = currentFloor;
       chatMetadata.sillytavernDIARY.characterName = characterName;
       chatMetadata.sillytavernDIARY.lastTriggerTime = 0;
       saveMetadata();
 
-      console.log(`[自动写日记] 已保存触发间隔: ${newInterval}，起始楼层: ${currentFloor}（${characterName}）`);
+      console.log(
+        `[Auto Diary] Enabled, interval=${newInterval}, startFloor=${currentFloor}, character=${characterName}`,
+      );
     } else {
-      console.log('[自动写日记] 已禁用自动写日记功能');
+      console.log('[Auto Diary] Disabled.');
     }
 
     saveSettings();
@@ -73,11 +105,10 @@ export function createAutoDiaryManager({
     if (!chatMetadata.sillytavernDIARY) {
       chatMetadata.sillytavernDIARY = {};
     }
+
     chatMetadata.sillytavernDIARY.lastTriggerFloor = floor;
     chatMetadata.sillytavernDIARY.characterName = characterName;
     saveMetadata();
-
-    console.log(`[自动写日记] 已更新"${characterName}"的触发楼层: ${floor}`);
   }
 
   function updateAutoDiaryStatus() {
@@ -96,9 +127,9 @@ export function createAutoDiaryManager({
     const remaining = interval - (currentFloor - lastFloor);
 
     if (remaining <= 0) {
-      updateStatusText(`已达触发条件（间隔${interval}条）`);
+      updateStatusText(`已达到触发条件（间隔 ${interval} 楼）`);
     } else {
-      updateStatusText(`已启用，还需${remaining}条消息触发（间隔${interval}条）`);
+      updateStatusText(`已启用，还需 ${remaining} 条消息触发（间隔 ${interval} 楼）`);
     }
   }
 
@@ -125,21 +156,16 @@ export function createAutoDiaryManager({
     const characterName = getCurrentCharacterName();
     const currentFloor = currentLength;
     const lastTriggerFloor = chatMetadata?.sillytavernDIARY?.lastTriggerFloor || 0;
-
     const lastTriggerTime = chatMetadata?.sillytavernDIARY?.lastTriggerTime || 0;
     const currentTime = Date.now();
     const timeSinceLastTrigger = currentTime - lastTriggerTime;
 
     if (lastTriggerTime > 0 && timeSinceLastTrigger < AUTO_DIARY_COOLDOWN_MS) {
-      const remainingCooldown = Math.ceil((AUTO_DIARY_COOLDOWN_MS - timeSinceLastTrigger) / 1000 / 60);
-      console.log(`[自动写日记] 冷却中，还需等待 ${remainingCooldown} 分钟`);
       return;
     }
 
-    console.log(`[自动写日记] 检查触发条件 - 当前楼层:${currentFloor}, 上次触发:${lastTriggerFloor}, 间隔:${interval}`);
-
     if (currentFloor - lastTriggerFloor >= interval) {
-      console.log('[自动写日记] 已达到触发条件，开始自动写日记');
+      console.log('[Auto Diary] Trigger condition met.');
 
       const { saveMetadata } = context;
       if (!chatMetadata.sillytavernDIARY) {
@@ -147,141 +173,109 @@ export function createAutoDiaryManager({
       }
       chatMetadata.sillytavernDIARY.lastTriggerTime = Date.now();
       saveMetadata();
-      console.log('[自动写日记] 已设置冷却时间，10分钟内不会再次触发');
 
-      notify.info(`自动写日记触发（${characterName}）`, '日记本');
+      notify.info(`自动写日记已触发：${characterName}`, '日记');
       await triggerAutoDiary(characterName, currentFloor);
     }
 
     updateAutoDiaryStatus();
   }
 
-  function extractGeneratedText(genResult) {
-    if (genResult && typeof genResult === 'string') {
-      return genResult;
-    }
-
-    if (genResult && genResult.pipe) {
-      return genResult.pipe || '';
-    }
-
-    console.error('[自动写日记] /gen 命令返回格式异常:', genResult);
-    return null;
-  }
-
   async function saveFailedContent(content, characterName, reason, userMessage) {
     try {
       await saveToRecycleBinFile(content, characterName, reason);
-      notify.error(userMessage, '自动写日记错误');
+      notify.error(userMessage, '自动写日记');
     } catch (recycleBinError) {
-      console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
-      notify.error(`${userMessage.replace('，已保存到回收站', '')}，且保存到回收站失败`, '自动写日记错误');
+      console.error('[Auto Diary] Failed to save recycle bin item:', recycleBinError);
+      notify.error(userMessage, '自动写日记');
     }
   }
 
   async function triggerAutoDiary(characterName, currentFloor) {
     let generatedContent = '';
+    let originalPreset = null;
+    let shouldRestorePreset = false;
 
     try {
-      let originalPreset = null;
-      let shouldRestorePreset = false;
-
-      if (!customApiClient?.isReady?.()) {
-        try {
-          const result = await switchToDiaryPreset();
-          originalPreset = result.originalPreset;
-          shouldRestorePreset = result.switched;
-        } catch (error) {
-          console.error('[自动写日记] 预设切换失败，继续使用当前预设:', error);
-        }
+      try {
+        const result = await switchToDiaryPreset();
+        originalPreset = result.originalPreset;
+        shouldRestorePreset = result.switched;
+      } catch (error) {
+        console.error('[Auto Diary] Failed to switch preset, continue with current preset:', error);
       }
 
-      console.log('[自动写日记] 开始后台生成日记内容...');
-
       let genResult = null;
-      try {
-        if (customApiClient?.isReady?.()) {
-          console.log('[Custom API] Using diary-specific API for auto diary generation');
-          genResult = await customApiClient.generate(AUTO_DIARY_PROMPT);
-        } else {
-          genResult = await executeSlashCommandsWithOptions(`/gen ${AUTO_DIARY_PROMPT}`, {
-            handleExecutionErrors: true,
-            handleParserErrors: true,
-            abortController: null,
-          });
-        }
+      if (customApiClient?.isReady?.()) {
+        console.log('[Custom API] Using diary-specific API for auto diary generation');
+        genResult = await customApiClient.generate(AUTO_DIARY_PROMPT);
+      } else {
+        genResult = await executeSlashCommandsWithOptions(`/gen ${AUTO_DIARY_PROMPT}`, {
+          handleExecutionErrors: true,
+          handleParserErrors: true,
+          abortController: null,
+          source: 'diary-plugin-auto',
+        });
+      }
 
-        console.log('[自动写日记] 后台生成完成');
-
-        if (shouldRestorePreset) {
-          schedulePresetRestore(async () => {
-            await restoreOriginalPreset(originalPreset);
-          });
-        }
-      } catch (error) {
-        console.error('[自动写日记] 后台生成失败:', error);
-        if (shouldRestorePreset) {
+      if (shouldRestorePreset) {
+        schedulePresetRestore(async () => {
           await restoreOriginalPreset(originalPreset);
-        }
-        notify.error('后台生成日记失败', '自动写日记错误');
-        return;
+        });
       }
 
       generatedContent = extractGeneratedText(genResult);
       if (generatedContent === null) {
-        notify.error('后台生成结果格式异常', '自动写日记错误');
+        notify.error('后台生成结果格式异常', '自动写日记');
         return;
       }
 
       if (!generatedContent) {
-        notify.error('后台生成内容为空', '自动写日记错误');
+        notify.error('后台生成内容为空', '自动写日记');
         return;
       }
 
-      console.log('[自动写日记] 获取到生成内容，长度:', generatedContent.length);
       const diaryData = parseDiaryContent(generatedContent);
       if (!diaryData) {
-        console.log('[自动写日记] 日记内容解析失败，保存到回收站');
         await saveFailedContent(
           generatedContent,
           characterName,
-          '自动写日记 - 正则匹配失败',
+          '自动写日记解析失败',
           '日记内容解析失败，已保存到回收站',
         );
         return;
       }
 
-      console.log('[自动写日记] 日记内容解析完成:', diaryData.title);
-
       const saveResult = await saveDiaryToFile(diaryData, characterName);
       if (!saveResult.success) {
-        console.log('[自动写日记] 日记保存失败，保存到回收站');
         await saveFailedContent(
           generatedContent,
           characterName,
-          '自动写日记 - 文件保存失败',
+          '自动写日记文件保存失败',
           '保存日记失败，已保存到回收站',
         );
         return;
       }
 
       updateLastTriggerFloor(characterName, currentFloor);
-
-      notify.success(`自动写日记完成："${diaryData.title}"`, '日记本', { timeOut: 5000 });
-      console.log('[自动写日记] 全部流程完成');
+      notify.success(`自动写日记完成：${diaryData.title}`, '日记', { timeOut: 5000 });
     } catch (error) {
-      console.error('[自动写日记] 发生错误:', error);
+      console.error('[Auto Diary] Failed:', error);
 
-      if (typeof generatedContent === 'string' && generatedContent.length > 0) {
+      if (shouldRestorePreset) {
+        await restoreOriginalPreset(originalPreset);
+      }
+
+      if (generatedContent) {
         try {
-          await saveToRecycleBinFile(generatedContent, characterName, `自动写日记 - 系统错误: ${error.message}`);
-          notify.error('自动写日记出错，内容已保存到回收站', '自动写日记错误');
+          await saveToRecycleBinFile(generatedContent, characterName, `自动写日记系统错误: ${error.message}`);
+          notify.error('自动写日记出错，内容已保存到回收站', '自动写日记');
         } catch (recycleBinError) {
-          console.error('[自动写日记] 保存到回收站也失败了:', recycleBinError);
-          notify.error(`自动写日记出错: ${error.message}`, '自动写日记错误');
+          console.error('[Auto Diary] Failed to save error content:', recycleBinError);
+          notify.error(`自动写日记出错：${error.message}`, '自动写日记');
         }
       } else {
-        notify.error(`自动写日记出错: ${error.message}`, '自动写日记错误');
+        notify.error(`自动写日记出错：${error.message}`, '自动写日记');
       }
     }
   }

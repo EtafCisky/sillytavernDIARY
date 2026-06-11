@@ -47,9 +47,11 @@ function extractGeneratedText(payload) {
   return (
     firstChoice?.message?.content ||
     firstChoice?.text ||
+    payload?.pipe ||
     payload?.content ||
     payload?.text ||
     payload?.message?.content ||
+    payload?.message ||
     payload?.data?.content ||
     payload?.data?.text ||
     ''
@@ -64,10 +66,41 @@ function buildApiPayload(settings) {
   };
 }
 
+function removeEventListener(eventSource, eventName, listener) {
+  if (typeof eventSource?.removeListener === 'function') {
+    eventSource.removeListener(eventName, listener);
+    return;
+  }
+
+  if (typeof eventSource?.off === 'function') {
+    eventSource.off(eventName, listener);
+  }
+}
+
+function addFinalEventListener(eventSource, eventName, listener) {
+  if (typeof eventSource?.makeLast === 'function') {
+    eventSource.makeLast(eventName, listener);
+    return;
+  }
+
+  eventSource.on(eventName, listener);
+}
+
+function applyCustomApiOverrides(generateData, settings) {
+  generateData.chat_completion_source = CHAT_COMPLETION_SOURCE;
+  generateData.reverse_proxy = normalizeCustomApiUrl(settings.url);
+  generateData.proxy_password = settings.key || '';
+  generateData.model = settings.model;
+  generateData.stream = false;
+}
+
 export function createCustomApiClient({
   loadApiSettingsSync,
   saveApiSettings,
   getRequestHeaders,
+  executeSlashCommandsWithOptions,
+  eventSource,
+  eventTypes,
 }) {
   function getSettings() {
     return typeof loadApiSettingsSync === 'function' ? loadApiSettingsSync() : {};
@@ -97,7 +130,7 @@ export function createCustomApiClient({
     };
 
     if (!normalizedSettings.url) {
-      throw new Error('请先填写 API URL');
+      throw new Error('Please enter an API URL first.');
     }
 
     const response = await fetch('/api/backends/chat-completions/status', {
@@ -107,13 +140,13 @@ export function createCustomApiClient({
     });
 
     if (!response.ok) {
-      throw new Error(`连接失败: HTTP ${response.status}: ${await response.text()}`);
+      throw new Error(`Connection failed: HTTP ${response.status}: ${await response.text()}`);
     }
 
     const payload = await response.json();
     const models = extractModels(payload);
     if (!models.length) {
-      throw new Error('连接成功，但未获取到可用模型');
+      throw new Error('Connection succeeded, but no models were returned.');
     }
 
     const nextSettings = {
@@ -133,33 +166,47 @@ export function createCustomApiClient({
   async function generate(prompt) {
     const settings = getSettings();
     if (!isReady(settings)) {
-      throw new Error('自定义 API 未启用或配置不完整');
+      throw new Error('Custom API is disabled or incomplete.');
     }
 
-    const response = await fetch('/api/backends/chat-completions/generate', {
-      method: 'POST',
-      headers: getRequestHeaders(),
-      body: JSON.stringify({
-        ...buildApiPayload(settings),
-        type: 'quiet',
-        model: settings.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
-        temperature: 0.7,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-        top_p: 1,
-        max_tokens: 2048,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`自定义 API 生成失败: HTTP ${response.status}: ${await response.text()}`);
+    if (typeof executeSlashCommandsWithOptions !== 'function') {
+      throw new Error('Custom API generation requires SillyTavern slash command support.');
     }
 
-    const text = extractGeneratedText(await response.json());
+    if (!eventSource || typeof eventSource.on !== 'function') {
+      throw new Error('Custom API generation requires SillyTavern event support.');
+    }
+
+    const eventName = eventTypes?.CHAT_COMPLETION_SETTINGS_READY || 'chat_completion_settings_ready';
+    let handled = false;
+    const overrideRequestTarget = generateData => {
+      if (handled || !generateData) {
+        return;
+      }
+
+      handled = true;
+      applyCustomApiOverrides(generateData, settings);
+      removeEventListener(eventSource, eventName, overrideRequestTarget);
+    };
+
+    addFinalEventListener(eventSource, eventName, overrideRequestTarget);
+
+    let rawResult;
+    try {
+      rawResult = await executeSlashCommandsWithOptions(`/gen ${prompt}`, {
+        handleParserErrors: true,
+        handleExecutionErrors: true,
+        parserFlags: {},
+        abortController: null,
+        source: 'diary-plugin-custom-api',
+      });
+    } finally {
+      removeEventListener(eventSource, eventName, overrideRequestTarget);
+    }
+
+    const text = extractGeneratedText(rawResult);
     if (!text) {
-      throw new Error('自定义 API 未返回文本内容');
+      throw new Error('Custom API returned no text.');
     }
 
     return text;
